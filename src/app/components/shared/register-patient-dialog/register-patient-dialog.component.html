@@ -1,0 +1,92 @@
+<h2 mat-dialog-title>Register New Patient</h2>
+<mat-dialog-content>
+  <form [formGroup]="registerForm" class="space-y-4 py-2">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>First Name</mat-label>
+        <input matInput formControlName="firstName" placeholder="John" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Last Name</mat-label>
+        <input matInput formControlName="lastName" placeholder="Doe" />
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Age</mat-label>
+        <input matInput type="number" formControlName="age" placeholder="30" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Gender</mat-label>
+        <input matInput formControlName="gender" placeholder="Male/Female" />
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Phone Number</mat-label>
+        <input
+          matInput
+          type="tel"
+          formControlName="phone"
+          placeholder="+1 555-0000"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Email</mat-label>
+        <input
+          matInput
+          type="email"
+          formControlName="email"
+          placeholder="patient@email.com"
+        />
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Blood Group</mat-label>
+        <input matInput formControlName="bloodGroup" placeholder="O+" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Date of Birth</mat-label>
+        <input matInput type="date" formControlName="dob" />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Address</mat-label>
+      <input matInput formControlName="address" placeholder="Street address" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Emergency Contact</mat-label>
+      <input
+        matInput
+        formControlName="emergencyContact"
+        placeholder="Name &amp; Phone"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Medical History</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="medicalHistory"
+        placeholder="Enter medical history, allergies, chronic conditions..."
+      ></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onRegister()">
+    Register Patient
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,30 @@
+.search-field .mat-mdc-form-field-subscript-wrapper {
+	display: none;
+}
+
+.patients-table .mat-mdc-header-cell {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: rgb(75 85 99);
+	border-bottom: 1px solid rgb(229 231 235);
+	padding: 0.75rem 1rem;
+}
+
+.patients-table .mat-mdc-cell {
+	border-bottom: 1px solid rgb(243 244 246);
+	padding: 0.75rem 1rem;
+}
+
+.patients-table .mat-mdc-row:hover {
+	background-color: rgb(249 250 251);
+}
+
+.status-active {
+	background-color: rgb(220 252 231) !important;
+	color: rgb(22 101 52) !important;
+}
+
+.status-admitted {
+	background-color: rgb(254 243 199) !important;
+	color: rgb(146 64 14) !important;
+}

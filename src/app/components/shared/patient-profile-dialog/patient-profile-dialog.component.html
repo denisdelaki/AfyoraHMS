@@ -1,0 +1,87 @@
+<h2 mat-dialog-title>Patient Profile - {{ data.patient.name }}</h2>
+<mat-dialog-content>
+  <mat-tab-group>
+    <mat-tab label="Information">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+        <div>
+          <p class="text-sm text-gray-600">Patient ID</p>
+          <p class="font-medium">{{ data.patient.id }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Blood Group</p>
+          <p class="font-medium">{{ data.patient.bloodGroup }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Phone</p>
+          <p class="font-medium">{{ data.patient.phone }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Email</p>
+          <p class="font-medium">{{ data.patient.email }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Age</p>
+          <p class="font-medium">{{ data.patient.age }} years</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Gender</p>
+          <p class="font-medium">{{ data.patient.gender }}</p>
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Appointments">
+      <div class="space-y-3 py-4">
+        @for (
+          appointment of data.appointments;
+          track appointment.date + appointment.time
+        ) {
+          <mat-card class="!p-4 !shadow-none !border !border-gray-200">
+            <div class="flex justify-between items-start gap-4">
+              <div>
+                <p class="font-medium">{{ appointment.doctor }}</p>
+                <p class="text-sm text-gray-600">
+                  {{ appointment.department }}
+                </p>
+              </div>
+              <mat-chip-set>
+                <mat-chip>{{ appointment.status }}</mat-chip>
+              </mat-chip-set>
+            </div>
+            <div class="mt-3 flex items-center gap-3 text-sm text-gray-600">
+              <span class="flex items-center gap-1">
+                <mat-icon class="!w-4 !h-4 !text-base">calendar_today</mat-icon>
+                {{ appointment.date }}
+              </span>
+              <span>{{ appointment.time }}</span>
+            </div>
+          </mat-card>
+        }
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Visit History">
+      <div class="space-y-3 py-4">
+        @for (visit of data.visitHistory; track visit.date + visit.doctor) {
+          <mat-card class="!p-4 !shadow-none !border !border-gray-200">
+            <div class="flex justify-between items-start mb-2 gap-4">
+              <p class="font-medium">{{ visit.date }}</p>
+              <p class="text-sm text-gray-600">{{ visit.doctor }}</p>
+            </div>
+            <p class="text-sm mb-1">
+              <span class="font-medium">Diagnosis:</span>
+              {{ visit.diagnosis }}
+            </p>
+            <p class="text-sm">
+              <span class="font-medium">Prescription:</span>
+              {{ visit.prescription }}
+            </p>
+          </mat-card>
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Close</button>
+</mat-dialog-actions>

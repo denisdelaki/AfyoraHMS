@@ -1,1 +1,110 @@
-<p>patients works!</p>
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold mb-1">Patient Management</h1>
+      <p class="text-gray-600">Manage patient records and appointments</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      class="!flex !items-center !gap-2"
+      (click)="openRegisterDialog()"
+    >
+      <mat-icon>add</mat-icon>
+      Register Patient
+    </button>
+  </div>
+
+  <mat-card class="!p-4 !rounded-xl !shadow-sm">
+    <mat-form-field appearance="fill" class="w-full search-field">
+      <mat-label>Search by patient name or ID...</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [(ngModel)]="searchTerm" />
+    </mat-form-field>
+  </mat-card>
+
+  <mat-card class="!p-6 !rounded-xl !shadow-sm">
+    <div class="overflow-x-auto">
+      <table
+        mat-table
+        [dataSource]="filteredPatients"
+        class="w-full !bg-transparent patients-table"
+      >
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>Patient ID</th>
+          <td mat-cell *matCellDef="let patient" class="font-medium">
+            {{ patient.id }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let patient">{{ patient.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="ageGender">
+          <th mat-header-cell *matHeaderCellDef>Age / Gender</th>
+          <td mat-cell *matCellDef="let patient">
+            {{ patient.age }} / {{ patient.gender }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="contact">
+          <th mat-header-cell *matHeaderCellDef>Contact</th>
+          <td mat-cell *matCellDef="let patient">
+            <div class="text-sm">
+              <div>{{ patient.phone }}</div>
+              <div class="text-gray-500">{{ patient.email }}</div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="bloodGroup">
+          <th mat-header-cell *matHeaderCellDef>Blood Group</th>
+          <td mat-cell *matCellDef="let patient">{{ patient.bloodGroup }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="lastVisit">
+          <th mat-header-cell *matHeaderCellDef>Last Visit</th>
+          <td mat-cell *matCellDef="let patient">{{ patient.lastVisit }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let patient">
+            <mat-chip-set>
+              <mat-chip [class]="getStatusClass(patient.status)">{{
+                patient.status
+              }}</mat-chip>
+            </mat-chip-set>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let patient">
+            <div class="flex items-center gap-1">
+              <button
+                mat-icon-button
+                (click)="openPatientDialog(patient)"
+                aria-label="View patient profile"
+              >
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                (click)="onEditPatient(patient)"
+                aria-label="Edit patient profile"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+  </mat-card>
+</div>
