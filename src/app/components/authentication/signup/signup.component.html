@@ -1,199 +1,311 @@
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-    <div class="w-full max-w-5xl">
-        <div class="text-center mb-8">
-            <div class="flex justify-center mb-4">
-                <!-- Logo -->
-                <div class="flex items-center space-x-2">
-                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <span class="text-white font-bold text-2xl">+</span>
-                    </div>
-                    <span class="text-2xl font-bold text-black-900">Afyora<span class="text-blue-600">HMS</span></span>
-                </div>
-            </div>
-            <h1 class="text-lg font-bold text-gray-900 mb-2">Create Your Account</h1>
-            <p class="text-sm text-gray-600">
-                Join thousands of healthcare facilities using our platform
-            </p>
+<div
+  class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4"
+>
+  <div class="w-full max-w-5xl">
+    <div class="text-center mb-8">
+      <div class="flex justify-center mb-4">
+        <!-- Logo -->
+        <div class="flex items-center space-x-2">
+          <div
+            class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center"
+          >
+            <span class="text-white font-bold text-2xl">+</span>
+          </div>
+          <span class="text-2xl font-bold text-black-900"
+            >Afyora<span class="text-blue-600">HMS</span></span
+          >
         </div>
+      </div>
+      <h1 class="text-lg font-bold text-gray-900 mb-2">Create Your Account</h1>
+      <p class="text-sm text-gray-600">
+        Join thousands of healthcare facilities using our platform
+      </p>
+    </div>
 
-        <mat-card class="p-4 lg:p-8 shadow-xl bg-white rounded-xl border border-gray-100">
-            <mat-card-content>
-                <form (ngSubmit)="handleSignup()" class="space-y-6">
-                    <!-- Facility Type Selection -->
-                    <div>
-                        <label class="text-base font-medium text-gray-900 mb-3 block">
-                            What type of facility are you registering?
-                        </label>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <button type="button" (click)="setFacilityType('hospital')" [ngClass]="{
+    <mat-card
+      class="p-4 lg:p-8 shadow-xl bg-white rounded-xl border border-gray-100"
+    >
+      <mat-card-content>
+        <form
+          [formGroup]="signupForm"
+          (ngSubmit)="handleSignup()"
+          class="space-y-6"
+        >
+          <!-- Facility Type Selection -->
+          <div>
+            <label class="text-base font-medium text-gray-900 mb-3 block">
+              What type of facility are you registering?
+            </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                type="button"
+                (click)="setFacilityType('hospital')"
+                [ngClass]="{
                   'border-blue-600 bg-blue-50': facilityType === 'hospital',
                   'border-gray-200 hover:border-gray-300':
                     facilityType !== 'hospital',
-                }" class="p-6 border-2 rounded-lg transition-all text-center focus:outline-none bg-white">
-                                <mat-icon [ngClass]="{
+                }"
+                class="p-6 border-2 rounded-lg transition-all text-center focus:outline-none bg-white"
+              >
+                <mat-icon
+                  [ngClass]="{
                     'text-blue-600': facilityType === 'hospital',
                     'text-gray-400': facilityType !== 'hospital',
-                  }" style="
+                  }"
+                  style="
                     width: 48px;
                     height: 48px;
                     font-size: 48px;
                     max-height: 48px;
-                  " class="mb-3">local_hospital</mat-icon>
-                                <h3 class="font-semibold text-sm mb-1">Hospital</h3>
-                                <p class="text-sm text-gray-600">
-                                    Large medical facility with multiple departments
-                                </p>
-                            </button>
+                  "
+                  class="mb-3"
+                  >local_hospital</mat-icon
+                >
+                <h3 class="font-semibold text-sm mb-1">Hospital</h3>
+                <p class="text-sm text-gray-600">
+                  Large medical facility with multiple departments
+                </p>
+              </button>
 
-                            <button type="button" (click)="setFacilityType('clinic')" [ngClass]="{
+              <button
+                type="button"
+                (click)="setFacilityType('clinic')"
+                [ngClass]="{
                   'border-blue-600 bg-blue-50': facilityType === 'clinic',
                   'border-gray-200 hover:border-gray-300':
                     facilityType !== 'clinic',
-                }" class="p-6 border-2 rounded-lg transition-all text-center focus:outline-none bg-white">
-                                <mat-icon [ngClass]="{
+                }"
+                class="p-6 border-2 rounded-lg transition-all text-center focus:outline-none bg-white"
+              >
+                <mat-icon
+                  [ngClass]="{
                     'text-blue-600': facilityType === 'clinic',
                     'text-gray-400': facilityType !== 'clinic',
-                  }" style="
+                  }"
+                  style="
                     width: 48px;
                     height: 48px;
                     font-size: 48px;
                     max-height: 48px;
-                  " class="mb-3">medical_services</mat-icon>
-                                <h3 class="font-semibold text-sm mb-1">Clinic</h3>
-                                <p class="text-sm text-gray-600">
-                                    Outpatient facility for primary care services
-                                </p>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Basic Information -->
-                    @if (facilityType) {
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <mat-form-field appearance="fill" class="w-full">
-                            <mat-label>{{
-                                facilityType === "hospital" ? "Hospital" : "Clinic"
-                                }}
-                                Name</mat-label>
-                            <input matInput [placeholder]="'Enter ' + facilityType + ' name'" required />
-                        </mat-form-field>
-
-                        <mat-form-field appearance="fill" class="w-full">
-                            <mat-label>Registration Number</mat-label>
-                            <input matInput placeholder="License/Registration number" required />
-                        </mat-form-field>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <mat-form-field appearance="fill" class="w-full">
-                            <mat-label>Admin First Name</mat-label>
-                            <input matInput placeholder="John" required />
-                        </mat-form-field>
-
-                        <mat-form-field appearance="fill" class="w-full">
-                            <mat-label>Admin Last Name</mat-label>
-                            <input matInput placeholder="Doe" required />
-                        </mat-form-field>
-                    </div>
-
-                    <mat-form-field appearance="fill" class="w-full w-[100%] block">
-                        <mat-label>Email Address</mat-label>
-                        <input matInput type="email" placeholder="admin@hospital.com" required />
-                    </mat-form-field>
-
-                    <mat-form-field appearance="fill" class="w-full block">
-                        <mat-label>Phone Number</mat-label>
-                        <input matInput type="tel" placeholder="+1 (555) 000-0000" required />
-                    </mat-form-field>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <mat-form-field appearance="fill" class="w-full">
-                            <mat-label>Password</mat-label>
-                            <input matInput [type]="showPassword ? 'text' : 'password'" placeholder="••••••••"
-                                required />
-                            <button mat-icon-button matSuffix type="button" (click)="togglePassword()">
-                                <mat-icon>{{
-                                    showPassword ? "visibility_off" : "visibility"
-                                    }}</mat-icon>
-                            </button>
-                        </mat-form-field>
-
-                        <mat-form-field appearance="fill" class="w-full">
-                            <mat-label>Confirm Password</mat-label>
-                            <input matInput [type]="showConfirmPassword ? 'text' : 'password'" placeholder="••••••••"
-                                required />
-                            <button mat-icon-button matSuffix type="button" (click)="toggleConfirmPassword()">
-                                <mat-icon>{{
-                                    showConfirmPassword ? "visibility_off" : "visibility"
-                                    }}</mat-icon>
-                            </button>
-                        </mat-form-field>
-                    </div>
-
-                    <div class="flex items-start pb-2">
-                        <mat-checkbox id="terms" required color="primary">
-                            <span
-                                class="text-sm text-gray-600 leading-normal text-wrap break-words inline-block max-w-full">
-                                I agree to the
-                                <a routerLink="/terms" class="text-blue-600 hover:underline"
-                                    (click)="$event.stopPropagation()">
-                                    Terms of Service
-                                </a>
-                                and
-                                <a routerLink="/privacy" class="text-blue-600 hover:underline"
-                                    (click)="$event.stopPropagation()">
-                                    Privacy Policy
-                                </a>
-                            </span>
-                        </mat-checkbox>
-                    </div>
-
-                    <button mat-flat-button color="primary" type="submit" class="w-full h-12 text-base">
-                        Continue to Setup
-                    </button>
-                    }
-
-                    @if (!facilityType) {
-                    <div class="py-8 text-center text-gray-500">
-                        Please select your facility type to continue
-                    </div>
-                    }
-                </form>
-
-                <div class="mt-6 text-center">
-                    <p class="text-sm text-gray-600">
-                        Already have an account?
-                        <a routerLink="/login" class="text-blue-600 font-medium hover:underline">
-                            Sign in
-                        </a>
-                    </p>
-                </div>
-            </mat-card-content>
-        </mat-card>
-
-        <!-- Features -->
-        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-            <div class="space-y-2">
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                    <mat-icon class="text-blue-600">local_hospital</mat-icon>
-                </div>
-                <h4 class="font-medium text-gray-900">Complete Management</h4>
-                <p class="text-sm text-gray-600">Manage all aspects of your facility</p>
+                  "
+                  class="mb-3"
+                  >medical_services</mat-icon
+                >
+                <h3 class="font-semibold text-sm mb-1">Clinic</h3>
+                <p class="text-sm text-gray-600">
+                  Outpatient facility for primary care services
+                </p>
+              </button>
             </div>
-            <div class="space-y-2">
-                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                    <mat-icon class="text-green-600">medical_services</mat-icon>
-                </div>
-                <h4 class="font-medium text-gray-900">Easy Setup</h4>
-                <p class="text-sm text-gray-600">Get started in minutes</p>
+          </div>
+
+          <!-- Basic Information -->
+          @if (facilityType) {
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label
+                  >{{
+                    facilityType === "hospital" ? "Hospital" : "Clinic"
+                  }}
+                  Name</mat-label
+                >
+                <input
+                  matInput
+                  [placeholder]="'Enter ' + facilityType + ' name'"
+                  formControlName="facilityName"
+                  required
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Registration Number</mat-label>
+                <input
+                  matInput
+                  placeholder="License/Registration number"
+                  formControlName="registrationNumber"
+                  required
+                />
+              </mat-form-field>
             </div>
-            <div class="space-y-2">
-                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
-                    <mat-icon class="text-purple-600">support_agent</mat-icon>
-                </div>
-                <h4 class="font-medium text-gray-900">24/7 Support</h4>
-                <p class="text-sm text-gray-600">We're here to help anytime</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Admin First Name</mat-label>
+                <input
+                  matInput
+                  placeholder="John"
+                  formControlName="adminFirstName"
+                  required
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Admin Last Name</mat-label>
+                <input
+                  matInput
+                  placeholder="Doe"
+                  formControlName="adminLastName"
+                  required
+                />
+              </mat-form-field>
             </div>
+
+            <mat-form-field appearance="fill" class="w-full w-[100%] block">
+              <mat-label>Email Address</mat-label>
+              <input
+                matInput
+                type="email"
+                placeholder="admin@hospital.com"
+                formControlName="email"
+                required
+              />
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="w-full block">
+              <mat-label>Phone Number</mat-label>
+              <input
+                matInput
+                type="tel"
+                placeholder="+1 (555) 000-0000"
+                formControlName="phone"
+                required
+              />
+            </mat-form-field>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Password</mat-label>
+                <input
+                  matInput
+                  [type]="showPassword ? 'text' : 'password'"
+                  placeholder="••••••••"
+                  formControlName="password"
+                  required
+                />
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="togglePassword()"
+                >
+                  <mat-icon>{{
+                    showPassword ? "visibility_off" : "visibility"
+                  }}</mat-icon>
+                </button>
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Confirm Password</mat-label>
+                <input
+                  matInput
+                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  placeholder="••••••••"
+                  formControlName="confirmPassword"
+                  required
+                />
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="toggleConfirmPassword()"
+                >
+                  <mat-icon>{{
+                    showConfirmPassword ? "visibility_off" : "visibility"
+                  }}</mat-icon>
+                </button>
+              </mat-form-field>
+            </div>
+
+            <div class="flex items-start pb-2">
+              <mat-checkbox
+                id="terms"
+                formControlName="terms"
+                required
+                color="primary"
+              >
+                <span
+                  class="text-sm text-gray-600 leading-normal text-wrap break-words inline-block max-w-full"
+                >
+                  I agree to the
+                  <a
+                    routerLink="/terms"
+                    class="text-blue-600 hover:underline"
+                    (click)="$event.stopPropagation()"
+                  >
+                    Terms of Service
+                  </a>
+                  and
+                  <a
+                    routerLink="/privacy"
+                    class="text-blue-600 hover:underline"
+                    (click)="$event.stopPropagation()"
+                  >
+                    Privacy Policy
+                  </a>
+                </span>
+              </mat-checkbox>
+            </div>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              class="w-full h-12 text-base"
+            >
+              Continue to Setup
+            </button>
+          }
+
+          @if (!facilityType) {
+            <div class="py-8 text-center text-gray-500">
+              Please select your facility type to continue
+            </div>
+          }
+        </form>
+
+        <div class="mt-6 text-center">
+          <p class="text-sm text-gray-600">
+            Already have an account?
+            <a
+              routerLink="/login"
+              class="text-blue-600 font-medium hover:underline"
+            >
+              Sign in
+            </a>
+          </p>
         </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Features -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+      <div class="space-y-2">
+        <div
+          class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto"
+        >
+          <mat-icon class="text-blue-600">local_hospital</mat-icon>
+        </div>
+        <h4 class="font-medium text-gray-900">Complete Management</h4>
+        <p class="text-sm text-gray-600">Manage all aspects of your facility</p>
+      </div>
+      <div class="space-y-2">
+        <div
+          class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto"
+        >
+          <mat-icon class="text-green-600">medical_services</mat-icon>
+        </div>
+        <h4 class="font-medium text-gray-900">Easy Setup</h4>
+        <p class="text-sm text-gray-600">Get started in minutes</p>
+      </div>
+      <div class="space-y-2">
+        <div
+          class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto"
+        >
+          <mat-icon class="text-purple-600">support_agent</mat-icon>
+        </div>
+        <h4 class="font-medium text-gray-900">24/7 Support</h4>
+        <p class="text-sm text-gray-600">We're here to help anytime</p>
+      </div>
     </div>
+  </div>
 </div>

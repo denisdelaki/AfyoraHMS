@@ -80,253 +80,342 @@
     <!-- Step Content -->
     <mat-card class="p-6 lg:p-8 !rounded-2xl !shadow-md">
       <mat-card-content>
-        <!-- Step 0: Registration -->
-        <div *ngIf="currentStep === 0">
-          <h2 class="text-2xl font-semibold mb-6">
-            {{ facilityType === "hospital" ? "Hospital" : "Clinic" }}
-            Registration
-          </h2>
-          <div class="space-y-2">
-            <div>
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label
-                  >{{
-                    facilityType === "hospital" ? "Hospital" : "Clinic"
-                  }}
-                  Name</mat-label
-                >
-                <input matInput placeholder="Enter {{ facilityType }} name" />
-              </mat-form-field>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>Address</mat-label>
-                <input matInput placeholder="Street address" />
-              </mat-form-field>
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>City</mat-label>
-                <input matInput placeholder="City" />
-              </mat-form-field>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>Phone Number</mat-label>
-                <input matInput type="tel" placeholder="+1 (555) 000-0000" />
-              </mat-form-field>
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label
-                  >{{
-                    facilityType === "hospital" ? "Hospital" : "Clinic"
-                  }}
-                  Email</mat-label
-                >
-                <input
-                  matInput
-                  type="email"
-                  placeholder="contact&#64;{{ facilityType }}.com"
-                />
-              </mat-form-field>
-            </div>
-            <div>
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>License Number</mat-label>
-                <input
-                  matInput
-                  placeholder="{{ facilityType }} license number"
-                />
-              </mat-form-field>
-            </div>
-            <div *ngIf="facilityType === 'hospital'">
-              <mat-form-field appearance="fill" class="w-full mb-0">
-                <mat-label>Number of Beds</mat-label>
-                <input matInput type="number" placeholder="e.g., 100" />
-              </mat-form-field>
-            </div>
-            <div *ngIf="facilityType === 'clinic'">
-              <mat-form-field appearance="fill" class="w-full mb-0">
-                <mat-label>Specialization</mat-label>
-                <input matInput placeholder="e.g., General Practice, Dental" />
-              </mat-form-field>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 1: Email Verification -->
-        <div *ngIf="currentStep === 1">
-          <h2 class="text-2xl font-semibold mb-6">Email Verification</h2>
-          <div class="text-center py-8">
-            <div class="flex justify-center mb-4">
-              <mat-icon
-                class="text-blue-600"
-                style="height: 64px; width: 64px; font-size: 64px"
-                >mail</mat-icon
-              >
-            </div>
-            <p class="text-gray-600 mb-4">
-              We've sent a verification code to your email
-            </p>
-            <p class="font-medium mb-6">contact&#64;{{ facilityType }}.com</p>
-
-            <div class="flex justify-center gap-2 mb-6">
-              <input
-                *ngFor="let i of [1, 2, 3, 4, 5, 6]"
-                type="text"
-                maxlength="1"
-                class="w-12 h-12 text-center text-lg border-2 border-gray-300 rounded-md focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 transition-colors"
-                placeholder="0"
-              />
-            </div>
-
-            <button
-              class="text-blue-600 text-sm hover:underline bg-transparent border-none cursor-pointer"
-            >
-              Resend verification code
-            </button>
-          </div>
-        </div>
-
-        <!-- Step 2: Create Admin User -->
-        <div *ngIf="currentStep === 2">
-          <h2 class="text-2xl font-semibold mb-6">Create Admin User</h2>
-          <div class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>First Name</mat-label>
-                <input matInput placeholder="John" />
-              </mat-form-field>
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>Last Name</mat-label>
-                <input matInput placeholder="Doe" />
-              </mat-form-field>
-            </div>
-            <div>
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>Email Address</mat-label>
-                <input
-                  matInput
-                  type="email"
-                  placeholder="admin&#64;{{ facilityType }}.com"
-                />
-              </mat-form-field>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>Password</mat-label>
-                <input matInput type="password" placeholder="••••••••" />
-              </mat-form-field>
-              <mat-form-field appearance="fill" class="w-full">
-                <mat-label>Confirm Password</mat-label>
-                <input matInput type="password" placeholder="••••••••" />
-              </mat-form-field>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 3: Select Modules -->
-        <div *ngIf="currentStep === 3">
-          <h2 class="text-2xl font-semibold mb-6">Select Modules</h2>
-          <p class="text-gray-600 mb-6">
-            Choose the modules you want to enable for your {{ facilityType }}
-          </p>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div
-              *ngFor="let module of modules"
-              class="flex items-center space-x-3 p-4 border-2 rounded-lg hover:bg-gray-50 hover:border-blue-200 cursor-pointer transition-all duration-200 shadow-sm"
-              [class.border-blue-500]="isModuleSelected(module)"
-              [class.bg-blue-50]="isModuleSelected(module)"
-              (click)="toggleModule(module)"
-            >
-              <mat-checkbox
-                [checked]="isModuleSelected(module)"
-                (change)="
-                  $event.source.checked
-                    ? selectedModules.push(module)
-                    : selectedModules.splice(selectedModules.indexOf(module), 1)
-                "
-                (click)="$event.stopPropagation()"
-                color="primary"
-              >
-              </mat-checkbox>
-              <span
-                class="flex-1 cursor-pointer font-medium text-gray-700 select-none"
-                >{{ module }}</span
-              >
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 4: Choose Plan -->
-        <div *ngIf="currentStep === 4">
-          <h2 class="text-2xl font-semibold mb-6">Choose Your Plan</h2>
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div
-              *ngFor="let plan of plans"
-              class="border-2 rounded-xl p-6 hover:border-blue-500 cursor-pointer transition-all duration-300 relative bg-white shadow-sm hover:shadow-md flex flex-col"
-            >
-              <h3 class="text-xl font-bold text-gray-800 mb-2">
-                {{ plan.name }}
-              </h3>
-              <div
-                class="text-3xl font-extrabold text-blue-600 mb-6 flex items-baseline gap-1"
-              >
-                {{ plan.price }}
-                <span class="text-sm text-gray-500 font-medium">/month</span>
-              </div>
-              <ul class="space-y-3 mb-8 flex-1">
-                <li
-                  *ngFor="let feature of plan.features"
-                  class="flex items-start gap-3 text-sm text-gray-600 font-medium"
-                >
-                  <mat-icon
-                    class="text-green-500"
-                    style="height: 20px; width: 20px; font-size: 20px"
-                    >check_circle</mat-icon
+        <form [formGroup]="onboardingForm" (ngSubmit)="handleComplete()">
+          <!-- Step 0: Registration -->
+          <div *ngIf="currentStep === 0">
+            <h2 class="text-2xl font-semibold mb-6">
+              {{ facilityType === "hospital" ? "Hospital" : "Clinic" }}
+              Registration
+            </h2>
+            <div class="space-y-2">
+              <div>
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label
+                    >{{
+                      facilityType === "hospital" ? "Hospital" : "Clinic"
+                    }}
+                    Name</mat-label
                   >
-                  <span>{{ feature }}</span>
-                </li>
-              </ul>
+                  <input
+                    matInput
+                    placeholder="Enter {{ facilityType }} name"
+                    formControlName="facilityName"
+                  />
+                </mat-form-field>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>Address</mat-label>
+                  <input
+                    matInput
+                    placeholder="Street address"
+                    formControlName="address"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>City</mat-label>
+                  <input matInput placeholder="City" formControlName="city" />
+                </mat-form-field>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>Phone Number</mat-label>
+                  <input
+                    matInput
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    formControlName="phone"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label
+                    >{{
+                      facilityType === "hospital" ? "Hospital" : "Clinic"
+                    }}
+                    Email</mat-label
+                  >
+                  <input
+                    matInput
+                    type="email"
+                    placeholder="contact&#64;{{ facilityType }}.com"
+                    formControlName="facilityEmail"
+                  />
+                </mat-form-field>
+              </div>
+              <div>
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>License Number</mat-label>
+                  <input
+                    matInput
+                    placeholder="{{ facilityType }} license number"
+                    formControlName="licenseNumber"
+                  />
+                </mat-form-field>
+              </div>
+              <div *ngIf="facilityType === 'hospital'">
+                <mat-form-field appearance="fill" class="w-full mb-0">
+                  <mat-label>Number of Beds</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    placeholder="e.g., 100"
+                    formControlName="numberOfBeds"
+                  />
+                </mat-form-field>
+              </div>
+              <div *ngIf="facilityType === 'clinic'">
+                <mat-form-field appearance="fill" class="w-full mb-0">
+                  <mat-label>Specialization</mat-label>
+                  <input
+                    matInput
+                    placeholder="e.g., General Practice, Dental"
+                    formControlName="specialization"
+                  />
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 1: Email Verification -->
+          <div *ngIf="currentStep === 1">
+            <h2 class="text-2xl font-semibold mb-6">Email Verification</h2>
+            <div class="text-center py-8">
+              <div class="flex justify-center mb-4">
+                <mat-icon
+                  class="text-blue-600"
+                  style="height: 64px; width: 64px; font-size: 64px"
+                  >mail</mat-icon
+                >
+              </div>
+              <p class="text-gray-600 mb-4">
+                We've sent a verification code to your email
+              </p>
+              <p class="font-medium mb-6">contact&#64;{{ facilityType }}.com</p>
+
+              <div class="flex justify-center gap-2 mb-6">
+                <input
+                  type="text"
+                  maxlength="1"
+                  formControlName="otp1"
+                  class="w-12 h-12 text-center text-lg border-2 border-gray-300 rounded-md focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 transition-colors"
+                  placeholder="0"
+                />
+                <input
+                  type="text"
+                  maxlength="1"
+                  formControlName="otp2"
+                  class="w-12 h-12 text-center text-lg border-2 border-gray-300 rounded-md focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 transition-colors"
+                  placeholder="0"
+                />
+                <input
+                  type="text"
+                  maxlength="1"
+                  formControlName="otp3"
+                  class="w-12 h-12 text-center text-lg border-2 border-gray-300 rounded-md focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 transition-colors"
+                  placeholder="0"
+                />
+                <input
+                  type="text"
+                  maxlength="1"
+                  formControlName="otp4"
+                  class="w-12 h-12 text-center text-lg border-2 border-gray-300 rounded-md focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 transition-colors"
+                  placeholder="0"
+                />
+                <input
+                  type="text"
+                  maxlength="1"
+                  formControlName="otp5"
+                  class="w-12 h-12 text-center text-lg border-2 border-gray-300 rounded-md focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 transition-colors"
+                  placeholder="0"
+                />
+                <input
+                  type="text"
+                  maxlength="1"
+                  formControlName="otp6"
+                  class="w-12 h-12 text-center text-lg border-2 border-gray-300 rounded-md focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 transition-colors"
+                  placeholder="0"
+                />
+              </div>
+
               <button
-                mat-flat-button
-                color="primary"
-                class="w-full !rounded-lg !py-6 !text-base font-semibold"
+                class="text-blue-600 text-sm hover:underline bg-transparent border-none cursor-pointer"
               >
-                Select Plan
+                Resend verification code
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- Navigation Buttons -->
-        <div class="flex justify-between mt-10 pt-6 border-t border-gray-100">
-          <button
-            mat-stroked-button
-            (click)="currentStep = Math.max(0, currentStep - 1)"
-            [disabled]="currentStep === 0"
-            class="!rounded-lg !px-6 !py-5 font-medium"
-          >
-            Previous
-          </button>
+          <!-- Step 2: Create Admin User -->
+          <div *ngIf="currentStep === 2">
+            <h2 class="text-2xl font-semibold mb-6">Create Admin User</h2>
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>First Name</mat-label>
+                  <input
+                    matInput
+                    placeholder="John"
+                    formControlName="adminFirstName"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>Last Name</mat-label>
+                  <input
+                    matInput
+                    placeholder="Doe"
+                    formControlName="adminLastName"
+                  />
+                </mat-form-field>
+              </div>
+              <div>
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>Email Address</mat-label>
+                  <input
+                    matInput
+                    type="email"
+                    placeholder="admin&#64;{{ facilityType }}.com"
+                    formControlName="adminEmail"
+                  />
+                </mat-form-field>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>Password</mat-label>
+                  <input
+                    matInput
+                    type="password"
+                    placeholder="••••••••"
+                    formControlName="adminPassword"
+                  />
+                </mat-form-field>
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>Confirm Password</mat-label>
+                  <input
+                    matInput
+                    type="password"
+                    placeholder="••••••••"
+                    formControlName="adminConfirmPassword"
+                  />
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
 
-          <button
-            *ngIf="currentStep < steps.length - 1"
-            mat-flat-button
-            color="primary"
-            (click)="currentStep = currentStep + 1"
-            class="!rounded-lg !px-8 !py-5 font-semibold"
-          >
-            Next
-          </button>
+          <!-- Step 3: Select Modules -->
+          <div *ngIf="currentStep === 3">
+            <h2 class="text-2xl font-semibold mb-6">Select Modules</h2>
+            <p class="text-gray-600 mb-6">
+              Choose the modules you want to enable for your {{ facilityType }}
+            </p>
+            <div
+              class="grid grid-cols-1 md:grid-cols-2 gap-4"
+              formGroupName="modules"
+            >
+              <div
+                *ngFor="let module of modules"
+                class="flex items-center space-x-3 p-4 border-2 rounded-lg hover:bg-gray-50 hover:border-blue-200 cursor-pointer transition-all duration-200 shadow-sm"
+                [class.border-blue-500]="isModuleSelected(module.key)"
+                [class.bg-blue-50]="isModuleSelected(module.key)"
+                (click)="toggleModule(module.key)"
+              >
+                <mat-checkbox
+                  [formControlName]="module.key"
+                  (change)="onModuleSelectionChange()"
+                  (click)="$event.stopPropagation()"
+                  color="primary"
+                >
+                </mat-checkbox>
+                <span
+                  class="flex-1 cursor-pointer font-medium text-gray-700 select-none"
+                  >{{ module.label }}</span
+                >
+              </div>
+            </div>
+          </div>
 
-          <button
-            *ngIf="currentStep === steps.length - 1"
-            mat-flat-button
-            color="primary"
-            (click)="handleComplete()"
-            class="!rounded-lg !px-8 !py-5 font-semibold"
-          >
-            Complete Setup
-          </button>
-        </div>
+          <!-- Step 4: Choose Plan -->
+          <div *ngIf="currentStep === 4">
+            <h2 class="text-2xl font-semibold mb-6">Choose Your Plan</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div
+                *ngFor="let plan of plans"
+                class="border-2 rounded-xl p-6 hover:border-blue-500 cursor-pointer transition-all duration-300 relative bg-white shadow-sm hover:shadow-md flex flex-col"
+                [class.border-blue-500]="
+                  onboardingForm.value.selectedPlan === plan.name
+                "
+                [class.bg-blue-50]="
+                  onboardingForm.value.selectedPlan === plan.name
+                "
+              >
+                <h3 class="text-xl font-bold text-gray-800 mb-2">
+                  {{ plan.name }}
+                </h3>
+                <div
+                  class="text-3xl font-extrabold text-blue-600 mb-6 flex items-baseline gap-1"
+                >
+                  {{ plan.price }}
+                  <span class="text-sm text-gray-500 font-medium">/month</span>
+                </div>
+                <ul class="space-y-3 mb-8 flex-1">
+                  <li
+                    *ngFor="let feature of plan.features"
+                    class="flex items-start gap-3 text-sm text-gray-600 font-medium"
+                  >
+                    <mat-icon
+                      class="text-green-500"
+                      style="height: 20px; width: 20px; font-size: 20px"
+                      >check_circle</mat-icon
+                    >
+                    <span>{{ feature }}</span>
+                  </li>
+                </ul>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  (click)="selectPlan(plan.name)"
+                  class="w-full !rounded-lg !py-6 !text-base font-semibold"
+                >
+                  Select Plan
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation Buttons -->
+          <div class="flex justify-between mt-10 pt-6 border-t border-gray-100">
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="currentStep = Math.max(0, currentStep - 1)"
+              [disabled]="currentStep === 0"
+              class="!rounded-lg !px-6 !py-5 font-medium"
+            >
+              Previous
+            </button>
+
+            <button
+              *ngIf="currentStep < steps.length - 1"
+              mat-flat-button
+              type="button"
+              color="primary"
+              (click)="currentStep = currentStep + 1"
+              class="!rounded-lg !px-8 !py-5 font-semibold"
+            >
+              Next
+            </button>
+
+            <button
+              *ngIf="currentStep === steps.length - 1"
+              mat-flat-button
+              type="submit"
+              color="primary"
+              class="!rounded-lg !px-8 !py-5 font-semibold"
+            >
+              Complete Setup
+            </button>
+          </div>
+        </form>
       </mat-card-content>
     </mat-card>
   </div>
