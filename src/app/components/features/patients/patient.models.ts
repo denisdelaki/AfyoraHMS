@@ -11,6 +11,8 @@ export interface Patient {
 }
 
 export interface Appointment {
+  patientId: string;
+  patientName: string;
   date: string;
   time: string;
   doctor: string;
@@ -37,4 +39,12 @@ export interface RegisterPatientPayload {
   address?: string;
   emergencyContact?: string;
   medicalHistory?: string;
+}
+
+export interface CreateAppointmentPayload {
+  patientId: string;
+  date: Date;
+  time: string;
+  doctor: string;
+  department: string;
 }

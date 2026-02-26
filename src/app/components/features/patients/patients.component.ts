@@ -11,12 +11,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import {
   Appointment,
+  CreateAppointmentPayload,
   Patient,
   RegisterPatientPayload,
   VisitHistory,
 } from './patient.models';
 import { RegisterPatientDialogComponent } from '../../shared/register-patient-dialog/register-patient-dialog.component';
 import { PatientProfileDialogComponent } from '../../shared/patient-profile-dialog/patient-profile-dialog.component';
+import { AppointmentBookingDialogComponent } from '../../shared/appointment-booking-dialog/appointment-booking-dialog.component';
 
 @Component({
   selector: 'app-patients',
@@ -99,6 +101,8 @@ export class PatientsComponent {
 
   appointments: Appointment[] = [
     {
+      patientId: 'P001',
+      patientName: 'John Smith',
       date: '2024-02-26',
       time: '10:00 AM',
       doctor: 'Dr. Emily Chen',
@@ -106,6 +110,8 @@ export class PatientsComponent {
       status: 'Scheduled',
     },
     {
+      patientId: 'P002',
+      patientName: 'Sarah Johnson',
       date: '2024-02-28',
       time: '02:00 PM',
       doctor: 'Dr. James Wilson',
@@ -171,9 +177,30 @@ export class PatientsComponent {
       maxHeight: '90vh',
       data: {
         patient,
-        appointments: this.appointments,
+        appointments: this.appointments.filter(
+          (appointment) => appointment.patientId === patient.id,
+        ),
         visitHistory: this.visitHistory,
       },
+    });
+  }
+
+  openAppointmentDialog(): void {
+    const dialogRef = this.dialog.open(AppointmentBookingDialogComponent, {
+      width: '90vw',
+      maxWidth: '700px',
+      maxHeight: '90vh',
+      data: {
+        patients: this.patients,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) {
+        return;
+      }
+
+      this.addAppointment(result);
     });
   }
 
@@ -193,6 +220,28 @@ export class PatientsComponent {
         status: 'Active',
       },
       ...this.patients,
+    ];
+  }
+
+  private addAppointment(formValue: CreateAppointmentPayload): void {
+    const patient = this.patients.find(
+      (item) => item.id === formValue.patientId,
+    );
+    if (!patient) {
+      return;
+    }
+
+    this.appointments = [
+      {
+        patientId: patient.id,
+        patientName: patient.name,
+        date: formValue.date.toISOString().slice(0, 10),
+        time: formValue.time,
+        doctor: formValue.doctor,
+        department: formValue.department,
+        status: 'Scheduled',
+      },
+      ...this.appointments,
     ];
   }
 

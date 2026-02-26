@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>Book Appointment</h2>
+<mat-dialog-content>
+  <form [formGroup]="appointmentForm" class="space-y-4 py-2">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Patient</mat-label>
+      <mat-select formControlName="patientId">
+        @for (patient of data.patients; track patient.id) {
+          <mat-option [value]="patient.id">
+            {{ patient.name }} ({{ patient.id }})
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Appointment Date</mat-label>
+        <input
+          matInput
+          [matDatepicker]="picker"
+          [min]="today"
+          formControlName="date"
+        />
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="picker"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Time</mat-label>
+        <input
+          matInput
+          [matTimepicker]="timePicker"
+          [max]="time"
+          formControlName="time"
+        />
+        <mat-timepicker-toggle
+          matIconSuffix
+          [for]="timePicker"
+        ></mat-timepicker-toggle>
+        <mat-timepicker #timePicker></mat-timepicker>
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Doctor</mat-label>
+        <input matInput formControlName="doctor" placeholder="Dr. Emily Chen" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Department</mat-label>
+        <input matInput formControlName="department" placeholder="Cardiology" />
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onBookAppointment()">
+    Book Appointment
+  </button>
+</mat-dialog-actions>
