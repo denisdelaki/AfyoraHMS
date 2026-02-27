@@ -19,6 +19,7 @@ import {
   AddDrugDialogComponent,
   AddDrugPayload,
 } from '../../dialogs/add-drug-dialog/add-drug-dialog.component';
+import { MatIcon } from '@angular/material/icon';
 
 type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts';
 
@@ -61,6 +62,7 @@ type Prescription = {
     MatInputModule,
     MatTabsModule,
     LucideAngularModule,
+    MatIcon,
   ],
   templateUrl: './pharmacy.component.html',
   styleUrl: './pharmacy.component.css',

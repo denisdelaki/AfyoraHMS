@@ -57,7 +57,18 @@
 
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Expiry Date</mat-label>
-        <input matInput type="date" [(ngModel)]="newDrug.expiryDate" />
+        <input
+          matInput
+          [matDatepicker]="picker"
+          [min]="today"
+          [(ngModel)]="newDrug.expiryDate"
+        />
+
+        <mat-datepicker-toggle
+          matIconSuffix
+          [for]="picker"
+        ></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
     </div>
 

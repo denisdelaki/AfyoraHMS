@@ -1,9 +1,11 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatTimepickerModule } from '@angular/material/timepicker';
 
 export type AddDrugPayload = {
   name: string;
@@ -33,6 +35,8 @@ type NewDrugForm = {
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
+    MatDatepickerModule,
+    MatTimepickerModule,
   ],
   templateUrl: './add-drug-dialog.component.html',
   styleUrl: './add-drug-dialog.component.css',
@@ -41,6 +45,7 @@ export class AddDrugDialogComponent {
   private readonly dialogRef = inject(
     MatDialogRef<AddDrugDialogComponent, AddDrugPayload | undefined>,
   );
+  readonly today = new Date();
 
   newDrug: NewDrugForm = this.createEmptyDrugForm();
 
