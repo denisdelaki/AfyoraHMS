@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -20,35 +20,10 @@ import {
   AddDrugPayload,
 } from '../../dialogs/add-drug-dialog/add-drug-dialog.component';
 import { MatIcon } from '@angular/material/icon';
+import { Drug, Prescription } from '../../../models';
+import { PharmacyService } from '../../../services';
 
 type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts';
-
-type Drug = {
-  id: string;
-  name: string;
-  category: string;
-  stock: number;
-  minStock: number;
-  price: number;
-  expiryDate: string;
-  manufacturer: string;
-};
-
-type PrescriptionDrug = {
-  name: string;
-  quantity: number;
-  dosage: string;
-};
-
-type Prescription = {
-  id: string;
-  patient: string;
-  patientId: string;
-  doctor: string;
-  drugs: PrescriptionDrug[];
-  status: 'Pending' | 'Dispensed';
-  date: string;
-};
 
 @Component({
   selector: 'app-pharmacy',
@@ -67,8 +42,9 @@ type Prescription = {
   templateUrl: './pharmacy.component.html',
   styleUrl: './pharmacy.component.css',
 })
-export class PharmacyComponent {
+export class PharmacyComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
+  private readonly pharmacyService = inject(PharmacyService);
 
   readonly Search = Search;
   readonly Plus = Plus;
@@ -161,6 +137,11 @@ export class PharmacyComponent {
     },
   ];
 
+  ngOnInit(): void {
+    this.loadDrugs();
+    this.loadPrescriptions();
+  }
+
   get filteredDrugs(): Drug[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) {
@@ -209,6 +190,20 @@ export class PharmacyComponent {
   }
 
   addDrugToCatalog(newDrug: AddDrugPayload): void {
+    this.pharmacyService.createDrug(newDrug).subscribe({
+      next: ({ data }) => {
+        this.drugs = [
+          data,
+          ...this.drugs.filter((item) => item.id !== data.id),
+        ];
+      },
+      error: () => {
+        this.addDrugToCatalogLocally(newDrug);
+      },
+    });
+  }
+
+  private addDrugToCatalogLocally(newDrug: AddDrugPayload): void {
     const nextId = `D${String(this.drugs.length + 1).padStart(3, '0')}`;
 
     this.drugs = [
@@ -221,15 +216,43 @@ export class PharmacyComponent {
   }
 
   dispensePrescription(prescriptionId: string): void {
-    this.prescriptions = this.prescriptions.map((prescription) => {
-      if (prescription.id !== prescriptionId) {
-        return prescription;
-      }
+    this.pharmacyService.dispensePrescription(prescriptionId).subscribe({
+      next: ({ data }) => {
+        this.prescriptions = [
+          data,
+          ...this.prescriptions.filter((entry) => entry.id !== data.id),
+        ];
+      },
+      error: () => {
+        this.prescriptions = this.prescriptions.map((prescription) => {
+          if (prescription.id !== prescriptionId) {
+            return prescription;
+          }
 
-      return {
-        ...prescription,
-        status: 'Dispensed',
-      };
+          return {
+            ...prescription,
+            status: 'Dispensed',
+          };
+        });
+      },
+    });
+  }
+
+  private loadDrugs(): void {
+    this.pharmacyService.getDrugs().subscribe({
+      next: ({ data }) => {
+        this.drugs = data.items;
+      },
+      error: () => {},
+    });
+  }
+
+  private loadPrescriptions(): void {
+    this.pharmacyService.getPrescriptions().subscribe({
+      next: ({ data }) => {
+        this.prescriptions = data.items;
+      },
+      error: () => {},
     });
   }
 }

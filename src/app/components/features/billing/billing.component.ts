@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -28,11 +28,8 @@ import {
   RecordPaymentPayload,
 } from '../../../models/billing.models';
 import { MatIcon } from '@angular/material/icon';
-import {
-  SendInvoiceReminderRequest,
-  SmsService,
-} from '../../../services/sms.service';
 import { finalize } from 'rxjs';
+import { BillingService } from '../../../services';
 
 type BillingTab = 'invoices' | 'payments';
 
@@ -53,9 +50,9 @@ type BillingTab = 'invoices' | 'payments';
   templateUrl: './billing.component.html',
   styleUrl: './billing.component.css',
 })
-export class BillingComponent {
+export class BillingComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
-  private readonly smsService = inject(SmsService);
+  private readonly billingService = inject(BillingService);
 
   readonly Search = Search;
   readonly Plus = Plus;
@@ -145,6 +142,11 @@ export class BillingComponent {
     },
   ];
 
+  ngOnInit(): void {
+    this.loadInvoices();
+    this.loadPayments();
+  }
+
   get filteredInvoices(): Invoice[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) {
@@ -224,7 +226,7 @@ export class BillingComponent {
     this.reminderStatusByInvoiceId.delete(invoice.id);
     this.sendingReminderInvoiceIds.add(invoice.id);
 
-    const payload: SendInvoiceReminderRequest = {
+    const payload = {
       invoiceId: invoice.id,
       patientId: invoice.patientId,
       patientName: invoice.patient,
@@ -232,7 +234,7 @@ export class BillingComponent {
       dueDate: invoice.date,
     };
 
-    this.smsService
+    this.billingService
       .sendInvoiceReminder(payload)
       .pipe(
         finalize(() => {
@@ -380,6 +382,24 @@ export class BillingComponent {
       return;
     }
 
+    this.billingService.createInvoice(payload).subscribe({
+      next: ({ data }) => {
+        this.invoices = [
+          data,
+          ...this.invoices.filter((item) => item.id !== data.id),
+        ];
+      },
+      error: () => {
+        this.addLocalInvoice(payload);
+      },
+    });
+  }
+
+  private addLocalInvoice(payload: NewInvoicePayload): void {
+    if (!payload.items.length) {
+      return;
+    }
+
     const subtotal = payload.items.reduce((sum, item) => sum + item.amount, 0);
     const tax = subtotal * 0.1;
     const total = subtotal + tax;
@@ -413,6 +433,33 @@ export class BillingComponent {
     invoiceId: string,
     payload: RecordPaymentPayload,
   ): void {
+    this.billingService.recordPayment(invoiceId, payload).subscribe({
+      next: ({ data }) => {
+        const invoice = this.invoices.find((entry) => entry.id === invoiceId);
+        if (!invoice) {
+          return;
+        }
+
+        this.invoices = this.invoices.map((entry) =>
+          entry.id === invoiceId
+            ? { ...entry, status: 'Paid', paymentMethod: payload.method }
+            : entry,
+        );
+        this.payments = [
+          data,
+          ...this.payments.filter((entry) => entry.id !== data.id),
+        ];
+      },
+      error: () => {
+        this.applyLocalRecordedPayment(invoiceId, payload);
+      },
+    });
+  }
+
+  private applyLocalRecordedPayment(
+    invoiceId: string,
+    payload: RecordPaymentPayload,
+  ): void {
     this.invoices = this.invoices.map((invoice) => {
       if (invoice.id !== invoiceId) {
         return invoice;
@@ -441,6 +488,24 @@ export class BillingComponent {
     };
 
     this.payments = [payment, ...this.payments];
+  }
+
+  private loadInvoices(): void {
+    this.billingService.getInvoices().subscribe({
+      next: ({ data }) => {
+        this.invoices = data.items;
+      },
+      error: () => {},
+    });
+  }
+
+  private loadPayments(): void {
+    this.billingService.getPayments().subscribe({
+      next: ({ data }) => {
+        this.payments = data.items;
+      },
+      error: () => {},
+    });
   }
 
   private getTodayDate(): string {

@@ -1,1 +1,31 @@
-<p>appointments works!</p>
+<div class="space-y-4">
+  <div>
+    <h1 class="text-2xl font-semibold mb-1">Appointments</h1>
+    <p class="text-slate-600">Manage and review patient appointments</p>
+  </div>
+
+  @if (!appointments.length) {
+    <mat-card class="p-5">
+      <p class="text-slate-600">No appointments available.</p>
+    </mat-card>
+  }
+
+  @for (appointment of appointments; track appointment.id) {
+    <mat-card class="p-5">
+      <div
+        class="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+      >
+        <div>
+          <p class="font-semibold">{{ appointment.patientName }}</p>
+          <p class="text-sm text-slate-600">
+            {{ appointment.date }} • {{ appointment.time }} •
+            {{ appointment.department }}
+          </p>
+        </div>
+        <div class="text-sm text-slate-600">
+          {{ appointment.doctor }} • {{ appointment.status }}
+        </div>
+      </div>
+    </mat-card>
+  }
+</div>

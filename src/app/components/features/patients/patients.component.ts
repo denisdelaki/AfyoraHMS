@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -19,6 +19,13 @@ import {
 import { RegisterPatientDialogComponent } from '../../dialogs/register-patient-dialog/register-patient-dialog.component';
 import { PatientProfileDialogComponent } from '../../dialogs/patient-profile-dialog/patient-profile-dialog.component';
 import { AppointmentBookingDialogComponent } from '../../dialogs/appointment-booking-dialog/appointment-booking-dialog.component';
+import { AppointmentsService, PatientsService } from '../../../services';
+import {
+  Appointment as ServiceAppointment,
+  CreateAppointmentRequest,
+  RegisterPatientRequest,
+  UpdatePatientRequest,
+} from '../../../models';
 
 @Component({
   selector: 'app-patients',
@@ -37,8 +44,10 @@ import { AppointmentBookingDialogComponent } from '../../dialogs/appointment-boo
   templateUrl: './patients.component.html',
   styleUrl: './patients.component.css',
 })
-export class PatientsComponent {
+export class PatientsComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
+  private readonly patientsService = inject(PatientsService);
+  private readonly appointmentsService = inject(AppointmentsService);
 
   displayedColumns: string[] = [
     'id',
@@ -141,6 +150,11 @@ export class PatientsComponent {
     },
   ];
 
+  ngOnInit(): void {
+    this.loadPatients();
+    this.loadAppointments();
+  }
+
   get filteredPatients(): Patient[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) {
@@ -179,25 +193,13 @@ export class PatientsComponent {
   }
 
   openPatientDialog(patient: Patient): void {
-    const dialogRef = this.dialog.open(PatientProfileDialogComponent, {
-      width: '90vw',
-      maxWidth: '1000px',
-      maxHeight: '90vh',
-      data: {
-        patient,
-        appointments: this.appointments.filter(
-          (appointment) => appointment.patientId === patient.id,
-        ),
-        visitHistory: this.visitHistory,
+    this.patientsService.getPatientVisitHistory(patient.id).subscribe({
+      next: ({ data }) => {
+        this.showPatientDialog(patient, data);
       },
-    });
-
-    dialogRef.afterClosed().subscribe((result) => {
-      if (!result || result.action !== 'update') {
-        return;
-      }
-
-      this.openRegisterDialog(result.patient);
+      error: () => {
+        this.showPatientDialog(patient, this.visitHistory);
+      },
     });
   }
 
@@ -221,6 +223,34 @@ export class PatientsComponent {
   }
 
   private addPatient(formValue: RegisterPatientPayload): void {
+    const requestPayload: RegisterPatientRequest = {
+      firstName: formValue.firstName,
+      lastName: formValue.lastName,
+      age: formValue.age,
+      gender: formValue.gender,
+      phone: formValue.phone,
+      email: formValue.email,
+      bloodGroup: formValue.bloodGroup,
+      dob: formValue.dob,
+      address: formValue.address,
+      emergencyContact: formValue.emergencyContact,
+      medicalHistory: formValue.medicalHistory,
+    };
+
+    this.patientsService.registerPatient(requestPayload).subscribe({
+      next: ({ data }) => {
+        this.patients = [
+          data,
+          ...this.patients.filter((entry) => entry.id !== data.id),
+        ];
+      },
+      error: () => {
+        this.addPatientLocally(formValue);
+      },
+    });
+  }
+
+  private addPatientLocally(formValue: RegisterPatientPayload): void {
     const nextId = `P${String(this.patients.length + 1).padStart(3, '0')}`;
 
     this.patients = [
@@ -240,6 +270,33 @@ export class PatientsComponent {
   }
 
   private addAppointment(formValue: CreateAppointmentPayload): void {
+    const requestPayload: CreateAppointmentRequest = {
+      patientId: formValue.patientId,
+      date: formValue.date.toISOString().slice(0, 10),
+      time: formValue.time,
+      doctor: formValue.doctor,
+      department: formValue.department,
+    };
+
+    this.appointmentsService.createAppointment(requestPayload).subscribe({
+      next: ({ data }) => {
+        this.appointments = [
+          this.mapServiceAppointment(data),
+          ...this.appointments.filter(
+            (entry) =>
+              entry.patientId !== data.patientId ||
+              entry.date !== data.date ||
+              entry.time !== data.time,
+          ),
+        ];
+      },
+      error: () => {
+        this.addAppointmentLocally(formValue);
+      },
+    });
+  }
+
+  private addAppointmentLocally(formValue: CreateAppointmentPayload): void {
     const patient = this.patients.find(
       (item) => item.id === formValue.patientId,
     );
@@ -262,6 +319,36 @@ export class PatientsComponent {
   }
 
   private updatePatient(
+    patientId: string,
+    formValue: RegisterPatientPayload,
+  ): void {
+    const updatePayload: UpdatePatientRequest = {
+      firstName: formValue.firstName,
+      lastName: formValue.lastName,
+      age: formValue.age,
+      gender: formValue.gender,
+      phone: formValue.phone,
+      email: formValue.email,
+      bloodGroup: formValue.bloodGroup,
+      dob: formValue.dob,
+      address: formValue.address,
+      emergencyContact: formValue.emergencyContact,
+      medicalHistory: formValue.medicalHistory,
+    };
+
+    this.patientsService.updatePatient(patientId, updatePayload).subscribe({
+      next: ({ data }) => {
+        this.patients = this.patients.map((patient) =>
+          patient.id === patientId ? data : patient,
+        );
+      },
+      error: () => {
+        this.updatePatientLocally(patientId, formValue);
+      },
+    });
+  }
+
+  private updatePatientLocally(
     patientId: string,
     formValue: RegisterPatientPayload,
   ): void {
@@ -288,5 +375,63 @@ export class PatientsComponent {
 
   getStatusClass(status: Patient['status']): string {
     return status === 'Active' ? 'status-active' : 'status-admitted';
+  }
+
+  private loadPatients(): void {
+    this.patientsService.getPatients().subscribe({
+      next: ({ data }) => {
+        this.patients = data.items;
+      },
+      error: () => {},
+    });
+  }
+
+  private loadAppointments(): void {
+    this.appointmentsService.getAppointments().subscribe({
+      next: ({ data }) => {
+        this.appointments = data.map((appointment) =>
+          this.mapServiceAppointment(appointment),
+        );
+      },
+      error: () => {},
+    });
+  }
+
+  private mapServiceAppointment(appointment: ServiceAppointment): Appointment {
+    return {
+      patientId: appointment.patientId,
+      patientName: appointment.patientName,
+      date: appointment.date,
+      time: appointment.time,
+      doctor: appointment.doctor,
+      department: appointment.department,
+      status: appointment.status,
+    };
+  }
+
+  private showPatientDialog(
+    patient: Patient,
+    visitHistory: VisitHistory[],
+  ): void {
+    const dialogRef = this.dialog.open(PatientProfileDialogComponent, {
+      width: '90vw',
+      maxWidth: '1000px',
+      maxHeight: '90vh',
+      data: {
+        patient,
+        appointments: this.appointments.filter(
+          (appointment) => appointment.patientId === patient.id,
+        ),
+        visitHistory,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result || result.action !== 'update') {
+        return;
+      }
+
+      this.openRegisterDialog(result.patient);
+    });
   }
 }

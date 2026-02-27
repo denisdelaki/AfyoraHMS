@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -13,36 +13,14 @@ import {
   CreateEhrRecordPayload,
   EhrRecordDialogComponent,
 } from '../../dialogs/ehr-record-dialog/ehr-record-dialog.component';
-
-interface Patient {
-  id: string;
-  name: string;
-  age: number;
-  gender: string;
-}
-
-interface LabResult {
-  test: string;
-  result: string;
-  status: 'Normal' | 'Abnormal' | 'High';
-}
-
-interface EhrRecord {
-  date: string;
-  doctor: string;
-  diagnosis: string;
-  prescriptions: string[];
-  labResults: LabResult[];
-  notes: string;
-}
-
-interface RadiologyImage {
-  date: string;
-  type: string;
-  radiologist: string;
-  findings: string;
-  status: string;
-}
+import {
+  CreateEhrRecordRequest,
+  EhrLabResult,
+  EhrPatient,
+  EhrRecord,
+  RadiologyImage,
+} from '../../../models';
+import { EhrService } from '../../../services';
 
 @Component({
   selector: 'app-ehr',
@@ -60,13 +38,14 @@ interface RadiologyImage {
   templateUrl: './ehr.component.html',
   styleUrl: './ehr.component.css',
 })
-export class EhrComponent {
+export class EhrComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
+  private readonly ehrService = inject(EhrService);
 
   searchTerm = '';
-  selectedPatient: Patient | null = null;
+  selectedPatient: EhrPatient | null = null;
 
-  patients: Patient[] = [
+  patients: EhrPatient[] = [
     { id: 'P001', name: 'John Smith', age: 45, gender: 'Male' },
     { id: 'P002', name: 'Sarah Johnson', age: 32, gender: 'Female' },
     { id: 'P003', name: 'Michael Brown', age: 58, gender: 'Male' },
@@ -74,6 +53,8 @@ export class EhrComponent {
 
   ehrRecords: EhrRecord[] = [
     {
+      id: 'EHR-001',
+      patientId: 'P001',
       date: '2024-02-20',
       doctor: 'Dr. Emily Chen',
       diagnosis: 'Hypertension',
@@ -89,6 +70,8 @@ export class EhrComponent {
         'Patient shows signs of uncontrolled hypertension. Adjusted medication dosage.',
     },
     {
+      id: 'EHR-002',
+      patientId: 'P001',
       date: '2024-01-15',
       doctor: 'Dr. James Wilson',
       diagnosis: 'Annual Physical Examination',
@@ -107,6 +90,8 @@ export class EhrComponent {
 
   radiologyImages: RadiologyImage[] = [
     {
+      id: 'RAD-001',
+      patientId: 'P001',
       date: '2024-02-15',
       type: 'Chest X-Ray',
       radiologist: 'Dr. Sarah Park',
@@ -114,6 +99,8 @@ export class EhrComponent {
       status: 'Completed',
     },
     {
+      id: 'RAD-002',
+      patientId: 'P001',
       date: '2024-01-20',
       type: 'CT Scan - Abdomen',
       radiologist: 'Dr. Michael Lee',
@@ -122,7 +109,16 @@ export class EhrComponent {
     },
   ];
 
-  get filteredPatients(): Patient[] {
+  ngOnInit(): void {
+    this.ehrService.getPatients().subscribe({
+      next: ({ data }) => {
+        this.patients = data;
+      },
+      error: () => {},
+    });
+  }
+
+  get filteredPatients(): EhrPatient[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) {
       return this.patients;
@@ -152,7 +148,7 @@ export class EhrComponent {
   get allLabResults(): Array<{
     test: string;
     result: string;
-    status: LabResult['status'];
+    status: EhrLabResult['status'];
     date: string;
   }> {
     return this.ehrRecords.flatMap((record) =>
@@ -165,8 +161,10 @@ export class EhrComponent {
     );
   }
 
-  selectPatient(patient: Patient): void {
+  selectPatient(patient: EhrPatient): void {
     this.selectedPatient = patient;
+    this.loadPatientRecords(patient.id);
+    this.loadPatientRadiology(patient.id);
   }
 
   openNewRecordDialog(): void {
@@ -308,27 +306,31 @@ export class EhrComponent {
   }
 
   saveRecord(payload: CreateEhrRecordPayload): void {
-    this.ehrRecords = [
-      {
-        date: new Date().toISOString().slice(0, 10),
-        doctor: 'Dr. Assigned',
-        diagnosis: payload.diagnosis.trim(),
-        prescriptions: payload.treatment
-          .split('\n')
-          .map((item) => item.trim())
-          .filter(Boolean),
-        labResults: [],
-        notes: payload.doctorNotes.trim() || payload.symptoms.trim(),
-      },
-      ...this.ehrRecords,
-    ];
+    const requestPayload: CreateEhrRecordRequest = {
+      patientId: payload.patientId,
+      diagnosis: payload.diagnosis,
+      symptoms: payload.symptoms,
+      treatment: payload.treatment,
+      doctorNotes: payload.doctorNotes,
+    };
 
-    this.selectedPatient =
-      this.patients.find((patient) => patient.id === payload.patientId) ??
-      this.selectedPatient;
+    this.ehrService.createRecord(requestPayload).subscribe({
+      next: ({ data }) => {
+        this.ehrRecords = [
+          data,
+          ...this.ehrRecords.filter((entry) => entry.id !== data.id),
+        ];
+        this.selectedPatient =
+          this.patients.find((patient) => patient.id === payload.patientId) ??
+          this.selectedPatient;
+      },
+      error: () => {
+        this.saveRecordLocally(payload);
+      },
+    });
   }
 
-  getLabStatusClass(status: LabResult['status']): string {
+  getLabStatusClass(status: EhrLabResult['status']): string {
     return status === 'Normal'
       ? 'bg-green-100 text-green-800'
       : 'bg-red-100 text-red-800';
@@ -423,5 +425,46 @@ export class EhrComponent {
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#039;');
+  }
+
+  private saveRecordLocally(payload: CreateEhrRecordPayload): void {
+    this.ehrRecords = [
+      {
+        id: `EHR-${Date.now()}`,
+        patientId: payload.patientId,
+        date: new Date().toISOString().slice(0, 10),
+        doctor: 'Dr. Assigned',
+        diagnosis: payload.diagnosis.trim(),
+        prescriptions: payload.treatment
+          .split('\n')
+          .map((item) => item.trim())
+          .filter(Boolean),
+        labResults: [],
+        notes: payload.doctorNotes.trim() || payload.symptoms.trim(),
+      },
+      ...this.ehrRecords,
+    ];
+
+    this.selectedPatient =
+      this.patients.find((patient) => patient.id === payload.patientId) ??
+      this.selectedPatient;
+  }
+
+  private loadPatientRecords(patientId: string): void {
+    this.ehrService.getPatientRecords(patientId).subscribe({
+      next: ({ data }) => {
+        this.ehrRecords = data;
+      },
+      error: () => {},
+    });
+  }
+
+  private loadPatientRadiology(patientId: string): void {
+    this.ehrService.getPatientRadiology(patientId).subscribe({
+      next: ({ data }) => {
+        this.radiologyImages = data;
+      },
+      error: () => {},
+    });
   }
 }

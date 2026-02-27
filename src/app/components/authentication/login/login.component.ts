@@ -8,6 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { AuthService } from '../../../services';
+import { LoginRequest } from '../../../models';
 
 @Component({
   selector: 'app-login',
@@ -28,7 +30,9 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 })
 export class LoginComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
   showPassword = false;
+  isSubmitting = false;
   readonly loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
@@ -47,7 +51,26 @@ export class LoginComponent {
       return;
     }
 
-    // Simulate login - in real app, validate credentials
+    const payload: LoginRequest = {
+      email: this.loginForm.value.email ?? '',
+      password: this.loginForm.value.password ?? '',
+      rememberMe: this.loginForm.value.rememberMe ?? false,
+    };
+
+    this.isSubmitting = true;
+    this.authService.login(payload).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.router.navigate(['/']);
+      },
+      error: () => {
+        this.isSubmitting = false;
+      },
+    });
+
+    //for testing without backend, uncomment below and comment out the above block
     this.router.navigate(['/']);
+
+    //for testing without backend, uncomment below and comment out the above block
   }
 }

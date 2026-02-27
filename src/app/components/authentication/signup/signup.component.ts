@@ -8,8 +8,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { AuthService } from '../../../services';
+import { FacilityType, SignupRequest } from '../../../models';
 
-type FacilityType = 'hospital' | 'clinic' | null;
+type SelectedFacilityType = FacilityType | null;
 
 @Component({
   selector: 'app-signup',
@@ -30,11 +32,13 @@ type FacilityType = 'hospital' | 'clinic' | null;
 })
 export class SignupComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
   showPassword = false;
   showConfirmPassword = false;
-  facilityType: FacilityType = null;
+  isSubmitting = false;
+  facilityType: SelectedFacilityType = null;
   readonly signupForm = this.fb.group({
-    facilityType: [null as FacilityType, [Validators.required]],
+    facilityType: [null as SelectedFacilityType, [Validators.required]],
     facilityName: ['', [Validators.required]],
     registrationNumber: ['', [Validators.required]],
     adminFirstName: ['', [Validators.required]],
@@ -48,7 +52,7 @@ export class SignupComponent {
 
   constructor(private router: Router) {}
 
-  setFacilityType(type: FacilityType) {
+  setFacilityType(type: SelectedFacilityType) {
     this.facilityType = type;
     this.signupForm.patchValue({ facilityType: type });
   }
@@ -67,7 +71,34 @@ export class SignupComponent {
       return;
     }
 
-    // Navigate to onboarding with facility type
+    if (!this.facilityType) {
+      return;
+    }
+
+    const payload: SignupRequest = {
+      facilityType: this.facilityType,
+      facilityName: this.signupForm.value.facilityName ?? '',
+      registrationNumber: this.signupForm.value.registrationNumber ?? '',
+      adminFirstName: this.signupForm.value.adminFirstName ?? '',
+      adminLastName: this.signupForm.value.adminLastName ?? '',
+      email: this.signupForm.value.email ?? '',
+      phone: this.signupForm.value.phone ?? '',
+      password: this.signupForm.value.password ?? '',
+    };
+
+    this.isSubmitting = true;
+    this.authService.signup(payload).subscribe({
+      next: () => {
+        this.isSubmitting = false;
+        this.router.navigate(['/onboarding'], {
+          queryParams: { type: this.facilityType },
+        });
+      },
+      error: () => {
+        this.isSubmitting = false;
+      },
+    });
+    //for testing without backend, uncomment below and comment out the above block
     this.router.navigate(['/onboarding'], {
       queryParams: { type: this.facilityType },
     });
