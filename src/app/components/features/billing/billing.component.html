@@ -1,1 +1,260 @@
-<p>billing works!</p>
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold mb-1">Billing &amp; Finance</h1>
+      <p class="text-slate-600">Manage invoices, payments and insurance</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      class="!px-4"
+      (click)="openNewInvoiceDialog()"
+    >
+      <mat-icon>add</mat-icon>
+      New Invoice
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <mat-card class="p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600 mb-1">Total Revenue</p>
+          <p class="text-2xl font-semibold">{{ totalRevenue | currency }}</p>
+        </div>
+        <div class="bg-green-500 p-3 rounded-lg text-white">
+          <lucide-icon [img]="DollarSign" class="w-6 h-6"></lucide-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600 mb-1">Pending Amount</p>
+          <p class="text-2xl font-semibold">{{ pendingAmount | currency }}</p>
+        </div>
+        <div class="bg-amber-500 p-3 rounded-lg text-white">
+          <lucide-icon [img]="Receipt" class="w-6 h-6"></lucide-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600 mb-1">Total Invoices</p>
+          <p class="text-2xl font-semibold">{{ invoices.length }}</p>
+        </div>
+        <div class="bg-blue-500 p-3 rounded-lg text-white">
+          <lucide-icon [img]="CreditCard" class="w-6 h-6"></lucide-icon>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-tab-group
+    [selectedIndex]="activeTab === 'invoices' ? 0 : 1"
+    (selectedIndexChange)="setActiveTab($event)"
+  >
+    <mat-tab label="Invoices"></mat-tab>
+    <mat-tab label="Payments"></mat-tab>
+  </mat-tab-group>
+
+  <div class="relative">
+    <lucide-icon
+      [img]="Search"
+      class="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
+    ></lucide-icon>
+    <mat-form-field appearance="fill" class="w-full billing-search-field">
+      <mat-label>Search by invoice ID or patient name</mat-label>
+      <input matInput [(ngModel)]="searchTerm" />
+    </mat-form-field>
+  </div>
+
+  @if (activeTab === "invoices") {
+    <div class="space-y-4">
+      @for (invoice of filteredInvoices; track invoice.id) {
+        <mat-card class="p-6">
+          <div
+            class="flex flex-col md:flex-row md:justify-between md:items-start gap-3 mb-4"
+          >
+            <div>
+              <p class="font-medium text-lg">
+                {{ invoice.id }} - {{ invoice.patient }}
+              </p>
+              <p class="text-sm text-slate-600">
+                Patient ID: {{ invoice.patientId }} • Date: {{ invoice.date }}
+              </p>
+            </div>
+            <mat-chip
+              [ngClass]="
+                invoice.status === 'Paid'
+                  ? '!bg-green-100 !text-green-800'
+                  : invoice.status === 'Overdue'
+                    ? '!bg-red-100 !text-red-800'
+                    : '!bg-yellow-100 !text-yellow-800'
+              "
+            >
+              {{ invoice.status }}
+            </mat-chip>
+          </div>
+
+          <div class="border rounded-lg overflow-hidden mb-4">
+            <table class="w-full">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th
+                    class="text-left py-2 px-4 text-sm font-medium text-slate-600"
+                  >
+                    Service
+                  </th>
+                  <th
+                    class="text-right py-2 px-4 text-sm font-medium text-slate-600"
+                  >
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of invoice.items; track $index) {
+                  <tr class="border-t">
+                    <td class="py-2 px-4">{{ item.service }}</td>
+                    <td class="py-2 px-4 text-right">
+                      {{ item.amount | currency }}
+                    </td>
+                  </tr>
+                }
+                <tr class="border-t">
+                  <td class="py-2 px-4 font-medium">Subtotal</td>
+                  <td class="py-2 px-4 text-right">
+                    {{ invoice.subtotal | currency }}
+                  </td>
+                </tr>
+                <tr class="border-t">
+                  <td class="py-2 px-4 font-medium">Tax (10%)</td>
+                  <td class="py-2 px-4 text-right">
+                    {{ invoice.tax | currency }}
+                  </td>
+                </tr>
+                <tr class="border-t bg-slate-50">
+                  <td class="py-2 px-4 font-semibold">Total</td>
+                  <td class="py-2 px-4 text-right font-semibold">
+                    {{ invoice.total | currency }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          @if (invoice.insurance) {
+            <div class="bg-blue-50 p-4 rounded-lg mb-4">
+              <p class="text-sm font-medium mb-2">Insurance Information</p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p class="text-slate-600">Company</p>
+                  <p class="font-medium">{{ invoice.insurance.company }}</p>
+                </div>
+                <div>
+                  <p class="text-slate-600">Coverage</p>
+                  <p class="font-medium">{{ invoice.insurance.coverage }}%</p>
+                </div>
+                <div>
+                  <p class="text-slate-600">Claim ID</p>
+                  <p class="font-medium">{{ invoice.insurance.claim }}</p>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="flex flex-wrap gap-2">
+            @if (invoice.status === "Pending") {
+              <button
+                mat-flat-button
+                color="primary"
+                (click)="openRecordPaymentDialog(invoice)"
+              >
+                Record Payment
+              </button>
+              <button
+                mat-stroked-button
+                (click)="sendReminder(invoice)"
+                [disabled]="isReminderSending(invoice.id)"
+              >
+                {{ getReminderLabel(invoice.id) }}
+              </button>
+            }
+            <button mat-stroked-button (click)="printInvoice(invoice)">
+              Print Invoice
+            </button>
+          </div>
+        </mat-card>
+      }
+    </div>
+  }
+
+  @if (activeTab === "payments") {
+    <mat-card class="p-6">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[680px]">
+          <thead>
+            <tr class="border-b">
+              <th
+                class="text-left py-3 px-4 text-sm font-medium text-slate-600"
+              >
+                Payment ID
+              </th>
+              <th
+                class="text-left py-3 px-4 text-sm font-medium text-slate-600"
+              >
+                Invoice
+              </th>
+              <th
+                class="text-left py-3 px-4 text-sm font-medium text-slate-600"
+              >
+                Patient
+              </th>
+              <th
+                class="text-left py-3 px-4 text-sm font-medium text-slate-600"
+              >
+                Amount
+              </th>
+              <th
+                class="text-left py-3 px-4 text-sm font-medium text-slate-600"
+              >
+                Method
+              </th>
+              <th
+                class="text-left py-3 px-4 text-sm font-medium text-slate-600"
+              >
+                Date
+              </th>
+              <th
+                class="text-left py-3 px-4 text-sm font-medium text-slate-600"
+              >
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (payment of payments; track payment.id) {
+              <tr class="border-b last:border-0 hover:bg-slate-50">
+                <td class="py-3 px-4 font-medium">{{ payment.id }}</td>
+                <td class="py-3 px-4">{{ payment.invoice }}</td>
+                <td class="py-3 px-4">{{ payment.patient }}</td>
+                <td class="py-3 px-4">{{ payment.amount | currency }}</td>
+                <td class="py-3 px-4">{{ payment.method }}</td>
+                <td class="py-3 px-4">{{ payment.date }}</td>
+                <td class="py-3 px-4">
+                  <mat-chip class="!bg-green-100 !text-green-800">{{
+                    payment.status
+                  }}</mat-chip>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-card>
+  }
+</div>

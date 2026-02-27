@@ -1,0 +1,86 @@
+<h2 mat-dialog-title>Generate New Invoice</h2>
+<mat-dialog-content>
+  <form [formGroup]="invoiceForm" class="space-y-4 py-2">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Patient</mat-label>
+      <input
+        matInput
+        formControlName="patient"
+        placeholder="Select patient..."
+      />
+    </mat-form-field>
+
+    <div>
+      <p class="text-sm font-medium text-slate-700 mb-2">Services</p>
+      <div formArrayName="services" class="space-y-3">
+        @for (serviceGroup of services.controls; track $index) {
+          <div
+            [formGroupName]="$index"
+            class="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-2 items-center"
+          >
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Service Name</mat-label>
+              <input
+                matInput
+                formControlName="service"
+                placeholder="Consultation"
+              />
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Amount ($)</mat-label>
+              <input matInput type="number" min="0" formControlName="amount" />
+            </mat-form-field>
+
+            <button
+              type="button"
+              mat-stroked-button
+              color="warn"
+              (click)="removeService($index)"
+            >
+              Remove
+            </button>
+          </div>
+        }
+      </div>
+
+      <button
+        type="button"
+        mat-stroked-button
+        class="mt-1"
+        (click)="addService()"
+      >
+        + Add Service
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Insurance Company</mat-label>
+        <input
+          matInput
+          formControlName="insuranceCompany"
+          placeholder="Insurance (optional)"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Coverage %</mat-label>
+        <input
+          matInput
+          type="number"
+          min="0"
+          max="100"
+          formControlName="coverage"
+          placeholder="80"
+        />
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onGenerateInvoice()">
+    Generate Invoice
+  </button>
+</mat-dialog-actions>

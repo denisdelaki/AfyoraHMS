@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>Record Payment - {{ data.invoiceId }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="paymentForm" class="space-y-4 py-2">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Amount</mat-label>
+      <input matInput type="number" min="0" formControlName="amount" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Payment Method</mat-label>
+      <mat-select formControlName="method">
+        @for (method of paymentMethods; track method) {
+          <mat-option [value]="method">{{ method }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onConfirmPayment()">
+    Confirm Payment
+  </button>
+</mat-dialog-actions>
