@@ -1,0 +1,85 @@
+<h2 mat-dialog-title>Add New Drug</h2>
+<mat-dialog-content>
+  <div class="space-y-3 pt-1">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Drug Name</mat-label>
+        <input
+          matInput
+          [(ngModel)]="newDrug.name"
+          placeholder="Enter drug name"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Category</mat-label>
+        <input
+          matInput
+          [(ngModel)]="newDrug.category"
+          placeholder="e.g., Antibiotic"
+        />
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Initial Stock</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="newDrug.stock"
+          placeholder="100"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Minimum Stock</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="newDrug.minStock"
+          placeholder="50"
+        />
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Price per Unit ($)</mat-label>
+        <input
+          matInput
+          type="number"
+          step="0.01"
+          [(ngModel)]="newDrug.price"
+          placeholder="10.00"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Expiry Date</mat-label>
+        <input matInput type="date" [(ngModel)]="newDrug.expiryDate" />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Manufacturer</mat-label>
+      <input
+        matInput
+        [(ngModel)]="newDrug.manufacturer"
+        placeholder="Manufacturer name"
+      />
+    </mat-form-field>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    [disabled]="!canSubmitDrug()"
+    (click)="onAddToCatalog()"
+  >
+    Add to Catalog
+  </button>
+</mat-dialog-actions>

@@ -1,1 +1,258 @@
-<p>pharmacy works!</p>
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold mb-1">Pharmacy Management</h1>
+      <p class="text-gray-600">Manage drug inventory and prescriptions</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      class="!flex !items-center !gap-2"
+      (click)="openAddDrugDialog()"
+    >
+      <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
+      Add Drug
+    </button>
+  </div>
+
+  @if (lowStockDrugs.length > 0 || expiringDrugs.length > 0) {
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      @if (lowStockDrugs.length > 0) {
+        <mat-card class="!p-4 !shadow-sm border-yellow-200 bg-yellow-50">
+          <div class="flex items-start gap-3">
+            <lucide-icon
+              [img]="AlertTriangle"
+              class="w-5 h-5 text-yellow-600 mt-0.5"
+            ></lucide-icon>
+            <div>
+              <p class="font-medium text-yellow-900">Low Stock Alert</p>
+              <p class="text-sm text-yellow-800">
+                {{ lowStockDrugs.length }} drug(s) below minimum stock level
+              </p>
+            </div>
+          </div>
+        </mat-card>
+      }
+
+      @if (expiringDrugs.length > 0) {
+        <mat-card class="!p-4 !shadow-sm border-red-200 bg-red-50">
+          <div class="flex items-start gap-3">
+            <lucide-icon
+              [img]="AlertTriangle"
+              class="w-5 h-5 text-red-600 mt-0.5"
+            ></lucide-icon>
+            <div>
+              <p class="font-medium text-red-900">Expiry Alert</p>
+              <p class="text-sm text-red-800">
+                {{ expiringDrugs.length }} drug(s) expiring in 3 months
+              </p>
+            </div>
+          </div>
+        </mat-card>
+      }
+    </div>
+  }
+
+  <div class="flex gap-2 border-b">
+    <button
+      class="tab-btn"
+      [class.tab-btn-active]="activeTab === 'catalog'"
+      (click)="setActiveTab('catalog')"
+    >
+      Drug Catalog
+    </button>
+    <button
+      class="tab-btn"
+      [class.tab-btn-active]="activeTab === 'prescriptions'"
+      (click)="setActiveTab('prescriptions')"
+    >
+      Prescriptions
+    </button>
+    <button
+      class="tab-btn"
+      [class.tab-btn-active]="activeTab === 'alerts'"
+      (click)="setActiveTab('alerts')"
+    >
+      Alerts
+    </button>
+  </div>
+
+  @if (activeTab === "catalog") {
+    <mat-card class="!p-4 !rounded-xl !shadow-sm">
+      <mat-form-field appearance="fill" class="w-full pharmacy-search-field">
+        <mat-label>Search drugs by name or category...</mat-label>
+        <lucide-icon matPrefix [img]="Search" class="w-4 h-4"></lucide-icon>
+        <input matInput [(ngModel)]="searchTerm" />
+      </mat-form-field>
+    </mat-card>
+
+    <mat-card class="!p-6 !rounded-xl !shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full pharmacy-table">
+          <thead>
+            <tr class="border-b">
+              <th>Drug ID</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Stock</th>
+              <th>Price</th>
+              <th>Expiry Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (drug of filteredDrugs; track drug.id) {
+              <tr class="border-b last:border-0 hover:bg-gray-50">
+                <td class="font-medium">{{ drug.id }}</td>
+                <td>{{ drug.name }}</td>
+                <td>{{ drug.category }}</td>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <lucide-icon
+                      [img]="Package"
+                      class="w-4 h-4 text-gray-400"
+                    ></lucide-icon>
+                    {{ drug.stock }}
+                    @if (drug.stock < drug.minStock) {
+                      <lucide-icon
+                        [img]="AlertTriangle"
+                        class="w-4 h-4 text-yellow-600"
+                      ></lucide-icon>
+                    }
+                  </div>
+                </td>
+                <td>${{ drug.price.toFixed(2) }}</td>
+                <td>{{ drug.expiryDate }}</td>
+                <td>
+                  <mat-chip-set>
+                    <mat-chip
+                      [class]="
+                        drug.stock < drug.minStock
+                          ? 'chip-low'
+                          : 'chip-in-stock'
+                      "
+                    >
+                      {{
+                        drug.stock < drug.minStock ? "Low Stock" : "In Stock"
+                      }}
+                    </mat-chip>
+                  </mat-chip-set>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-card>
+  }
+
+  @if (activeTab === "prescriptions") {
+    <div class="space-y-4">
+      @for (prescription of prescriptions; track prescription.id) {
+        <mat-card class="!p-6 !rounded-xl !shadow-sm">
+          <div class="flex justify-between items-start mb-4 gap-4">
+            <div>
+              <p class="font-medium text-lg">
+                {{ prescription.id }} - {{ prescription.patient }}
+              </p>
+              <p class="text-sm text-gray-600">
+                Patient ID: {{ prescription.patientId }} • Prescribed by
+                {{ prescription.doctor }}
+              </p>
+              <p class="text-sm text-gray-500">Date: {{ prescription.date }}</p>
+            </div>
+            <mat-chip-set>
+              <mat-chip
+                [class]="
+                  prescription.status === 'Dispensed'
+                    ? 'chip-in-stock'
+                    : 'chip-pending'
+                "
+              >
+                {{ prescription.status }}
+              </mat-chip>
+            </mat-chip-set>
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-sm font-medium">Medications:</p>
+            @for (drug of prescription.drugs; track $index) {
+              <div class="bg-gray-50 p-3 rounded-lg">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <p class="font-medium">{{ drug.name }}</p>
+                    <p class="text-sm text-gray-600">
+                      Dosage: {{ drug.dosage }}
+                    </p>
+                  </div>
+                  <span class="text-sm text-gray-600"
+                    >Qty: {{ drug.quantity }}</span
+                  >
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (prescription.status === "Pending") {
+            <button
+              mat-flat-button
+              color="primary"
+              class="!w-full !mt-4"
+              (click)="dispensePrescription(prescription.id)"
+            >
+              Dispense Prescription
+            </button>
+          }
+        </mat-card>
+      }
+    </div>
+  }
+
+  @if (activeTab === "alerts") {
+    <div class="space-y-6">
+      @if (lowStockDrugs.length > 0) {
+        <div>
+          <h3 class="text-lg font-semibold mb-3">Low Stock Drugs</h3>
+          <div class="space-y-3">
+            @for (drug of lowStockDrugs; track drug.id) {
+              <mat-card class="!p-4 !rounded-xl !shadow-sm">
+                <div class="flex justify-between items-center gap-3">
+                  <div>
+                    <p class="font-medium">{{ drug.name }}</p>
+                    <p class="text-sm text-gray-600">
+                      Current: {{ drug.stock }} • Minimum: {{ drug.minStock }}
+                    </p>
+                  </div>
+                  <button mat-stroked-button color="primary">Reorder</button>
+                </div>
+              </mat-card>
+            }
+          </div>
+        </div>
+      }
+
+      @if (expiringDrugs.length > 0) {
+        <div>
+          <h3 class="text-lg font-semibold mb-3">Expiring Soon</h3>
+          <div class="space-y-3">
+            @for (drug of expiringDrugs; track drug.id) {
+              <mat-card class="!p-4 !rounded-xl !shadow-sm">
+                <div class="flex justify-between items-center gap-3">
+                  <div>
+                    <p class="font-medium">{{ drug.name }}</p>
+                    <p class="text-sm text-gray-600">
+                      Expiry Date: {{ drug.expiryDate }}
+                    </p>
+                  </div>
+                  <mat-chip-set>
+                    <mat-chip class="chip-low">Expiring</mat-chip>
+                  </mat-chip-set>
+                </div>
+              </mat-card>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
