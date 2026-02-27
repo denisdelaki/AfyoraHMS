@@ -1,1 +1,167 @@
-<p>ehr works!</p>
+<div class="flex flex-col gap-6">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="mb-1 text-3xl font-semibold">Electronic Health Records</h1>
+      <p class="m-0 text-sm text-gray-500">
+        View and manage patient health records
+      </p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openNewRecordDialog()">
+      <mat-icon>add</mat-icon>
+      New Record
+    </button>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full">
+      <mat-label>Search patient by name or ID</mat-label>
+      <input matInput [(ngModel)]="searchTerm" />
+    </mat-form-field>
+    <mat-icon>search</mat-icon>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <mat-card
+      class="cursor-pointer border-2 border-transparent p-4 transition-all duration-200 hover:shadow-md"
+      [ngClass]="
+        selectedPatient?.id === patient.id
+          ? 'border-blue-600'
+          : 'border-transparent'
+      "
+      *ngFor="let patient of filteredPatients"
+      (click)="selectPatient(patient)"
+    >
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="mb-1 font-semibold">{{ patient.name }}</p>
+          <p class="m-0 text-sm text-gray-500">
+            {{ patient.id }} • {{ patient.age }}y • {{ patient.gender }}
+          </p>
+        </div>
+        <mat-icon>description</mat-icon>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-card class="p-6" *ngIf="selectedPatient">
+    <div class="mb-4">
+      <h2 class="mb-1 text-xl font-semibold">
+        Health Records - {{ selectedPatient.name }}
+      </h2>
+      <p class="m-0 text-sm text-gray-500">
+        Patient ID: {{ selectedPatient.id }}
+      </p>
+    </div>
+
+    <mat-tab-group>
+      <mat-tab label="Medical Records">
+        <div class="flex flex-col gap-4 py-4">
+          <mat-card class="p-4" *ngFor="let record of ehrRecords">
+            <div class="mb-4">
+              <div>
+                <p class="m-0 font-semibold">{{ record.diagnosis }}</p>
+                <p class="mt-1 text-sm text-gray-500">
+                  {{ record.date }} • {{ record.doctor }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <div *ngIf="record.prescriptions.length > 0">
+                <p class="mb-2 flex items-center gap-2 text-sm font-semibold">
+                  <mat-icon>medication</mat-icon>
+                  Prescriptions:
+                </p>
+                <ul
+                  class="m-0 list-inside list-disc pl-1 text-sm text-gray-700"
+                >
+                  <li *ngFor="let prescription of record.prescriptions">
+                    {{ prescription }}
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <p class="mb-2 text-sm font-semibold">Doctor's Notes:</p>
+                <p class="m-0 text-sm text-gray-700">{{ record.notes }}</p>
+              </div>
+            </div>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Prescriptions">
+        <div class="flex flex-col gap-4 py-4">
+          <mat-card class="p-4" *ngFor="let item of allPrescriptions">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex gap-3">
+                <mat-icon class="text-blue-600">medication</mat-icon>
+                <div>
+                  <p class="m-0 font-semibold">{{ item.prescription }}</p>
+                  <p class="mt-1 text-sm text-gray-500">
+                    Prescribed by {{ item.doctor }} on {{ item.date }}
+                  </p>
+                </div>
+              </div>
+              <mat-chip-set>
+                <mat-chip>Active</mat-chip>
+              </mat-chip-set>
+            </div>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Lab Results">
+        <div class="flex flex-col gap-4 py-4">
+          <mat-card class="p-4" *ngFor="let lab of allLabResults">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex gap-3">
+                <mat-icon class="text-green-600">science</mat-icon>
+                <div>
+                  <p class="m-0 font-semibold">{{ lab.test }}</p>
+                  <p class="mt-1 text-sm text-gray-500">
+                    Result: {{ lab.result }}
+                  </p>
+                  <p class="mt-1 text-xs text-gray-500">Date: {{ lab.date }}</p>
+                </div>
+              </div>
+              <span
+                class="rounded-full px-2.5 py-1 text-xs font-medium"
+                [ngClass]="getLabStatusClass(lab.status)"
+              >
+                {{ lab.status }}
+              </span>
+            </div>
+          </mat-card>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Radiology">
+        <div class="flex flex-col gap-4 py-4">
+          <mat-card class="p-4" *ngFor="let image of radiologyImages">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex gap-3">
+                <mat-icon class="text-purple-600">image</mat-icon>
+                <div>
+                  <p class="m-0 font-semibold">{{ image.type }}</p>
+                  <p class="mt-1 text-sm text-gray-500">
+                    Radiologist: {{ image.radiologist }}
+                  </p>
+                  <p class="mt-2 text-sm text-gray-700">
+                    <strong>Findings:</strong> {{ image.findings }}
+                  </p>
+                  <p class="mt-1 text-xs text-gray-500">
+                    Date: {{ image.date }}
+                  </p>
+                </div>
+              </div>
+              <mat-chip-set>
+                <mat-chip>{{ image.status }}</mat-chip>
+              </mat-chip-set>
+            </div>
+          </mat-card>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+</div>

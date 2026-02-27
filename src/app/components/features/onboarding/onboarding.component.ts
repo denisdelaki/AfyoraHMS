@@ -8,7 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
-import { LogoComponent } from '../../shared/logo/logo.component';
+import { LogoComponent } from '../../dialogs/logo/logo.component';
 
 @Component({
   selector: 'app-onboarding',

@@ -16,9 +16,9 @@ import {
   RegisterPatientPayload,
   VisitHistory,
 } from './patient.models';
-import { RegisterPatientDialogComponent } from '../../shared/register-patient-dialog/register-patient-dialog.component';
-import { PatientProfileDialogComponent } from '../../shared/patient-profile-dialog/patient-profile-dialog.component';
-import { AppointmentBookingDialogComponent } from '../../shared/appointment-booking-dialog/appointment-booking-dialog.component';
+import { RegisterPatientDialogComponent } from '../../dialogs/register-patient-dialog/register-patient-dialog.component';
+import { PatientProfileDialogComponent } from '../../dialogs/patient-profile-dialog/patient-profile-dialog.component';
+import { AppointmentBookingDialogComponent } from '../../dialogs/appointment-booking-dialog/appointment-booking-dialog.component';
 
 @Component({
   selector: 'app-patients',

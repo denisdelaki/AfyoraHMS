@@ -1,0 +1,60 @@
+<h2 mat-dialog-title>Add New Health Record</h2>
+<mat-dialog-content>
+  <form [formGroup]="recordForm" class="space-y-4 py-2">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Patient</mat-label>
+      <mat-select formControlName="patientId">
+        @for (patient of data.patients; track patient.id) {
+          <mat-option [value]="patient.id">
+            {{ patient.name }} ({{ patient.id }})
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Diagnosis</mat-label>
+      <input
+        matInput
+        formControlName="diagnosis"
+        placeholder="Enter diagnosis"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Symptoms</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="symptoms"
+        placeholder="Describe symptoms..."
+      ></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Treatment Plan</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="treatment"
+        placeholder="Treatment recommendations..."
+      ></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Doctor's Notes</mat-label>
+      <textarea
+        matInput
+        rows="4"
+        formControlName="doctorNotes"
+        placeholder="Additional notes..."
+      ></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSave()">
+    Save Record
+  </button>
+</mat-dialog-actions>
