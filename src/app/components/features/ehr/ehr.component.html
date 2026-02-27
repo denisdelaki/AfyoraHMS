@@ -44,13 +44,29 @@
   </div>
 
   <mat-card class="p-6" *ngIf="selectedPatient">
-    <div class="mb-4">
-      <h2 class="mb-1 text-xl font-semibold">
-        Health Records - {{ selectedPatient.name }}
-      </h2>
-      <p class="m-0 text-sm text-gray-500">
-        Patient ID: {{ selectedPatient.id }}
-      </p>
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 class="mb-1 text-xl font-semibold">
+          Health Records - {{ selectedPatient.name }}
+        </h2>
+        <p class="m-0 text-sm text-gray-500">
+          Patient ID: {{ selectedPatient.id }}
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button mat-stroked-button (click)="printPatientRecord()">
+          <mat-icon>print</mat-icon>
+          Print
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="downloadPatientRecordPdf()"
+        >
+          <mat-icon>download</mat-icon>
+          Download PDF
+        </button>
+      </div>
     </div>
 
     <mat-tab-group>

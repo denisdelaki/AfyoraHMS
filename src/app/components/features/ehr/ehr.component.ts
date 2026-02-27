@@ -188,6 +188,125 @@ export class EhrComponent {
     });
   }
 
+  async downloadPatientRecordPdf(): Promise<void> {
+    if (!this.selectedPatient) {
+      return;
+    }
+
+    const { jsPDF } = await import('jspdf');
+    const document = new jsPDF({ unit: 'pt', format: 'a4' });
+
+    const margin = 40;
+    const pageWidth = document.internal.pageSize.getWidth();
+    const pageHeight = document.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - margin * 2;
+    let y = margin;
+
+    const ensureSpace = (spaceNeeded = 24): void => {
+      if (y + spaceNeeded <= pageHeight - margin) {
+        return;
+      }
+
+      document.addPage();
+      y = margin;
+    };
+
+    const writeWrapped = (
+      text: string,
+      fontSize = 11,
+      lineGap = 15,
+      isBold = false,
+    ): void => {
+      ensureSpace(lineGap * 2);
+      document.setFont('helvetica', isBold ? 'bold' : 'normal');
+      document.setFontSize(fontSize);
+      const lines = document.splitTextToSize(text, contentWidth);
+      lines.forEach((line: string) => {
+        ensureSpace(lineGap);
+        document.text(line, margin, y);
+        y += lineGap;
+      });
+    };
+
+    writeWrapped('Electronic Health Record', 18, 22, true);
+    writeWrapped(
+      `${this.selectedPatient.name} (${this.selectedPatient.id}) • ${this.selectedPatient.age}y • ${this.selectedPatient.gender}`,
+      11,
+      16,
+    );
+    writeWrapped(`Generated: ${new Date().toLocaleString()}`, 10, 16);
+    y += 8;
+
+    writeWrapped('Medical Records', 14, 18, true);
+    this.ehrRecords.forEach((record, recordIndex) => {
+      y += 4;
+      writeWrapped(
+        `${recordIndex + 1}. ${record.diagnosis} (${record.date}) - ${record.doctor}`,
+        11,
+        16,
+        true,
+      );
+
+      if (record.prescriptions.length > 0) {
+        writeWrapped('Prescriptions:', 11, 15, true);
+        record.prescriptions.forEach((prescription) => {
+          writeWrapped(`• ${prescription}`, 10, 14);
+        });
+      }
+
+      if (record.labResults.length > 0) {
+        writeWrapped('Lab Results:', 11, 15, true);
+        record.labResults.forEach((result) => {
+          writeWrapped(
+            `• ${result.test}: ${result.result} (${result.status})`,
+            10,
+            14,
+          );
+        });
+      }
+
+      writeWrapped(`Doctor's Notes: ${record.notes}`, 10, 14);
+    });
+
+    y += 6;
+    writeWrapped('Radiology', 14, 18, true);
+    this.radiologyImages.forEach((image) => {
+      writeWrapped(
+        `• ${image.type} (${image.date}) - ${image.radiologist} | ${image.status}`,
+        10,
+        14,
+      );
+      writeWrapped(`  Findings: ${image.findings}`, 10, 14);
+    });
+
+    const fileBaseName = `${this.selectedPatient.name}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const fileName = `${fileBaseName || 'patient'}-${this.selectedPatient.id}-ehr.pdf`;
+
+    document.save(fileName);
+  }
+
+  printPatientRecord(): void {
+    if (!this.selectedPatient) {
+      return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) {
+      return;
+    }
+
+    printWindow.document.write(this.buildPrintableRecordHtml());
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 300);
+  }
+
   saveRecord(payload: CreateEhrRecordPayload): void {
     this.ehrRecords = [
       {
@@ -213,5 +332,96 @@ export class EhrComponent {
     return status === 'Normal'
       ? 'bg-green-100 text-green-800'
       : 'bg-red-100 text-red-800';
+  }
+
+  private buildPrintableRecordHtml(): string {
+    if (!this.selectedPatient) {
+      return '';
+    }
+
+    const recordsHtml = this.ehrRecords
+      .map(
+        (record) => `
+          <section class="record">
+            <h3>${this.escapeHtml(record.diagnosis)}</h3>
+            <p class="meta">${this.escapeHtml(record.date)} • ${this.escapeHtml(record.doctor)}</p>
+            ${
+              record.prescriptions.length
+                ? `<p><strong>Prescriptions:</strong></p><ul>${record.prescriptions
+                    .map(
+                      (prescription) =>
+                        `<li>${this.escapeHtml(prescription)}</li>`,
+                    )
+                    .join('')}</ul>`
+                : ''
+            }
+            ${
+              record.labResults.length
+                ? `<p><strong>Lab Results:</strong></p><ul>${record.labResults
+                    .map(
+                      (result) =>
+                        `<li>${this.escapeHtml(result.test)}: ${this.escapeHtml(result.result)} (${this.escapeHtml(result.status)})</li>`,
+                    )
+                    .join('')}</ul>`
+                : ''
+            }
+            <p><strong>Doctor's Notes:</strong> ${this.escapeHtml(record.notes)}</p>
+          </section>
+        `,
+      )
+      .join('');
+
+    const radiologyHtml = this.radiologyImages
+      .map(
+        (image) => `
+          <li>
+            <strong>${this.escapeHtml(image.type)}</strong> (${this.escapeHtml(image.date)}) - ${this.escapeHtml(image.radiologist)} [${this.escapeHtml(image.status)}]<br/>
+            Findings: ${this.escapeHtml(image.findings)}
+          </li>
+        `,
+      )
+      .join('');
+
+    return `
+      <!doctype html>
+      <html>
+        <head>
+          <title>EHR - ${this.escapeHtml(this.selectedPatient.name)}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 32px; color: #111827; }
+            h1 { margin: 0 0 6px; font-size: 22px; }
+            h2 { margin: 20px 0 10px; font-size: 18px; }
+            h3 { margin: 0 0 4px; font-size: 16px; }
+            .subtitle { margin: 0 0 18px; color: #4b5563; }
+            .record { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+            .meta { margin: 0 0 10px; color: #6b7280; font-size: 13px; }
+            ul { margin: 8px 0 10px 20px; }
+            p { margin: 6px 0; }
+          </style>
+        </head>
+        <body>
+          <h1>Electronic Health Record</h1>
+          <p class="subtitle">
+            ${this.escapeHtml(this.selectedPatient.name)} (${this.escapeHtml(this.selectedPatient.id)}) •
+            ${this.selectedPatient.age}y • ${this.escapeHtml(this.selectedPatient.gender)}
+          </p>
+
+          <h2>Medical Records</h2>
+          ${recordsHtml}
+
+          <h2>Radiology</h2>
+          <ul>${radiologyHtml}</ul>
+        </body>
+      </html>
+    `;
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
   }
 }
