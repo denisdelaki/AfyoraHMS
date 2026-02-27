@@ -1,4 +1,6 @@
-<h2 mat-dialog-title>Register New Patient</h2>
+<h2 mat-dialog-title>
+  {{ patientToEdit ? "Update Patient Information" : "Register New Patient" }}
+</h2>
 <mat-dialog-content>
   <form [formGroup]="registerForm" class="space-y-4 py-2">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -21,7 +23,11 @@
 
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Gender</mat-label>
-        <input matInput formControlName="gender" placeholder="Male/Female" />
+        <mat-select formControlName="gender" placeholder="Select gender">
+          <mat-option value="Male">Male</mat-option>
+          <mat-option value="Female">Female</mat-option>
+          <mat-option value="Other">Other</mat-option>
+        </mat-select>
       </mat-form-field>
     </div>
 
@@ -55,7 +61,17 @@
 
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Date of Birth</mat-label>
-        <input matInput type="date" formControlName="dob" />
+        <input
+          matInput
+          [max]="today"
+          [matDatepicker]="picker"
+          formControlName="dob"
+        />
+        <mat-hint>MM/DD/YYYY</mat-hint>
+        <mat-datepicker-toggle matIconSuffix [for]="picker">
+          <mat-icon matDatepickerToggleIcon>keyboard_arrow_down</mat-icon>
+        </mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
     </div>
 
@@ -87,6 +103,6 @@
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Cancel</button>
   <button mat-flat-button color="primary" (click)="onRegister()">
-    Register Patient
+    {{ patientToEdit ? "Update Patient" : "Register Patient" }}
   </button>
 </mat-dialog-actions>

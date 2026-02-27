@@ -154,15 +154,23 @@ export class PatientsComponent {
     );
   }
 
-  openRegisterDialog(): void {
+  openRegisterDialog(patientToEdit?: Patient): void {
     const dialogRef = this.dialog.open(RegisterPatientDialogComponent, {
       width: '90vw',
       maxWidth: '900px',
       maxHeight: '90vh',
+      data: {
+        patient: patientToEdit,
+      },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (!result) {
+        return;
+      }
+
+      if (patientToEdit) {
+        this.updatePatient(patientToEdit.id, result);
         return;
       }
 
@@ -171,7 +179,7 @@ export class PatientsComponent {
   }
 
   openPatientDialog(patient: Patient): void {
-    this.dialog.open(PatientProfileDialogComponent, {
+    const dialogRef = this.dialog.open(PatientProfileDialogComponent, {
       width: '90vw',
       maxWidth: '1000px',
       maxHeight: '90vh',
@@ -182,6 +190,14 @@ export class PatientsComponent {
         ),
         visitHistory: this.visitHistory,
       },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result || result.action !== 'update') {
+        return;
+      }
+
+      this.openRegisterDialog(result.patient);
     });
   }
 
@@ -245,8 +261,29 @@ export class PatientsComponent {
     ];
   }
 
+  private updatePatient(
+    patientId: string,
+    formValue: RegisterPatientPayload,
+  ): void {
+    this.patients = this.patients.map((patient) => {
+      if (patient.id !== patientId) {
+        return patient;
+      }
+
+      return {
+        ...patient,
+        name: `${formValue.firstName} ${formValue.lastName}`.trim(),
+        age: formValue.age ?? 0,
+        gender: formValue.gender ?? '',
+        phone: formValue.phone ?? '',
+        email: formValue.email ?? '',
+        bloodGroup: formValue.bloodGroup ?? '',
+      };
+    });
+  }
+
   onEditPatient(patient: Patient): void {
-    this.openPatientDialog(patient);
+    this.openRegisterDialog(patient);
   }
 
   getStatusClass(status: Patient['status']): string {

@@ -1,10 +1,24 @@
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { RegisterPatientPayload } from '../../features/patients/patient.models';
+import {
+  Patient,
+  RegisterPatientPayload,
+} from '../../features/patients/patient.models';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
+
+interface RegisterPatientDialogData {
+  patient?: Patient;
+}
 
 @Component({
   selector: 'app-register-patient-dialog',
@@ -14,18 +28,28 @@ import { RegisterPatientPayload } from '../../features/patients/patient.models';
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
+    MatDatepickerModule,
+    MatIconModule,
+    MatSelectModule,
   ],
   templateUrl: './register-patient-dialog.component.html',
   styleUrl: './register-patient-dialog.component.css',
 })
 export class RegisterPatientDialogComponent {
+  readonly today = new Date();
   private readonly formBuilder = inject(FormBuilder);
+  private readonly data = inject<RegisterPatientDialogData | null>(
+    MAT_DIALOG_DATA,
+    { optional: true },
+  );
   private readonly dialogRef = inject(
     MatDialogRef<
       RegisterPatientDialogComponent,
       RegisterPatientPayload | undefined
     >,
   );
+
+  readonly patientToEdit = this.data?.patient;
 
   registerForm = this.formBuilder.group({
     firstName: ['', [Validators.required]],
@@ -40,6 +64,24 @@ export class RegisterPatientDialogComponent {
     emergencyContact: [''],
     medicalHistory: [''],
   });
+
+  constructor() {
+    if (!this.patientToEdit) {
+      return;
+    }
+
+    const [firstName, ...lastNameParts] = this.patientToEdit.name.split(' ');
+
+    this.registerForm.patchValue({
+      firstName: firstName ?? '',
+      lastName: lastNameParts.join(' '),
+      age: this.patientToEdit.age,
+      gender: this.patientToEdit.gender,
+      phone: this.patientToEdit.phone,
+      email: this.patientToEdit.email,
+      bloodGroup: this.patientToEdit.bloodGroup,
+    });
+  }
 
   onCancel(): void {
     this.dialogRef.close();

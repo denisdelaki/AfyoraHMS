@@ -83,5 +83,12 @@
   </mat-tab-group>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
+  <button
+    mat-flat-button
+    color="primary"
+    [mat-dialog-close]="{ action: 'update', patient: data.patient }"
+  >
+    Update Patient Info
+  </button>
   <button mat-button mat-dialog-close>Close</button>
 </mat-dialog-actions>
