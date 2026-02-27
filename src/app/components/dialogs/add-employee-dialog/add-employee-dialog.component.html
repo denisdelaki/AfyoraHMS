@@ -1,0 +1,125 @@
+<h2 mat-dialog-title>Add New Employee</h2>
+<mat-dialog-content>
+  <form
+    [formGroup]="employeeForm"
+    class="flex flex-col gap-4 py-4 min-w-[500px]"
+  >
+    <div class="grid grid-cols-2 gap-4">
+      <mat-form-field appearance="fill">
+        <mat-label>First Name</mat-label>
+        <input matInput formControlName="firstName" placeholder="John" />
+        <mat-error *ngIf="employeeForm.get('firstName')?.hasError('required')"
+          >Required</mat-error
+        >
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Last Name</mat-label>
+        <input matInput formControlName="lastName" placeholder="Doe" />
+        <mat-error *ngIf="employeeForm.get('lastName')?.hasError('required')"
+          >Required</mat-error
+        >
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <mat-form-field appearance="fill">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role">
+          <mat-option *ngFor="let role of roles" [value]="role">{{
+            role
+          }}</mat-option>
+        </mat-select>
+        <mat-error *ngIf="employeeForm.get('role')?.hasError('required')"
+          >Required</mat-error
+        >
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Department</mat-label>
+        <input
+          matInput
+          formControlName="department"
+          placeholder="e.g., Cardiology"
+        />
+        <mat-error *ngIf="employeeForm.get('department')?.hasError('required')"
+          >Required</mat-error
+        >
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <mat-form-field appearance="fill">
+        <mat-label>Email</mat-label>
+        <input
+          matInput
+          type="email"
+          formControlName="email"
+          placeholder="employee@hospital.com"
+        />
+        <mat-error *ngIf="employeeForm.get('email')?.hasError('required')"
+          >Required</mat-error
+        >
+        <mat-error *ngIf="employeeForm.get('email')?.hasError('email')"
+          >Invalid email</mat-error
+        >
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Phone</mat-label>
+        <input
+          matInput
+          type="tel"
+          formControlName="phone"
+          placeholder="+1 555-0000"
+        />
+        <mat-error *ngIf="employeeForm.get('phone')?.hasError('required')"
+          >Required</mat-error
+        >
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <mat-form-field appearance="fill">
+        <mat-label>Join Date</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="joinDate" />
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+        <mat-error *ngIf="employeeForm.get('joinDate')?.hasError('required')"
+          >Required</mat-error
+        >
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Annual Salary ($)</mat-label>
+        <input
+          matInput
+          type="number"
+          formControlName="salary"
+          placeholder="75000"
+        />
+        <mat-error *ngIf="employeeForm.get('salary')?.hasError('required')"
+          >Required</mat-error
+        >
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Default Shift</mat-label>
+      <mat-select formControlName="shift">
+        <mat-option *ngFor="let shift of shifts" [value]="shift">{{
+          shift
+        }}</mat-option>
+      </mat-select>
+      <mat-error *ngIf="employeeForm.get('shift')?.hasError('required')"
+        >Required</mat-error
+      >
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSubmit()">
+    Add Employee
+  </button>
+</mat-dialog-actions>

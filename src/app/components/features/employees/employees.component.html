@@ -1,1 +1,288 @@
-<p>employees works!</p>
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold mb-1">Employee Management</h1>
+      <p class="text-gray-600">Manage staff, shifts, and payroll</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      class="!flex !items-center !gap-2"
+      (click)="openAddEmployeeDialog()"
+    >
+      <mat-icon>add</mat-icon>
+      Add Employee
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <mat-card class="!p-6 !m-0">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600 mb-1">Total Staff</p>
+          <p class="text-2xl font-semibold">{{ totalStaff() }}</p>
+        </div>
+        <div class="bg-blue-500 p-3 rounded-lg">
+          <lucide-icon [img]="Search" class="w-6 h-6 text-white"></lucide-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!p-6 !m-0">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600 mb-1">Doctors</p>
+          <p class="text-2xl font-semibold">{{ doctorsCount() }}</p>
+        </div>
+        <div class="bg-green-500 p-3 rounded-lg">
+          <lucide-icon [img]="Plus" class="w-6 h-6 text-white"></lucide-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!p-6 !m-0">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600 mb-1">On Duty Today</p>
+          <p class="text-2xl font-semibold">{{ onDutyTodayCount() }}</p>
+        </div>
+        <div class="bg-yellow-500 p-3 rounded-lg">
+          <lucide-icon [img]="Clock" class="w-6 h-6 text-white"></lucide-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!p-6 !m-0">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600 mb-1">Monthly Payroll</p>
+          <p class="text-2xl font-semibold">${{ monthlyPayroll() }}</p>
+        </div>
+        <div class="bg-purple-500 p-3 rounded-lg">
+          <lucide-icon
+            [img]="DollarSign"
+            class="w-6 h-6 text-white"
+          ></lucide-icon>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Tabs -->
+  <mat-tab-group animationDuration="0ms">
+    <!-- Employees Tab -->
+    <mat-tab label="Employees">
+      <div class="space-y-4 pt-4">
+        <mat-card class="!p-4">
+          <div class="relative flex items-center">
+            <lucide-icon
+              [img]="Search"
+              class="absolute left-3 w-5 h-5 text-gray-400 z-10"
+            ></lucide-icon>
+            <input
+              type="text"
+              placeholder="Search by name, role, or department..."
+              class="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+              [ngModel]="searchTerm()"
+              (ngModelChange)="searchTerm.set($event)"
+            />
+          </div>
+        </mat-card>
+
+        <mat-card class="!p-0 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b bg-gray-50/50">
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Employee ID
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Name
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Role
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Department
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Contact
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Shift
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let employee of filteredEmployees()"
+                  class="border-b last:border-0 hover:bg-gray-50 transition-colors"
+                >
+                  <td class="py-3 px-4 font-medium">{{ employee.id }}</td>
+                  <td class="py-3 px-4">{{ employee.name }}</td>
+                  <td class="py-3 px-4">{{ employee.role }}</td>
+                  <td class="py-3 px-4">{{ employee.department }}</td>
+                  <td class="py-3 px-4">
+                    <div class="text-sm">
+                      <div>{{ employee.phone }}</div>
+                      <div class="text-gray-500">{{ employee.email }}</div>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">{{ employee.shift }}</td>
+                  <td class="py-3 px-4">
+                    <span
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    >
+                      {{ employee.status }}
+                    </span>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredEmployees().length === 0">
+                  <td colspan="7" class="py-8 text-center text-gray-500">
+                    No employees found matching "{{ searchTerm() }}"
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Shifts Tab -->
+    <mat-tab label="Shifts">
+      <div class="space-y-4 pt-4">
+        <mat-card *ngFor="let shift of shifts()" class="!p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-lg font-semibold flex items-center gap-2">
+                <lucide-icon [img]="Calendar" class="w-5 h-5"></lucide-icon>
+                {{ shift.shift }} Shift
+              </h3>
+              <p class="text-sm text-gray-600">{{ shift.time }}</p>
+            </div>
+            <button mat-stroked-button>Manage</button>
+          </div>
+          <div class="space-y-2">
+            <p class="text-sm font-medium text-gray-600">
+              Assigned Staff ({{ shift.employees.length }}):
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <span
+                *ngFor="let emp of shift.employees"
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+              >
+                {{ emp }}
+              </span>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Attendance Tab -->
+    <mat-tab label="Attendance">
+      <div class="pt-4">
+        <mat-card class="!p-0 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b bg-gray-50/50">
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Date
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Employee
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Check In
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Check Out
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let record of attendance()"
+                  class="border-b last:border-0 hover:bg-gray-50 transition-colors"
+                >
+                  <td class="py-3 px-4">{{ record.date }}</td>
+                  <td class="py-3 px-4">{{ record.employee }}</td>
+                  <td class="py-3 px-4">{{ record.checkIn }}</td>
+                  <td class="py-3 px-4">{{ record.checkOut }}</td>
+                  <td class="py-3 px-4">
+                    <span
+                      [ngClass]="
+                        record.status === 'Present'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      "
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    >
+                      {{ record.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Payroll Tab -->
+    <mat-tab label="Payroll">
+      <div class="pt-4">
+        <mat-card class="!p-0 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b bg-gray-50/50">
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Employee
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Role
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Annual Salary
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Monthly
+                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
+                    Join Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let employee of employees()"
+                  class="border-b last:border-0 hover:bg-gray-50 transition-colors"
+                >
+                  <td class="py-3 px-4 font-medium">{{ employee.name }}</td>
+                  <td class="py-3 px-4">{{ employee.role }}</td>
+                  <td class="py-3 px-4">${{ employee.salary | number }}</td>
+                  <td class="py-3 px-4">
+                    ${{ employee.salary / 12 | number: "1.2-2" }}
+                  </td>
+                  <td class="py-3 px-4">{{ employee.joinDate }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
