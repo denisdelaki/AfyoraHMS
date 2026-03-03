@@ -6,3 +6,4 @@ export * from './ehr.models';
 export * from './billing.models';
 export * from './patients.models';
 export * from './pharmacy.models';
+export * from './inventory.models';

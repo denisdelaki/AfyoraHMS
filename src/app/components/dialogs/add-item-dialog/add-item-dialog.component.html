@@ -1,0 +1,65 @@
+<h2 mat-dialog-title class="!mb-1">Add New Item</h2>
+<p class="text-sm text-slate-600 px-6">Create a new inventory supply record.</p>
+<mat-dialog-content>
+  <form
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    mat-dialog-content
+    class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4"
+  >
+    <mat-form-field appearance="fill" class="sm:col-span-2 w-full">
+      <mat-label>Item Type</mat-label>
+      <mat-select formControlName="type">
+        <mat-option value="Supply">Supply</mat-option>
+        <mat-option value="Equipment">Equipment</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Category</mat-label>
+      <input matInput formControlName="category" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Initial Stock</mat-label>
+      <input matInput type="number" formControlName="stock" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Minimum Stock</mat-label>
+      <input matInput type="number" formControlName="minStock" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Unit</mat-label>
+      <input matInput formControlName="unit" placeholder="boxes, packs" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Price per Unit</mat-label>
+      <input matInput type="number" formControlName="price" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="sm:col-span-2 w-full">
+      <mat-label>Vendor</mat-label>
+      <input matInput formControlName="vendor" />
+    </mat-form-field>
+
+    <div class="sm:col-span-2 flex justify-end gap-2 pt-1">
+      <button mat-stroked-button type="button" (click)="close()">Cancel</button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="form.invalid"
+      >
+        Add to Inventory
+      </button>
+    </div>
+  </form>
+</mat-dialog-content>

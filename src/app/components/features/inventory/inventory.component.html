@@ -1,1 +1,414 @@
-<p>inventory works!</p>
+<section class="space-y-6">
+  <div
+    class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+  >
+    <div>
+      <h1 class="text-2xl font-semibold mb-1">Inventory Management</h1>
+      <p class="text-slate-600">Manage medical supplies and equipment</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      class="!rounded-lg"
+      (click)="openAddDialog()"
+    >
+      <mat-icon class="mr-1">add</mat-icon>
+      Add Item
+    </button>
+  </div>
+
+  <mat-card
+    *ngIf="lowStock$ | async as lowStock"
+    class="!shadow-none border border-amber-200 bg-amber-50 !rounded-xl"
+  >
+    <div *ngIf="lowStock.length > 0" class="flex items-start gap-3 p-4">
+      <mat-icon class="text-amber-600">warning</mat-icon>
+      <div>
+        <p class="font-semibold text-amber-900">Low Stock Alert</p>
+        <p class="text-sm text-amber-800">
+          {{ lowStock.length }} item(s) below minimum stock level
+        </p>
+      </div>
+    </div>
+  </mat-card>
+
+  <div
+    *ngIf="stats$ | async as stats"
+    class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+  >
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Total Items</p>
+          <p class="text-2xl font-semibold">{{ stats.totalItems }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-blue-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">inventory_2</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Low Stock</p>
+          <p class="text-2xl font-semibold">{{ stats.lowStock }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-amber-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">trending_down</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Equipment</p>
+          <p class="text-2xl font-semibold">{{ stats.equipment }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-emerald-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">medical_services</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Active Vendors</p>
+          <p class="text-2xl font-semibold">{{ stats.vendors }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-violet-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">store</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-tab-group mat-stretch-tabs="false" animationDuration="0ms">
+    <mat-tab label="Supplies">
+      <div class="py-4 space-y-4">
+        <mat-card class="!rounded-xl !shadow-sm">
+          <div class="p-4">
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Search supplies</mat-label>
+              <input
+                matInput
+                [formControl]="searchControl"
+                placeholder="Search by name or category"
+              />
+              <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+          </div>
+        </mat-card>
+
+        <mat-card class="!rounded-xl !shadow-sm">
+          <div class="overflow-x-auto p-1">
+            <table class="w-full min-w-[900px]">
+              <thead>
+                <tr class="border-b border-slate-200 text-left">
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Item ID
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Name
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Category
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Stock
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Price
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Vendor
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody *ngIf="filteredSupplies$ | async as suppliesList">
+                <tr
+                  *ngFor="let supply of suppliesList; trackBy: trackById"
+                  class="border-b border-slate-100 hover:bg-slate-50/70"
+                >
+                  <td class="py-3 px-4 font-medium">{{ supply.id }}</td>
+                  <td class="py-3 px-4">{{ supply.name }}</td>
+                  <td class="py-3 px-4">{{ supply.category }}</td>
+                  <td class="py-3 px-4">
+                    <div class="flex items-center gap-2">
+                      {{ supply.stock }} {{ supply.unit }}
+                      <mat-icon
+                        *ngIf="supply.stock < supply.minStock"
+                        class="!text-amber-600 !text-[18px]"
+                      >
+                        warning
+                      </mat-icon>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">{{ supply.price | currency }}</td>
+                  <td class="py-3 px-4">{{ supply.vendor }}</td>
+                  <td class="py-3 px-4">
+                    <span
+                      class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      [ngClass]="
+                        supply.stock < supply.minStock
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      "
+                    >
+                      {{
+                        supply.stock < supply.minStock
+                          ? "Low Stock"
+                          : "In Stock"
+                      }}
+                    </span>
+                  </td>
+                </tr>
+                <tr *ngIf="suppliesList.length === 0">
+                  <td colspan="7" class="text-center text-slate-500 py-10">
+                    No matching supplies found.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Equipment">
+      <div class="py-4">
+        <mat-card class="!rounded-xl !shadow-sm overflow-x-auto p-1">
+          <table
+            class="w-full min-w-[900px]"
+            *ngIf="equipment$ | async as equipmentList"
+          >
+            <thead>
+              <tr class="border-b border-slate-200 text-left">
+                <th
+                  class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                >
+                  Equipment ID
+                </th>
+                <th
+                  class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                >
+                  Name
+                </th>
+                <th
+                  class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                >
+                  Category
+                </th>
+                <th
+                  class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                >
+                  Location
+                </th>
+                <th
+                  class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                >
+                  Last Maintenance
+                </th>
+                <th
+                  class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                >
+                  Next Maintenance
+                </th>
+                <th
+                  class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                >
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let item of equipmentList; trackBy: trackById"
+                class="border-b border-slate-100 hover:bg-slate-50/70"
+              >
+                <td class="py-3 px-4 font-medium">{{ item.id }}</td>
+                <td class="py-3 px-4">{{ item.name }}</td>
+                <td class="py-3 px-4">{{ item.category }}</td>
+                <td class="py-3 px-4">{{ item.location }}</td>
+                <td class="py-3 px-4">{{ item.lastMaintenance }}</td>
+                <td class="py-3 px-4">{{ item.nextMaintenance }}</td>
+                <td class="py-3 px-4">
+                  <span
+                    class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                    [ngClass]="
+                      item.status === 'Operational'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-amber-100 text-amber-700'
+                    "
+                  >
+                    {{ item.status }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Vendors">
+      <div
+        class="py-4 grid grid-cols-1 lg:grid-cols-2 gap-4"
+        *ngIf="vendors$ | async as vendorList"
+      >
+        <mat-card
+          class="!rounded-xl !shadow-sm"
+          *ngFor="let vendor of vendorList; trackBy: trackById"
+        >
+          <div class="p-5">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-lg font-semibold">{{ vendor.name }}</h3>
+                <p class="text-sm text-slate-500">{{ vendor.id }}</p>
+              </div>
+              <span
+                class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700"
+                >Active</span
+              >
+            </div>
+
+            <div class="space-y-2 text-sm">
+              <p class="flex justify-between gap-3">
+                <span class="text-slate-600">Contact:</span>
+                <span class="font-medium">{{ vendor.contact }}</span>
+              </p>
+              <p class="flex justify-between gap-3">
+                <span class="text-slate-600">Email:</span>
+                <span class="font-medium">{{ vendor.email }}</span>
+              </p>
+              <p class="flex justify-between gap-3">
+                <span class="text-slate-600">Rating:</span>
+                <span class="font-medium">⭐ {{ vendor.rating }}/5</span>
+              </p>
+              <p class="flex justify-between gap-3">
+                <span class="text-slate-600">Total Orders:</span>
+                <span class="font-medium">{{ vendor.totalOrders }}</span>
+              </p>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Purchase Orders">
+      <div class="py-4 space-y-4" *ngIf="orders$ | async as ordersList">
+        <mat-card
+          class="!rounded-xl !shadow-sm"
+          *ngFor="let order of ordersList; trackBy: trackById"
+        >
+          <div class="p-5 space-y-4">
+            <div
+              class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
+            >
+              <div>
+                <p class="font-semibold text-lg">
+                  {{ order.id }} - {{ order.vendor }}
+                </p>
+                <p class="text-sm text-slate-600">
+                  Ordered: {{ order.orderDate }} • Expected:
+                  {{ order.expectedDate }}
+                </p>
+              </div>
+              <span
+                class="text-xs font-semibold px-2.5 py-1 rounded-full w-fit"
+                [ngClass]="
+                  order.status === 'Delivered'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-slate-200 text-slate-700'
+                "
+              >
+                {{ order.status }}
+              </span>
+            </div>
+
+            <div class="border border-slate-200 rounded-lg overflow-hidden">
+              <table class="w-full">
+                <thead class="bg-slate-50">
+                  <tr class="text-left">
+                    <th
+                      class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase"
+                    >
+                      Item
+                    </th>
+                    <th
+                      class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase text-right"
+                    >
+                      Quantity
+                    </th>
+                    <th
+                      class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase text-right"
+                    >
+                      Price
+                    </th>
+                    <th
+                      class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase text-right"
+                    >
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let item of order.items"
+                    class="border-t border-slate-100"
+                  >
+                    <td class="py-2 px-4">{{ item.name }}</td>
+                    <td class="py-2 px-4 text-right">{{ item.quantity }}</td>
+                    <td class="py-2 px-4 text-right">
+                      {{ item.price | currency }}
+                    </td>
+                    <td class="py-2 px-4 text-right">
+                      {{ item.quantity * item.price | currency }}
+                    </td>
+                  </tr>
+                  <tr
+                    class="border-t border-slate-200 bg-slate-50 font-semibold"
+                  >
+                    <td colspan="3" class="py-2 px-4 text-right">
+                      Order Total:
+                    </td>
+                    <td class="py-2 px-4 text-right">
+                      {{ order.total | currency }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</section>
