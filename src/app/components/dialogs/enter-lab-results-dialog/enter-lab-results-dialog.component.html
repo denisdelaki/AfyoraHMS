@@ -1,0 +1,81 @@
+<h2 mat-dialog-title>Enter Test Results - {{ data.request.id }}</h2>
+
+<mat-dialog-content>
+  <div class="mb-4">
+    <p class="font-semibold">
+      {{ data.request.test }} - {{ data.request.patient }}
+    </p>
+  </div>
+
+  <form [formGroup]="form" class="space-y-4">
+    <div formArrayName="parameters" class="space-y-3">
+      <div
+        *ngFor="let parameter of parameters.controls; let i = index"
+        [formGroupName]="i"
+        class="border border-slate-200 rounded-lg p-3"
+      >
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <mat-form-field appearance="fill">
+            <mat-label>Parameter</mat-label>
+            <input matInput formControlName="name" placeholder="e.g. Glucose" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Value</mat-label>
+            <input matInput formControlName="value" placeholder="e.g. 95" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Unit</mat-label>
+            <input matInput formControlName="unit" placeholder="e.g. mg/dL" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Reference Range</mat-label>
+            <input matInput formControlName="range" placeholder="e.g. 70-100" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="sm:col-span-2">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="Normal">Normal</mat-option>
+              <mat-option value="Abnormal">Abnormal</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="flex justify-end">
+          <button
+            mat-button
+            color="warn"
+            type="button"
+            (click)="removeParameter(i)"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <button mat-stroked-button type="button" (click)="addParameter()">
+      + Add Parameter
+    </button>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Remarks</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="remarks"
+        placeholder="Additional remarks..."
+      ></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="submit()">
+    Submit Results
+  </button>
+</mat-dialog-actions>

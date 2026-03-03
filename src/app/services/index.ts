@@ -6,3 +6,4 @@ export * from './ehr.service';
 export * from './billing.service';
 export * from './pharmacy.service';
 export * from './sms.service';
+export * from './laboratory.service';

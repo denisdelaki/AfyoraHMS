@@ -1,0 +1,63 @@
+<h2 mat-dialog-title>Create Lab Test Order</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+    <mat-form-field appearance="fill" class="sm:col-span-2">
+      <mat-label>Patient</mat-label>
+      <input
+        matInput
+        formControlName="patient"
+        placeholder="Search patient..."
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Patient ID</mat-label>
+      <input matInput formControlName="patientId" placeholder="e.g. P005" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Ordered By</mat-label>
+      <input
+        matInput
+        formControlName="orderedBy"
+        placeholder="e.g. Dr. Jane Doe"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="sm:col-span-2">
+      <mat-label>Test Type</mat-label>
+      <mat-select formControlName="testId">
+        <mat-option *ngFor="let test of data.tests" [value]="test.id">
+          {{ test.name }} - {{ test.price | currency }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="sm:col-span-2">
+      <mat-label>Priority</mat-label>
+      <mat-select formControlName="priority">
+        <mat-option *ngFor="let priority of priorities" [value]="priority">
+          {{ priority }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="sm:col-span-2">
+      <mat-label>Clinical Notes</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="notes"
+        placeholder="Enter clinical notes or special instructions..."
+      ></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="submit()">
+    Create Order
+  </button>
+</mat-dialog-actions>

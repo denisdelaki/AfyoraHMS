@@ -1,1 +1,401 @@
-<p>laboratory works!</p>
+<section class="space-y-6">
+  <div
+    class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+  >
+    <div>
+      <h1 class="text-2xl font-semibold mb-1">Laboratory Management</h1>
+      <p class="text-slate-600">Manage lab tests and results</p>
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      class="!rounded-lg"
+      *ngIf="tests$ | async as tests"
+      (click)="openNewOrderDialog(tests)"
+    >
+      <mat-icon class="mr-1">add</mat-icon>
+      New Test Order
+    </button>
+  </div>
+
+  <div
+    *ngIf="stats$ | async as stats"
+    class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+  >
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Total Requests</p>
+          <p class="text-2xl font-semibold">{{ stats.totalRequests }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-blue-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">science</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Pending</p>
+          <p class="text-2xl font-semibold">{{ stats.pending }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-amber-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">schedule</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">In Progress</p>
+          <p class="text-2xl font-semibold">{{ stats.inProgress }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-orange-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">biotech</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Completed</p>
+          <p class="text-2xl font-semibold">{{ stats.completed }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-emerald-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">check_circle</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-tab-group
+    mat-stretch-tabs="false"
+    animationDuration="0ms"
+    (selectedIndexChange)="setActiveTab($event)"
+  >
+    <mat-tab label="Test Requests">
+      <div class="py-4 space-y-4">
+        <mat-card class="!rounded-xl !shadow-sm">
+          <div class="p-4">
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Search requests</mat-label>
+              <input
+                matInput
+                [formControl]="searchControl"
+                placeholder="Search by patient, test, or order ID"
+              />
+              <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+          </div>
+        </mat-card>
+
+        <mat-card class="!rounded-xl !shadow-sm">
+          <div class="overflow-x-auto p-1">
+            <table class="w-full min-w-[1100px]">
+              <thead>
+                <tr class="border-b border-slate-200 text-left">
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Order ID
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Patient
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Test
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Ordered By
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Sample Collected
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Priority
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Status
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody *ngIf="filteredRequests$ | async as requests">
+                <tr
+                  *ngFor="let request of requests; trackBy: trackByRequest"
+                  class="border-b border-slate-100 hover:bg-slate-50/70"
+                >
+                  <td class="py-3 px-4 font-medium">{{ request.id }}</td>
+                  <td class="py-3 px-4">
+                    <div>
+                      <p>{{ request.patient }}</p>
+                      <p class="text-sm text-slate-500">
+                        {{ request.patientId }}
+                      </p>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">{{ request.test }}</td>
+                  <td class="py-3 px-4">{{ request.orderedBy }}</td>
+                  <td class="py-3 px-4">{{ request.sampleCollected }}</td>
+                  <td class="py-3 px-4">
+                    <span
+                      class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      [ngClass]="
+                        request.priority === 'Urgent' ||
+                        request.priority === 'STAT'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-slate-100 text-slate-700'
+                      "
+                    >
+                      {{ request.priority }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span
+                      class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      [ngClass]="
+                        request.status === 'Approved' ||
+                        request.status === 'Completed'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : request.status === 'In Progress'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-slate-100 text-slate-700'
+                      "
+                    >
+                      {{ request.status }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <button
+                      *ngIf="request.status === 'Pending'"
+                      mat-flat-button
+                      color="primary"
+                      (click)="startTest(request.id)"
+                    >
+                      Start Test
+                    </button>
+
+                    <button
+                      *ngIf="request.status === 'In Progress'"
+                      mat-flat-button
+                      color="primary"
+                      (click)="openEnterResultsDialog(request)"
+                    >
+                      Enter Results
+                    </button>
+                  </td>
+                </tr>
+
+                <tr *ngIf="requests.length === 0">
+                  <td colspan="8" class="text-center text-slate-500 py-10">
+                    No matching test requests found.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Results">
+      <div class="py-4 space-y-4" *ngIf="results$ | async as results">
+        <mat-card
+          *ngFor="let result of results; trackBy: trackByResult"
+          class="!rounded-xl !shadow-sm"
+        >
+          <div class="p-5">
+            <div
+              class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4"
+            >
+              <div>
+                <p class="font-semibold text-lg">
+                  {{ result.labId }} - {{ result.patient }}
+                </p>
+                <p class="text-sm text-slate-600">{{ result.test }}</p>
+                <p class="text-sm text-slate-500">
+                  Completed: {{ result.completedDate }} • Technician:
+                  {{ result.technician }}
+                </p>
+              </div>
+              <span
+                class="text-xs font-semibold px-2.5 py-1 rounded-full h-fit"
+                [ngClass]="
+                  result.status === 'Approved'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-blue-100 text-blue-700'
+                "
+              >
+                {{ result.status }}
+              </span>
+            </div>
+
+            <div
+              class="border border-slate-200 rounded-lg overflow-hidden mb-4"
+            >
+              <table class="w-full min-w-[760px]">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                  <tr class="text-left">
+                    <th
+                      class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase"
+                    >
+                      Parameter
+                    </th>
+                    <th
+                      class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase"
+                    >
+                      Value
+                    </th>
+                    <th
+                      class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase"
+                    >
+                      Unit
+                    </th>
+                    <th
+                      class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase"
+                    >
+                      Reference Range
+                    </th>
+                    <th
+                      class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase"
+                    >
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let param of result.parameters"
+                    class="border-t border-slate-100"
+                  >
+                    <td class="py-2 px-4">{{ param.name }}</td>
+                    <td class="py-2 px-4 font-medium">{{ param.value }}</td>
+                    <td class="py-2 px-4">{{ param.unit }}</td>
+                    <td class="py-2 px-4">{{ param.range }}</td>
+                    <td class="py-2 px-4">
+                      <span
+                        class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                        [ngClass]="
+                          param.status === 'Normal'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-red-100 text-red-700'
+                        "
+                      >
+                        {{ param.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div
+              class="flex flex-wrap gap-2"
+              *ngIf="result.status === 'Awaiting Approval'"
+            >
+              <button
+                mat-flat-button
+                color="primary"
+                (click)="approveResult(result.labId)"
+              >
+                Approve Results
+              </button>
+              <button mat-stroked-button (click)="requestRetest(result.labId)">
+                Request Retest
+              </button>
+            </div>
+
+            <div
+              class="flex flex-wrap gap-2"
+              *ngIf="result.status === 'Approved'"
+            >
+              <button mat-flat-button color="primary">Print Report</button>
+              <button mat-stroked-button>Send to Doctor</button>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Test Catalog">
+      <div class="py-4" *ngIf="tests$ | async as tests">
+        <mat-card class="!rounded-xl !shadow-sm">
+          <div class="overflow-x-auto p-1">
+            <table class="w-full min-w-[900px]">
+              <thead>
+                <tr class="border-b border-slate-200 text-left">
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Test ID
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Test Name
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Category
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Duration
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Price
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let test of tests; trackBy: trackByTest"
+                  class="border-b border-slate-100 hover:bg-slate-50/70"
+                >
+                  <td class="py-3 px-4 font-medium">{{ test.id }}</td>
+                  <td class="py-3 px-4">{{ test.name }}</td>
+                  <td class="py-3 px-4">{{ test.category }}</td>
+                  <td class="py-3 px-4">{{ test.duration }}</td>
+                  <td class="py-3 px-4">{{ test.price | currency }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</section>
