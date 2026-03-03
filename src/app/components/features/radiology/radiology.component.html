@@ -1,1 +1,363 @@
-<p>radiology works!</p>
+<section class="space-y-6">
+  <div
+    class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+  >
+    <div>
+      <h1 class="text-2xl font-semibold mb-1">Radiology Management</h1>
+      <p class="text-slate-600">Manage imaging orders and reports</p>
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      class="!rounded-lg"
+      *ngIf="imagingTypes$ | async as imagingTypes"
+      (click)="openNewOrderDialog(imagingTypes)"
+    >
+      <mat-icon class="mr-1">add</mat-icon>
+      New Imaging Order
+    </button>
+  </div>
+
+  <div
+    *ngIf="stats$ | async as stats"
+    class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+  >
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Total Orders</p>
+          <p class="text-2xl font-semibold">{{ stats.totalOrders }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-blue-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">image</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Pending</p>
+          <p class="text-2xl font-semibold">{{ stats.pending }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-amber-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">schedule</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Scheduled</p>
+          <p class="text-2xl font-semibold">{{ stats.scheduled }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-orange-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">event</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="!rounded-xl !shadow-sm">
+      <div class="p-5 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-slate-600">Completed</p>
+          <p class="text-2xl font-semibold">{{ stats.completed }}</p>
+        </div>
+        <div
+          class="size-10 rounded-lg bg-emerald-500/90 flex items-center justify-center"
+        >
+          <mat-icon class="!text-white">check_circle</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <mat-tab-group
+    mat-stretch-tabs="false"
+    animationDuration="0ms"
+    (selectedIndexChange)="setActiveTab($event)"
+  >
+    <mat-tab label="Imaging Orders">
+      <div class="py-4 space-y-4">
+        <mat-card class="!rounded-xl !shadow-sm">
+          <div class="p-4">
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Search orders</mat-label>
+              <input
+                matInput
+                [formControl]="searchControl"
+                placeholder="Search by patient, order ID, or imaging type"
+              />
+              <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+          </div>
+        </mat-card>
+
+        <mat-card class="!rounded-xl !shadow-sm">
+          <div class="overflow-x-auto p-1">
+            <table class="w-full min-w-[1100px]">
+              <thead>
+                <tr class="border-b border-slate-200 text-left">
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Order ID
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Patient
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Imaging Type
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Ordered By
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Scheduled Date
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Priority
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Status
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody *ngIf="filteredOrders$ | async as orders">
+                <tr
+                  *ngFor="let order of orders; trackBy: trackByOrder"
+                  class="border-b border-slate-100 hover:bg-slate-50/70"
+                >
+                  <td class="py-3 px-4 font-medium">{{ order.id }}</td>
+                  <td class="py-3 px-4">
+                    <div>
+                      <p>{{ order.patient }}</p>
+                      <p class="text-sm text-slate-500">
+                        {{ order.patientId }}
+                      </p>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">{{ order.type }}</td>
+                  <td class="py-3 px-4">{{ order.orderedBy }}</td>
+                  <td class="py-3 px-4">{{ order.scheduledDate }}</td>
+                  <td class="py-3 px-4">
+                    <span
+                      class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      [ngClass]="
+                        order.priority === 'Urgent' || order.priority === 'STAT'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-slate-100 text-slate-700'
+                      "
+                    >
+                      {{ order.priority }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span
+                      class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      [ngClass]="
+                        order.status === 'Report Ready' ||
+                        order.status === 'Completed'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : order.status === 'Scheduled'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-slate-100 text-slate-700'
+                      "
+                    >
+                      {{ order.status }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4">
+                    <button
+                      *ngIf="order.status === 'Pending'"
+                      mat-flat-button
+                      color="primary"
+                      (click)="scheduleOrder(order.id)"
+                    >
+                      Schedule
+                    </button>
+
+                    <button
+                      *ngIf="order.status === 'Scheduled'"
+                      mat-flat-button
+                      color="primary"
+                      (click)="openUploadImagesDialog(order)"
+                    >
+                      Upload Images
+                    </button>
+
+                    <button
+                      *ngIf="order.status === 'Completed'"
+                      mat-flat-button
+                      color="primary"
+                      (click)="openAddReportDialog(order)"
+                    >
+                      Add Report
+                    </button>
+
+                    <button
+                      *ngIf="order.status === 'Report Ready'"
+                      mat-stroked-button
+                      (click)="viewReport()"
+                    >
+                      <mat-icon class="mr-1">visibility</mat-icon>
+                      View
+                    </button>
+                  </td>
+                </tr>
+
+                <tr *ngIf="orders.length === 0">
+                  <td colspan="8" class="text-center text-slate-500 py-10">
+                    No matching imaging orders found.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Reports">
+      <div class="py-4 space-y-4" *ngIf="reports$ | async as reports">
+        <mat-card
+          *ngFor="let report of reports; trackBy: trackByReport"
+          class="!rounded-xl !shadow-sm"
+        >
+          <div class="p-5">
+            <div
+              class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4"
+            >
+              <div>
+                <p class="font-semibold text-lg">
+                  {{ report.orderId }} - {{ report.patient }}
+                </p>
+                <p class="text-sm text-slate-600">{{ report.type }}</p>
+                <p class="text-sm text-slate-500">
+                  Scan Date: {{ report.scanDate }} • Radiologist:
+                  {{ report.radiologist }}
+                </p>
+              </div>
+              <span
+                class="text-xs font-semibold px-2.5 py-1 rounded-full h-fit bg-emerald-100 text-emerald-700"
+              >
+                {{ report.status }}
+              </span>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <h4 class="font-medium mb-2">Findings</h4>
+                <p class="text-sm text-slate-700 bg-slate-50 p-4 rounded-lg">
+                  {{ report.findings }}
+                </p>
+              </div>
+
+              <div>
+                <h4 class="font-medium mb-2">Impression</h4>
+                <p class="text-sm text-slate-700 bg-slate-50 p-4 rounded-lg">
+                  {{ report.impression }}
+                </p>
+              </div>
+
+              <div>
+                <h4 class="font-medium mb-2">Recommendations</h4>
+                <p class="text-sm text-slate-700 bg-slate-50 p-4 rounded-lg">
+                  {{ report.recommendations }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mt-5">
+              <button
+                mat-flat-button
+                color="primary"
+                (click)="printReport(report)"
+              >
+                Print Report
+              </button>
+              <button mat-stroked-button (click)="sendReportToDoctor(report)">
+                Send to Doctor
+              </button>
+              <button mat-stroked-button (click)="viewUploadedImages(report)">
+                View Images
+              </button>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Imaging Catalog">
+      <div class="py-4" *ngIf="imagingTypes$ | async as imagingTypes">
+        <mat-card class="!rounded-xl !shadow-sm">
+          <div class="overflow-x-auto p-1">
+            <table class="w-full min-w-[900px]">
+              <thead>
+                <tr class="border-b border-slate-200 text-left">
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Type ID
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Imaging Type
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Duration
+                  </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Price
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let type of imagingTypes; trackBy: trackByType"
+                  class="border-b border-slate-100 hover:bg-slate-50/70"
+                >
+                  <td class="py-3 px-4 font-medium">{{ type.id }}</td>
+                  <td class="py-3 px-4">{{ type.name }}</td>
+                  <td class="py-3 px-4">{{ type.duration }}</td>
+                  <td class="py-3 px-4">{{ type.price | currency }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</section>

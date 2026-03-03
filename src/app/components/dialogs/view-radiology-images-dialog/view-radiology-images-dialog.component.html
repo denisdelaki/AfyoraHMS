@@ -1,0 +1,59 @@
+<h2 mat-dialog-title>Uploaded Images - {{ data.report.orderId }}</h2>
+
+<mat-dialog-content>
+  <div *ngIf="data.images.length === 0" class="py-6 text-center text-slate-500">
+    No uploaded images found for this report.
+  </div>
+
+  <div *ngIf="data.images.length > 0" class="space-y-3">
+    <p class="text-sm text-slate-600">{{ data.images.length }} image(s)</p>
+
+    <div
+      class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1"
+    >
+      <div
+        *ngFor="let image of data.images; trackBy: trackByImage"
+        class="rounded-lg border border-slate-200 p-2"
+      >
+        <img
+          [src]="image.url"
+          [alt]="image.name"
+          class="w-full h-36 object-cover rounded-md border border-slate-100 cursor-pointer"
+          (click)="openPreview(image)"
+        />
+        <p class="text-sm text-slate-700 mt-2 truncate">{{ image.name }}</p>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<div
+  *ngIf="selectedImage"
+  class="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center p-4"
+  (click)="closePreview()"
+>
+  <div class="relative max-w-5xl w-full" (click)="$event.stopPropagation()">
+    <button
+      mat-icon-button
+      class="!absolute -top-12 right-0 !text-white"
+      type="button"
+      (click)="closePreview()"
+      aria-label="Close image preview"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <img
+      [src]="selectedImage.url"
+      [alt]="selectedImage.name"
+      class="w-full max-h-[80vh] object-contain rounded-lg"
+    />
+    <p class="text-sm text-slate-100 mt-2 truncate text-center">
+      {{ selectedImage.name }}
+    </p>
+  </div>
+</div>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Close</button>
+</mat-dialog-actions>

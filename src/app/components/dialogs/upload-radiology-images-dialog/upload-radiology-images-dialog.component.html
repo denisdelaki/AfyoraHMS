@@ -1,0 +1,152 @@
+<h2 mat-dialog-title>Upload Images - {{ data.order.id }}</h2>
+
+<mat-dialog-content>
+  <div class="space-y-4 pt-2">
+    <div>
+      <p class="font-medium mb-1">
+        {{ data.order.type }} - {{ data.order.patient }}
+      </p>
+      <p class="text-sm text-slate-600">
+        Clinical Notes: {{ data.order.clinicalNotes }}
+      </p>
+    </div>
+
+    <div
+      class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center"
+    >
+      <mat-icon class="!text-slate-400 !text-5xl !w-12 !h-12 mb-3"
+        >upload</mat-icon
+      >
+      <p class="text-sm text-slate-600 mb-3">
+        Select images from your device or capture using camera
+      </p>
+      <div class="flex flex-wrap justify-center gap-2">
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="triggerFileSelection(fileInput)"
+        >
+          Select Files
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="requestCameraPermissionAndCapture()"
+        >
+          Capture Using Camera
+        </button>
+      </div>
+
+      <p *ngIf="cameraPermissionError" class="mt-3 text-sm text-red-600">
+        {{ cameraPermissionError }}
+      </p>
+
+      <input
+        #fileInput
+        type="file"
+        accept="image/*"
+        multiple
+        class="hidden"
+        (change)="onFilesSelected($event)"
+      />
+
+      <div *ngIf="isCameraActive" class="mt-4 space-y-3">
+        <video
+          #cameraVideo
+          autoplay
+          playsinline
+          muted
+          class="w-full max-h-64 rounded-lg border border-slate-200 bg-black"
+        ></video>
+
+        <div class="flex flex-wrap justify-center gap-2">
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            (click)="captureImageFromCamera()"
+          >
+            Capture Photo
+          </button>
+          <button mat-stroked-button type="button" (click)="stopCameraStream()">
+            Stop Camera
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="selectedFilesCount > 0" class="space-y-3">
+      <p class="text-sm font-medium text-slate-700">
+        Selected images ({{ selectedFilesCount }})
+      </p>
+
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1"
+      >
+        <div
+          *ngFor="let image of selectedImages; let index = index"
+          class="rounded-lg border border-slate-200 p-2"
+        >
+          <img
+            [src]="image.previewUrl"
+            [alt]="image.file.name"
+            class="w-full h-32 object-cover rounded-md border border-slate-100 cursor-pointer"
+            (click)="openImagePreview(image)"
+          />
+
+          <div class="flex items-center justify-between mt-2 gap-2">
+            <p class="text-sm text-slate-700 truncate">{{ image.file.name }}</p>
+            <button
+              mat-button
+              color="warn"
+              type="button"
+              (click)="removeFile(index)"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<div
+  *ngIf="previewImage"
+  class="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center p-4"
+  (click)="closeImagePreview()"
+>
+  <div class="relative max-w-5xl w-full" (click)="$event.stopPropagation()">
+    <button
+      mat-icon-button
+      class="!absolute -top-12 right-0 !text-white"
+      type="button"
+      (click)="closeImagePreview()"
+      aria-label="Close image preview"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <img
+      [src]="previewImage.previewUrl"
+      [alt]="previewImage.file.name"
+      class="w-full max-h-[80vh] object-contain rounded-lg"
+    />
+    <p class="text-sm text-slate-100 mt-2 truncate text-center">
+      {{ previewImage.file.name }}
+    </p>
+  </div>
+</div>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="selectedFilesCount === 0"
+    (click)="submit()"
+  >
+    Upload &amp; Complete
+  </button>
+</mat-dialog-actions>
