@@ -3,3 +3,15 @@
 /* You can add global styles to this file, and also import other style files */
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.app-snackbar-success .mat-mdc-snack-bar-container {
+	--mdc-snackbar-container-color: #166534;
+	--mdc-snackbar-supporting-text-color: #f0fdf4;
+	--mat-snack-bar-button-color: #dcfce7;
+}
+
+.app-snackbar-error .mat-mdc-snack-bar-container {
+	--mdc-snackbar-container-color: #991b1b;
+	--mdc-snackbar-supporting-text-color: #fef2f2;
+	--mat-snack-bar-button-color: #fecaca;
+}

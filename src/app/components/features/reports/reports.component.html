@@ -1,1 +1,536 @@
-<p>reports works!</p>
+<div class="space-y-6">
+  <div
+    class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+  >
+    <div>
+      <h1 class="text-2xl font-semibold">Reports &amp; Analytics</h1>
+      <p class="text-gray-600">
+        Generate custom reports for different departments
+      </p>
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="mb-4 flex items-center gap-2">
+      <lucide-icon [img]="Filter" class="h-5 w-5 text-blue-600"></lucide-icon>
+      <h2 class="text-lg font-semibold">Report Configuration</h2>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div>
+        <label for="reportType" class="text-sm font-medium text-gray-700"
+          >Report Type</label
+        >
+        <select
+          id="reportType"
+          [(ngModel)]="selectedReport"
+          (ngModelChange)="onSelectionChange()"
+          class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+        >
+          <option *ngFor="let type of reportTypes" [value]="type.value">
+            {{ type.label }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label for="timeRange" class="text-sm font-medium text-gray-700"
+          >Time Range</label
+        >
+        <select
+          id="timeRange"
+          [(ngModel)]="timeRange"
+          (ngModelChange)="onSelectionChange()"
+          class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+        >
+          <option *ngFor="let range of timeRanges" [value]="range.value">
+            {{ range.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="flex items-end">
+        <button
+          type="button"
+          (click)="generateReport()"
+          class="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+        >
+          <lucide-icon [img]="FileText" class="h-4 w-4"></lucide-icon>
+          Generate Report
+        </button>
+      </div>
+    </div>
+
+    <div
+      *ngIf="timeRange === 'custom'"
+      class="mt-4 grid grid-cols-1 gap-4 rounded-lg bg-gray-50 p-4 md:grid-cols-2"
+    >
+      <div>
+        <label for="startDate" class="text-sm font-medium text-gray-700"
+          >Start Date</label
+        >
+        <input
+          id="startDate"
+          type="date"
+          [(ngModel)]="startDate"
+          (ngModelChange)="onSelectionChange()"
+          class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+        />
+      </div>
+      <div>
+        <label for="endDate" class="text-sm font-medium text-gray-700"
+          >End Date</label
+        >
+        <input
+          id="endDate"
+          type="date"
+          [(ngModel)]="endDate"
+          (ngModelChange)="onSelectionChange()"
+          class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+        />
+      </div>
+    </div>
+  </div>
+
+  <ng-container *ngIf="reportGenerated; else emptyState">
+    <div class="flex justify-end">
+      <button
+        type="button"
+        (click)="exportReport()"
+        class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
+      >
+        <lucide-icon [img]="Download" class="h-4 w-4"></lucide-icon>
+        Export Report
+      </button>
+    </div>
+
+    <ng-container *ngIf="selectedReport === 'general'">
+      <div
+        class="rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-6"
+      >
+        <h3 class="text-xl font-bold">Hospital Overview Report</h3>
+        <p class="text-gray-600">
+          Comprehensive analytics for all departments -
+          {{ getTimeRangeLabel() }}
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <div
+          *ngFor="let metric of generalMetrics"
+          class="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm"
+        >
+          <lucide-icon
+            [img]="getIconByKey(metric.iconKey)"
+            class="mx-auto mb-2 h-8 w-8"
+            [ngClass]="metric.accentClass"
+          ></lucide-icon>
+          <p class="text-sm text-gray-600">{{ metric.title }}</p>
+          <p class="text-xl font-bold">{{ metric.value }}</p>
+          <p class="text-xs text-green-600">{{ metric.change || "Total" }}</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 class="mb-4 text-lg font-semibold">Financial Performance</h3>
+          <div class="h-72">
+            <canvas
+              baseChart
+              [type]="'line'"
+              [data]="revenueAreaChartData"
+              [options]="lineChartOptions"
+            ></canvas>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 class="mb-4 text-lg font-semibold">Patient Growth</h3>
+          <div class="h-72">
+            <canvas
+              baseChart
+              [type]="'line'"
+              [data]="patientChartData"
+              [options]="lineChartOptions"
+            ></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">
+          Multi-Department Activity Trend
+        </h3>
+        <div class="h-80">
+          <canvas
+            baseChart
+            [type]="'line'"
+            [data]="departmentActivityChartData"
+            [options]="lineChartOptions"
+          ></canvas>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Detailed Summary Statistics</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[780px]">
+            <thead>
+              <tr class="border-b text-left text-sm text-gray-600">
+                <th class="px-4 py-3">Category</th>
+                <th class="px-4 py-3">Current Value</th>
+                <th class="px-4 py-3">Previous Period</th>
+                <th class="px-4 py-3">Change</th>
+                <th class="px-4 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let row of summaryStats"
+                class="border-b last:border-0 hover:bg-gray-50"
+              >
+                <td class="px-4 py-3 font-medium">{{ row.category }}</td>
+                <td class="px-4 py-3">{{ row.currentValue }}</td>
+                <td class="px-4 py-3">{{ row.previousPeriod }}</td>
+                <td
+                  class="px-4 py-3"
+                  [ngClass]="
+                    row.change.startsWith('+')
+                      ? 'text-green-600'
+                      : 'text-orange-600'
+                  "
+                >
+                  {{ row.change }}
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class="rounded px-2 py-1 text-xs"
+                    [ngClass]="getStatusClass(row.status)"
+                    >{{ row.status }}</span
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="selectedReport === 'patients'">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div
+          *ngFor="let metric of patientMetrics"
+          class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">{{ metric.title }}</p>
+              <p class="text-2xl font-semibold">{{ metric.value }}</p>
+              <p class="text-sm text-green-600">
+                {{ metric.change }} from previous period
+              </p>
+            </div>
+            <lucide-icon
+              [img]="getIconByKey(metric.iconKey)"
+              class="h-10 w-10"
+              [ngClass]="metric.accentClass"
+            ></lucide-icon>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Patient Growth Trend</h3>
+        <div class="h-96">
+          <canvas
+            baseChart
+            [type]="'line'"
+            [data]="patientChartData"
+            [options]="lineChartOptions"
+          ></canvas>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="selectedReport === 'pharmacy'">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div
+          *ngFor="let metric of pharmacyMetrics"
+          class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">{{ metric.title }}</p>
+              <p class="text-2xl font-semibold">{{ metric.value }}</p>
+              <p class="text-sm text-green-600">
+                {{ metric.change }} from previous period
+              </p>
+            </div>
+            <lucide-icon
+              [img]="getIconByKey(metric.iconKey)"
+              class="h-10 w-10"
+              [ngClass]="metric.accentClass"
+            ></lucide-icon>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Pharmacy Performance Trend</h3>
+        <div class="h-96">
+          <canvas
+            baseChart
+            [type]="'line'"
+            [data]="pharmacyChartData"
+            [options]="lineChartOptions"
+          ></canvas>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Top Dispensed Medications</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[640px]">
+            <thead>
+              <tr class="border-b text-left text-sm text-gray-600">
+                <th class="px-4 py-3">Medication</th>
+                <th class="px-4 py-3">Units Dispensed</th>
+                <th class="px-4 py-3">Revenue</th>
+                <th class="px-4 py-3">Avg. Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let med of topMedications"
+                class="border-b last:border-0 hover:bg-gray-50"
+              >
+                <td class="px-4 py-3 font-medium">{{ med.name }}</td>
+                <td class="px-4 py-3">{{ med.dispensed }}</td>
+                <td class="px-4 py-3">{{ med.revenue | currency }}</td>
+                <td class="px-4 py-3">
+                  {{
+                    med.revenue / med.dispensed
+                      | currency: "USD" : "symbol" : "1.2-2"
+                  }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="selectedReport === 'inventory'">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div
+          *ngFor="let metric of inventoryMetrics"
+          class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">{{ metric.title }}</p>
+              <p class="text-2xl font-semibold">{{ metric.value }}</p>
+            </div>
+            <lucide-icon
+              [img]="getIconByKey(metric.iconKey)"
+              class="h-10 w-10"
+              [ngClass]="metric.accentClass"
+            ></lucide-icon>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Inventory Status by Category</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[680px]">
+            <thead>
+              <tr class="border-b text-left text-sm text-gray-600">
+                <th class="px-4 py-3">Category</th>
+                <th class="px-4 py-3">In Stock</th>
+                <th class="px-4 py-3">Low Stock</th>
+                <th class="px-4 py-3">Out of Stock</th>
+                <th class="px-4 py-3">Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let item of inventoryData"
+                class="border-b last:border-0 hover:bg-gray-50"
+              >
+                <td class="px-4 py-3 font-medium">{{ item.category }}</td>
+                <td class="px-4 py-3 text-green-600">{{ item.inStock }}</td>
+                <td class="px-4 py-3 text-orange-600">{{ item.lowStock }}</td>
+                <td class="px-4 py-3 text-red-600">{{ item.outOfStock }}</td>
+                <td class="px-4 py-3">{{ item.value | currency }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Inventory Value by Category</h3>
+        <div class="h-80">
+          <canvas
+            baseChart
+            [type]="'bar'"
+            [data]="inventoryChartData"
+            [options]="barChartOptions"
+          ></canvas>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="selectedReport === 'laboratory'">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div
+          *ngFor="let metric of laboratoryMetrics"
+          class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">{{ metric.title }}</p>
+              <p class="text-2xl font-semibold">{{ metric.value }}</p>
+            </div>
+            <lucide-icon
+              [img]="getIconByKey(metric.iconKey)"
+              class="h-10 w-10"
+              [ngClass]="metric.accentClass"
+            ></lucide-icon>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Laboratory Activity Trend</h3>
+        <div class="h-96">
+          <canvas
+            baseChart
+            [type]="'bar'"
+            [data]="laboratoryChartData"
+            [options]="barChartOptions"
+          ></canvas>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="selectedReport === 'employees'">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div
+          *ngFor="let metric of employeeMetrics"
+          class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">{{ metric.title }}</p>
+              <p class="text-2xl font-semibold">{{ metric.value }}</p>
+            </div>
+            <lucide-icon
+              [img]="getIconByKey(metric.iconKey)"
+              class="h-10 w-10"
+              [ngClass]="metric.accentClass"
+            ></lucide-icon>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Employee Attendance Trend</h3>
+        <div class="h-96">
+          <canvas
+            baseChart
+            [type]="'line'"
+            [data]="employeeChartData"
+            [options]="lineChartOptions"
+          ></canvas>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Department Statistics</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[640px]">
+            <thead>
+              <tr class="border-b text-left text-sm text-gray-600">
+                <th class="px-4 py-3">Department</th>
+                <th class="px-4 py-3">Headcount</th>
+                <th class="px-4 py-3">Avg. Salary</th>
+                <th class="px-4 py-3">Turnover</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let department of employeePerformance"
+                class="border-b last:border-0 hover:bg-gray-50"
+              >
+                <td class="px-4 py-3 font-medium">
+                  {{ department.department }}
+                </td>
+                <td class="px-4 py-3">{{ department.headcount }}</td>
+                <td class="px-4 py-3">{{ department.avgSalary | currency }}</td>
+                <td class="px-4 py-3">{{ department.turnover }} employees</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="selectedReport === 'revenue'">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div
+          *ngFor="let metric of revenueMetrics"
+          class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">{{ metric.title }}</p>
+              <p class="text-2xl font-semibold">{{ metric.value }}</p>
+              <p class="text-sm text-green-600">
+                {{ metric.change }} from previous period
+              </p>
+            </div>
+            <lucide-icon
+              [img]="getIconByKey(metric.iconKey)"
+              class="h-10 w-10"
+              [ngClass]="metric.accentClass"
+            ></lucide-icon>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Revenue vs Expenses Trend</h3>
+        <div class="h-96">
+          <canvas
+            baseChart
+            [type]="'line'"
+            [data]="revenueAreaChartData"
+            [options]="lineChartOptions"
+          ></canvas>
+        </div>
+      </div>
+      <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Profit Margin</h3>
+        <div class="h-72">
+          <canvas
+            baseChart
+            [type]="'bar'"
+            [data]="profitChartData"
+            [options]="barChartOptions"
+          ></canvas>
+        </div>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <ng-template #emptyState>
+    <div
+      class="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm"
+    >
+      <lucide-icon
+        [img]="Calendar"
+        class="mx-auto mb-4 h-16 w-16 text-gray-400"
+      ></lucide-icon>
+      <h3 class="mb-2 text-lg font-semibold text-gray-900">
+        No Report Generated
+      </h3>
+      <p class="text-gray-600">
+        Select a report type and time range, then click "Generate Report" to
+        view analytics
+      </p>
+    </div>
+  </ng-template>
+</div>
