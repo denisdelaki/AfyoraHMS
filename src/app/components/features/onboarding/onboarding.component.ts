@@ -133,12 +133,15 @@ export class OnboardingComponent implements OnInit {
   }
 
   handleComplete(): void {
-    if (this.onboardingForm.invalid) {
-      this.onboardingForm.markAllAsTouched();
-      return;
-    }
-
+    console.log('Onboarding completed with data:', this.onboardingForm.value);
     this.router.navigate(['/']);
+    if (this.onboardingForm.invalid) {
+      // this.onboardingForm.markAllAsTouched();
+      // return;
+    } else {
+      // Here you would typically send the form data to your backend API to complete the onboarding process. For now, we'll just navigate to the dashboard.
+      this.router.navigate(['/']);
+    }
   }
 
   toggleModule(moduleKey: string): void {

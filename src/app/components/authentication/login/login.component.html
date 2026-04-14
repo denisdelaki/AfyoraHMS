@@ -83,6 +83,12 @@
               formControlName="email"
               required
             />
+            @if (hasControlError("email", "required")) {
+              <mat-error> Email is required </mat-error>
+            }
+            @if (hasControlError("email", "email")) {
+              <mat-error> Please enter a valid email address </mat-error>
+            }
           </mat-form-field>
         </div>
 
@@ -107,6 +113,9 @@
                 showPassword ? "visibility_off" : "visibility"
               }}</mat-icon>
             </button>
+            @if (hasControlError("password", "required")) {
+              <mat-error> Password is required </mat-error>
+            }
           </mat-form-field>
         </div>
 
@@ -125,6 +134,7 @@
         <button
           mat-flat-button
           color="primary"
+          [disabled]="loginForm.invalid"
           type="submit"
           class="w-full !py-6 text-lg rounded-lg mt-2"
         >

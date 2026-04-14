@@ -97,6 +97,11 @@
                 </p>
               </button>
             </div>
+            @if (hasControlError("facilityType", "required")) {
+              <p class="text-sm text-red-600 mt-2">
+                Please select a facility type.
+              </p>
+            }
           </div>
 
           <!-- Basic Information -->
@@ -115,6 +120,14 @@
                   formControlName="facilityName"
                   required
                 />
+                @if (hasControlError("facilityName", "required")) {
+                  <mat-error>Facility name is required.</mat-error>
+                }
+                @if (hasControlError("facilityName", "minlength")) {
+                  <mat-error
+                    >Facility name must be at least 2 characters.</mat-error
+                  >
+                }
               </mat-form-field>
 
               <mat-form-field appearance="fill" class="w-full">
@@ -125,6 +138,15 @@
                   formControlName="registrationNumber"
                   required
                 />
+                @if (hasControlError("registrationNumber", "required")) {
+                  <mat-error>Registration number is required.</mat-error>
+                }
+                @if (hasControlError("registrationNumber", "minlength")) {
+                  <mat-error
+                    >Registration number must be at least 3
+                    characters.</mat-error
+                  >
+                }
               </mat-form-field>
             </div>
 
@@ -137,6 +159,20 @@
                   formControlName="adminFirstName"
                   required
                 />
+                @if (hasControlError("adminFirstName", "required")) {
+                  <mat-error>First name is required.</mat-error>
+                }
+                @if (hasControlError("adminFirstName", "minlength")) {
+                  <mat-error
+                    >First name must be at least 2 characters.</mat-error
+                  >
+                }
+                @if (hasControlError("adminFirstName", "pattern")) {
+                  <mat-error
+                    >First name can only contain letters, spaces, apostrophes,
+                    and hyphens.</mat-error
+                  >
+                }
               </mat-form-field>
 
               <mat-form-field appearance="fill" class="w-full">
@@ -147,6 +183,20 @@
                   formControlName="adminLastName"
                   required
                 />
+                @if (hasControlError("adminLastName", "required")) {
+                  <mat-error>Last name is required.</mat-error>
+                }
+                @if (hasControlError("adminLastName", "minlength")) {
+                  <mat-error
+                    >Last name must be at least 2 characters.</mat-error
+                  >
+                }
+                @if (hasControlError("adminLastName", "pattern")) {
+                  <mat-error
+                    >Last name can only contain letters, spaces, apostrophes,
+                    and hyphens.</mat-error
+                  >
+                }
               </mat-form-field>
             </div>
 
@@ -159,6 +209,12 @@
                 formControlName="email"
                 required
               />
+              @if (hasControlError("email", "required")) {
+                <mat-error>Email address is required.</mat-error>
+              }
+              @if (hasControlError("email", "email")) {
+                <mat-error>Please enter a valid email address.</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="fill" class="w-full block">
@@ -170,6 +226,12 @@
                 formControlName="phone"
                 required
               />
+              @if (hasControlError("phone", "required")) {
+                <mat-error>Phone number is required.</mat-error>
+              }
+              @if (hasControlError("phone", "pattern")) {
+                <mat-error>Please enter a valid phone number.</mat-error>
+              }
             </mat-form-field>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -192,6 +254,18 @@
                     showPassword ? "visibility_off" : "visibility"
                   }}</mat-icon>
                 </button>
+                @if (hasControlError("password", "required")) {
+                  <mat-error>Password is required.</mat-error>
+                }
+                @if (hasControlError("password", "minlength")) {
+                  <mat-error>Password must be at least 8 characters.</mat-error>
+                }
+                @if (hasControlError("password", "pattern")) {
+                  <mat-error
+                    >Password must include uppercase, lowercase, and a
+                    number.</mat-error
+                  >
+                }
               </mat-form-field>
 
               <mat-form-field appearance="fill" class="w-full">
@@ -213,6 +287,12 @@
                     showConfirmPassword ? "visibility_off" : "visibility"
                   }}</mat-icon>
                 </button>
+                @if (hasControlError("confirmPassword", "required")) {
+                  <mat-error>Confirm password is required.</mat-error>
+                }
+                @if (hasControlError("confirmPassword", "passwordMismatch")) {
+                  <mat-error>Passwords do not match.</mat-error>
+                }
               </mat-form-field>
             </div>
 
@@ -245,11 +325,17 @@
                 </span>
               </mat-checkbox>
             </div>
+            @if (hasControlError("terms", "required")) {
+              <p class="text-sm text-red-600 -mt-4">
+                You must accept the Terms of Service and Privacy Policy.
+              </p>
+            }
 
             <button
               mat-flat-button
               color="primary"
               type="submit"
+              [disabled]="signupForm.invalid || isSubmitting"
               class="w-full h-12 text-base"
             >
               Continue to Setup

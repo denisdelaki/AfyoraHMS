@@ -408,9 +408,10 @@
             <button
               *ngIf="currentStep === steps.length - 1"
               mat-flat-button
-              type="submit"
+              type="button"
               color="primary"
               class="!rounded-lg !px-8 !py-5 font-semibold"
+              (click)="handleComplete()"
             >
               Complete Setup
             </button>

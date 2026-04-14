@@ -45,6 +45,11 @@ export class LoginComponent {
     this.showPassword = !this.showPassword;
   }
 
+  hasControlError(controlName: string, errorName: string): boolean {
+    const control = this.loginForm.get(controlName);
+    return !!control && control.touched && control.hasError(errorName);
+  }
+
   handleLogin() {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
