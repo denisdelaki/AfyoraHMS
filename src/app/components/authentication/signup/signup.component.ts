@@ -40,6 +40,8 @@ type SelectedFacilityType = FacilityType | null;
 export class SignupComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly signupDraftStorageKey = 'afyora.signupDraft';
+  private readonly organizationIdStorageKey = 'afyora.organizationId';
   private readonly namePattern = /^[a-zA-Z' -]+$/;
   private readonly phonePattern = /^\+?[0-9\s()-]{7,20}$/;
   private readonly passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
@@ -132,7 +134,28 @@ export class SignupComponent {
 
     this.isSubmitting = true;
     this.authService.signup(payload).subscribe({
-      next: () => {
+      next: (response) => {
+        localStorage.setItem(
+          this.signupDraftStorageKey,
+          JSON.stringify(payload),
+        );
+
+        const responseData = (response as { data?: unknown })?.data ?? response;
+        const signupResponse = responseData as {
+          organization_id?: number | string;
+          organizationId?: number | string;
+        };
+
+        const organizationId =
+          signupResponse.organization_id ?? signupResponse.organizationId;
+
+        if (organizationId !== null && organizationId !== undefined) {
+          localStorage.setItem(
+            this.organizationIdStorageKey,
+            String(organizationId),
+          );
+        }
+
         this.isSubmitting = false;
         this.router.navigate(['/onboarding'], {
           queryParams: { type: this.facilityType },
@@ -141,10 +164,6 @@ export class SignupComponent {
       error: () => {
         this.isSubmitting = false;
       },
-    });
-    //for testing without backend, uncomment below and comment out the above block
-    this.router.navigate(['/onboarding'], {
-      queryParams: { type: this.facilityType },
     });
   }
 

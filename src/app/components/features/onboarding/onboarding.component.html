@@ -384,15 +384,27 @@
 
           <!-- Navigation Buttons -->
           <div class="flex justify-between mt-10 pt-6 border-t border-gray-100">
-            <button
-              mat-stroked-button
-              type="button"
-              (click)="currentStep = Math.max(0, currentStep - 1)"
-              [disabled]="currentStep === 0"
-              class="!rounded-lg !px-6 !py-5 font-medium"
-            >
-              Previous
-            </button>
+            <div class="flex items-center gap-3">
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="currentStep = Math.max(0, currentStep - 1)"
+                [disabled]="currentStep === 0"
+                class="!rounded-lg !px-6 !py-5 font-medium"
+              >
+                Previous
+              </button>
+
+              <button
+                mat-stroked-button
+                type="button"
+                color="warn"
+                class="!rounded-lg !px-6 !py-5 font-medium"
+                (click)="quitOnboarding()"
+              >
+                Quit
+              </button>
+            </div>
 
             <button
               *ngIf="currentStep < steps.length - 1"

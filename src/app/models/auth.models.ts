@@ -29,6 +29,35 @@ export type SignupRequest = {
 };
 
 export type SignupResponse = {
-  organizationId: string;
-  onboardingRequired: boolean;
+  organizationId?: number | string;
+  organization_id?: number | string;
+  onboardingRequired?: boolean;
+  onboarding_required?: boolean;
+  message?: string;
+};
+
+export type FacilityOnboardingRequest = {
+  organization_id: number | string;
+  facilityType: FacilityType;
+  facilityName: string;
+  address: string;
+  city: string;
+  phone: string;
+  facilityEmail: string;
+  licenseNumber: string;
+  numberOfBeds?: number | null;
+  specialization?: string;
+  emailOtp?: string;
+  adminFirstName: string;
+  adminLastName: string;
+  adminEmail: string;
+  adminPassword: string;
+  modules: string[];
+  selectedPlan: string;
+};
+
+export type FacilityOnboardingResponse = {
+  facilityId: number | string;
+  onboardingCompleted: boolean;
+  message?: string;
 };

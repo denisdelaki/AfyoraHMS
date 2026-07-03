@@ -4,6 +4,8 @@ import { Observable, finalize, tap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import {
   ApiResponse,
+  FacilityOnboardingRequest,
+  FacilityOnboardingResponse,
   LoginRequest,
   LoginResponse,
   SignupRequest,
@@ -19,6 +21,9 @@ export class AuthService {
     accessToken: 'afyora.accessToken',
     refreshToken: 'afyora.refreshToken',
   };
+  private readonly signupDraftStorageKey = 'afyora.signupDraft';
+  private readonly organizationIdStorageKey = 'afyora.organizationId';
+  private readonly onboardingDraftStorageKey = 'afyora.onboardingDraft';
 
   login(payload: LoginRequest): Observable<ApiResponse<LoginResponse>> {
     return this.http
@@ -32,7 +37,16 @@ export class AuthService {
 
   signup(payload: SignupRequest): Observable<ApiResponse<SignupResponse>> {
     return this.http.post<ApiResponse<SignupResponse>>(
-      `${this.baseUrl}/signup`,
+      `${this.baseUrl}/signup/`,
+      payload,
+    );
+  }
+
+  completeFacilityOnboarding(
+    payload: FacilityOnboardingRequest,
+  ): Observable<ApiResponse<FacilityOnboardingResponse>> {
+    return this.http.post<ApiResponse<FacilityOnboardingResponse>>(
+      `${this.baseUrl}/onboarding/complete/`,
       payload,
     );
   }
@@ -62,6 +76,9 @@ export class AuthService {
     localStorage.removeItem(this.storageKeys.user);
     localStorage.removeItem(this.storageKeys.accessToken);
     localStorage.removeItem(this.storageKeys.refreshToken);
+    localStorage.removeItem(this.signupDraftStorageKey);
+    localStorage.removeItem(this.onboardingDraftStorageKey);
+    localStorage.removeItem(this.organizationIdStorageKey);
   }
 
   private saveLoginSession(response: unknown): void {

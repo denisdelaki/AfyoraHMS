@@ -44,6 +44,7 @@ type StoredUser = {
 export class SideBarComponent {
   private readonly authService = inject(AuthService);
   private readonly userStorageKey = 'afyora.user';
+  private readonly onboardingDraftStorageKey = 'afyora.onboardingDraft';
   readonly Menu = Menu;
   readonly X = X;
   readonly Hospital = Hospital;
@@ -75,6 +76,7 @@ export class SideBarComponent {
     const storedUser = localStorage.getItem(this.userStorageKey);
 
     if (!storedUser) {
+      this.loadUserFromOnboardingDraft();
       return;
     }
 
@@ -86,6 +88,36 @@ export class SideBarComponent {
 
       this.userName = fullName || firstName || 'User';
       this.userEmail = user.email || 'No email';
+      this.userInitials = this.buildInitials(firstName, lastName);
+    } catch {
+      this.loadUserFromOnboardingDraft();
+    }
+  }
+
+  private loadUserFromOnboardingDraft(): void {
+    const draft = localStorage.getItem(this.onboardingDraftStorageKey);
+
+    if (!draft) {
+      this.userName = 'User';
+      this.userEmail = 'No email';
+      this.userInitials = 'US';
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(draft) as {
+        formValue?: {
+          adminFirstName?: string;
+          adminLastName?: string;
+          adminEmail?: string;
+        };
+      };
+      const firstName = parsed.formValue?.adminFirstName ?? '';
+      const lastName = parsed.formValue?.adminLastName ?? '';
+      const fullName = `${firstName} ${lastName}`.trim();
+
+      this.userName = fullName || firstName || 'User';
+      this.userEmail = parsed.formValue?.adminEmail || 'No email';
       this.userInitials = this.buildInitials(firstName, lastName);
     } catch {
       this.userName = 'User';
