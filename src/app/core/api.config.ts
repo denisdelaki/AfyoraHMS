@@ -1,4 +1,6 @@
-export const API_BASE_URL = 'http://localhost:8080/api';
+import { environment } from '../../environments/environment';
+
+export const API_BASE_URL = environment.apiBaseUrl;
 
 export function apiUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;

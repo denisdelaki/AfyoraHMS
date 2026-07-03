@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, finalize, tap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import {
   ApiResponse,
@@ -14,12 +14,20 @@ import {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = apiUrl('/auth');
+  private readonly storageKeys = {
+    user: 'afyora.user',
+    accessToken: 'afyora.accessToken',
+    refreshToken: 'afyora.refreshToken',
+  };
 
   login(payload: LoginRequest): Observable<ApiResponse<LoginResponse>> {
-    return this.http.post<ApiResponse<LoginResponse>>(
-      `${this.baseUrl}/login`,
-      payload,
-    );
+    return this.http
+      .post<ApiResponse<LoginResponse>>(`${this.baseUrl}/login/`, payload)
+      .pipe(
+        tap((response) => {
+          this.saveLoginSession(response);
+        }),
+      );
   }
 
   signup(payload: SignupRequest): Observable<ApiResponse<SignupResponse>> {
@@ -39,6 +47,54 @@ export class AuthService {
   }
 
   logout(): Observable<ApiResponse<null>> {
-    return this.http.post<ApiResponse<null>>(`${this.baseUrl}/logout`, {});
+    return this.http.post<ApiResponse<null>>(`${this.baseUrl}/logout`, {}).pipe(
+      finalize(() => {
+        this.clearAuthData();
+      }),
+    );
+  }
+
+  clearAuthData(): void {
+    if (!this.isStorageAvailable()) {
+      return;
+    }
+
+    localStorage.removeItem(this.storageKeys.user);
+    localStorage.removeItem(this.storageKeys.accessToken);
+    localStorage.removeItem(this.storageKeys.refreshToken);
+  }
+
+  private saveLoginSession(response: unknown): void {
+    if (!this.isStorageAvailable()) {
+      return;
+    }
+
+    const payload = (response as { data?: unknown })?.data ?? response;
+    const session = payload as {
+      accessToken?: string;
+      access_token?: string;
+      refreshToken?: string;
+      refresh_token?: string;
+      user?: unknown;
+    };
+
+    const accessToken = session.accessToken ?? session.access_token;
+    const refreshToken = session.refreshToken ?? session.refresh_token;
+
+    if (accessToken) {
+      localStorage.setItem(this.storageKeys.accessToken, accessToken);
+    }
+
+    if (refreshToken) {
+      localStorage.setItem(this.storageKeys.refreshToken, refreshToken);
+    }
+
+    if (session.user) {
+      localStorage.setItem(this.storageKeys.user, JSON.stringify(session.user));
+    }
+  }
+
+  private isStorageAvailable(): boolean {
+    return typeof localStorage !== 'undefined';
   }
 }

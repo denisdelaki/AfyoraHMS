@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services';
 import { LoginRequest } from '../../../models';
 
@@ -24,6 +25,7 @@ import { LoginRequest } from '../../../models';
     MatInputModule,
     MatIconModule,
     MatCheckboxModule,
+    MatSnackBarModule,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
@@ -31,6 +33,7 @@ import { LoginRequest } from '../../../models';
 export class LoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly snackBar = inject(MatSnackBar);
   showPassword = false;
   isSubmitting = false;
   readonly loginForm = this.fb.group({
@@ -64,18 +67,46 @@ export class LoginComponent {
 
     this.isSubmitting = true;
     this.authService.login(payload).subscribe({
-      next: () => {
+      next: (resp) => {
+        console.log('Login successful:', resp);
+
+        let firstName = 'User';
+        const storedUser = localStorage.getItem('afyora.user');
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser) as {
+              firstName?: string;
+              first_name?: string;
+            };
+            firstName = user.firstName || user.first_name || 'User';
+          } catch {
+            firstName = 'User';
+          }
+        }
+
+        this.snackBar.open(`Hello, ${firstName} welcome back!`, 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+
         this.isSubmitting = false;
-        this.router.navigate(['/']);
+        this.router.navigate(['/dashboard']);
       },
-      error: () => {
+      error: (err) => {
+        const errorMessage =
+          err?.details?.non_field_errors?.[0] ||
+          err?.error?.message ||
+          'Login failed. Please try again.';
+
+        console.error('Login failed:', errorMessage);
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 4000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
         this.isSubmitting = false;
       },
     });
-
-    //for testing without backend, uncomment below and comment out the above block
-    this.router.navigate(['/']);
-
-    //for testing without backend, uncomment below and comment out the above block
   }
 }
