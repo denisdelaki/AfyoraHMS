@@ -133,19 +133,16 @@ export class EmployeeService {
 
   constructor() {}
 
-  fetchEmployees(facilityId?: string | number): Observable<Employee[]> {
+  fetchEmployees(facilityId: string | number): Observable<Employee[]> {
     const params = this.buildFacilityParams(facilityId);
 
     return this.http
-      .get<ApiResponse<Employee[] | PaginatedResponse<Employee>>>(
-        this.baseUrl,
-        {
-          headers: this.buildAuthHeaders(),
-          params,
-        },
-      )
+      .get<ApiResponse<Employee[]>>(this.baseUrl, {
+        headers: this.buildAuthHeaders(),
+        params,
+      })
       .pipe(
-        map((response) => this.normalizeEmployeeList(response.data)),
+        map((response) => this.normalizeEmployeeList(response.results || [])),
         tap((employees) => this.employees.set(employees)),
       );
   }

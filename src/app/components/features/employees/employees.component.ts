@@ -37,11 +37,19 @@ import {
   styleUrl: './employees.component.css',
 })
 export class EmployeesComponent implements OnInit {
+  totalStaff = signal(0);
+  doctorsCount = signal(0);
+  onDutyTodayCount = signal(0);
+  monthlyPayroll = signal('0K');
+
+  currentTimeOfDay = signal(
+    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  );
   private employeeService = inject(EmployeeService);
   private dialog = inject(MatDialog);
 
   // Expose signal data
-  employees = this.employeeService.employees;
+  employees: any[] = [];
   shifts = this.employeeService.shifts;
   attendance = this.employeeService.attendance;
 
@@ -58,7 +66,7 @@ export class EmployeesComponent implements OnInit {
   // Computed filtered list
   filteredEmployees = computed(() => {
     const term = this.searchTerm().toLowerCase();
-    return this.employees().filter(
+    return this.employees.filter(
       (emp) =>
         emp.name.toLowerCase().includes(term) ||
         emp.role.toLowerCase().includes(term) ||
@@ -66,21 +74,20 @@ export class EmployeesComponent implements OnInit {
     );
   });
 
-  // Computed stats
-  totalStaff = computed(() => this.employees().length);
-  doctorsCount = computed(
-    () => this.employees().filter((e) => e.role.includes('Dr.')).length,
-  );
-  onDutyTodayCount = computed(
-    () => this.employees().filter((e) => e.shift === 'Morning').length,
-  );
-  monthlyPayroll = computed(() => {
-    const sum = this.employees().reduce((acc, emp) => acc + emp.salary, 0);
-    return Math.round(sum / 12 / 1000) + 'K';
-  });
-
   ngOnInit(): void {
-    this.employeeService.fetchEmployees().subscribe({
+    this.fetchEmployees();
+  }
+
+  fetchEmployees() {
+    const facilityId =
+      JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
+    this.employeeService.fetchEmployees(facilityId).subscribe({
+      next: (employees) => {
+        this.employees = employees;
+        this.employeeService.employees.set(employees);
+
+        this.setEmployeesData(employees);
+      },
       error: (error) => {
         console.error(
           'Failed to load employees from API. Using local fallback data.',
@@ -88,6 +95,51 @@ export class EmployeesComponent implements OnInit {
         );
       },
     });
+  }
+
+  private setEmployeesData(employees: Employee[]): void {
+    // Computed stats
+    this.totalStaff.set(employees.length);
+    this.doctorsCount.set(
+      employees.filter((e) => e.role.toLowerCase().includes('doctor')).length,
+    );
+
+    const currentShift =
+      this.currentTimeOfDay() < '14:00'
+        ? 'Morning'
+        : this.currentTimeOfDay() >= '22:00'
+          ? 'Night'
+          : 'Evening';
+    this.onDutyTodayCount.set(
+      employees.filter((e) => e.shift === currentShift).length,
+    );
+
+    const sum = employees.reduce(
+      (acc, emp) => acc + Number(emp.salary ?? 0),
+      0,
+    );
+    this.monthlyPayroll.set(sum.toString() + 'K');
+
+    //set the shifts and attendance signals
+    this.employeeService.shifts.set(
+      Array.from(new Set(employees.map((e) => e.shift))).map((shift) => ({
+        shift,
+        time: '',
+        employees: employees
+          .filter((e) => e.shift === shift)
+          .map((e) => e.name),
+      })),
+    );
+
+    this.employeeService.attendance.set(
+      employees.map((e) => ({
+        date: new Date().toISOString().slice(0, 10),
+        employee: e.name,
+        checkIn: '',
+        checkOut: '',
+        status: 'Present',
+      })),
+    );
   }
 
   openAddEmployeeDialog() {
@@ -99,6 +151,9 @@ export class EmployeesComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: Omit<Employee, 'id'>) => {
       if (result) {
         this.employeeService.addEmployee(result).subscribe({
+          next: () => {
+            this.fetchEmployees();
+          },
           error: (error) => {
             console.error('Failed to create employee via API.', error);
           },

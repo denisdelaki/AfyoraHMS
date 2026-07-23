@@ -26,8 +26,8 @@
       <mat-form-field appearance="fill">
         <mat-label>Role</mat-label>
         <mat-select formControlName="role">
-          <mat-option *ngFor="let role of roles" [value]="role">{{
-            role
+          <mat-option *ngFor="let role of roles" [value]="role.value">{{
+            role.label
           }}</mat-option>
         </mat-select>
         <mat-error *ngIf="employeeForm.get('role')?.hasError('required')"
@@ -37,11 +37,13 @@
 
       <mat-form-field appearance="fill">
         <mat-label>Department</mat-label>
-        <input
-          matInput
-          formControlName="department"
-          placeholder="e.g., Cardiology"
-        />
+        <mat-select formControlName="department">
+          <mat-option
+            *ngFor="let department of departments"
+            [value]="department.id"
+            >{{ department.name }}</mat-option
+          >
+        </mat-select>
         <mat-error *ngIf="employeeForm.get('department')?.hasError('required')"
           >Required</mat-error
         >

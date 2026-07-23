@@ -58,7 +58,7 @@
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm text-gray-600 mb-1">Monthly Payroll</p>
-          <p class="text-2xl font-semibold">${{ monthlyPayroll() }}</p>
+          <p class="text-2xl font-semibold">Kes &nbsp;{{ monthlyPayroll() }}</p>
         </div>
         <div class="bg-purple-500 p-3 rounded-lg">
           <lucide-icon
@@ -121,7 +121,7 @@
               </thead>
               <tbody>
                 <tr
-                  *ngFor="let employee of filteredEmployees()"
+                  *ngFor="let employee of employees"
                   class="border-b last:border-0 hover:bg-gray-50 transition-colors"
                 >
                   <td class="py-3 px-4 font-medium">{{ employee.id }}</td>
@@ -143,7 +143,7 @@
                     </span>
                   </td>
                 </tr>
-                <tr *ngIf="filteredEmployees().length === 0">
+                <tr *ngIf="employees.length === 0">
                   <td colspan="7" class="py-8 text-center text-gray-500">
                     No employees found matching "{{ searchTerm() }}"
                   </td>
@@ -267,7 +267,7 @@
               </thead>
               <tbody>
                 <tr
-                  *ngFor="let employee of employees()"
+                  *ngFor="let employee of employees"
                   class="border-b last:border-0 hover:bg-gray-50 transition-colors"
                 >
                   <td class="py-3 px-4 font-medium">{{ employee.name }}</td>
