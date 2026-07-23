@@ -67,7 +67,7 @@ export class AddEmployeeDialogComponent {
         department: formValue.department,
         email: formValue.email,
         phone: formValue.phone,
-        joinDate: formValue.joinDate,
+        joinDate: this.normalizeJoinDate(formValue.joinDate),
         salary: Number(formValue.salary),
         status: 'Active',
         shift: formValue.shift.split(' ')[0], // e.g. "Morning"
@@ -76,5 +76,22 @@ export class AddEmployeeDialogComponent {
     } else {
       this.employeeForm.markAllAsTouched();
     }
+  }
+
+  private normalizeJoinDate(value: unknown): string {
+    if (value instanceof Date) {
+      return value.toISOString().slice(0, 10);
+    }
+
+    if (typeof value === 'string' && value.trim().length > 0) {
+      const parsedDate = new Date(value);
+      if (!Number.isNaN(parsedDate.getTime())) {
+        return parsedDate.toISOString().slice(0, 10);
+      }
+
+      return value;
+    }
+
+    return new Date().toISOString().slice(0, 10);
   }
 }

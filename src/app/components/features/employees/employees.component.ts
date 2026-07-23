@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, OnInit, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
@@ -36,7 +36,7 @@ import {
   templateUrl: './employees.component.html',
   styleUrl: './employees.component.css',
 })
-export class EmployeesComponent {
+export class EmployeesComponent implements OnInit {
   private employeeService = inject(EmployeeService);
   private dialog = inject(MatDialog);
 
@@ -79,6 +79,17 @@ export class EmployeesComponent {
     return Math.round(sum / 12 / 1000) + 'K';
   });
 
+  ngOnInit(): void {
+    this.employeeService.fetchEmployees().subscribe({
+      error: (error) => {
+        console.error(
+          'Failed to load employees from API. Using local fallback data.',
+          error,
+        );
+      },
+    });
+  }
+
   openAddEmployeeDialog() {
     const dialogRef = this.dialog.open(AddEmployeeDialogComponent, {
       width: '600px',
@@ -87,7 +98,11 @@ export class EmployeesComponent {
 
     dialogRef.afterClosed().subscribe((result: Omit<Employee, 'id'>) => {
       if (result) {
-        this.employeeService.addEmployee(result);
+        this.employeeService.addEmployee(result).subscribe({
+          error: (error) => {
+            console.error('Failed to create employee via API.', error);
+          },
+        });
       }
     });
   }
