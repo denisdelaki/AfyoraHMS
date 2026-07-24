@@ -12,11 +12,13 @@ import { AppointmentsService } from '../../../services';
 })
 export class AppointmentsComponent implements OnInit {
   private readonly appointmentsService = inject(AppointmentsService);
+  private readonly facilityId =
+    JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
 
   appointments: Appointment[] = [];
 
   ngOnInit(): void {
-    this.appointmentsService.getAppointments().subscribe({
+    this.appointmentsService.getAppointments(this.facilityId).subscribe({
       next: ({ data }) => {
         this.appointments = data;
       },

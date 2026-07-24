@@ -289,22 +289,24 @@ export class PatientsComponent implements OnInit {
       department: formValue.department,
     };
 
-    this.appointmentsService.createAppointment(requestPayload).subscribe({
-      next: ({ data }) => {
-        this.appointments = [
-          this.mapServiceAppointment(data),
-          ...this.appointments.filter(
-            (entry) =>
-              entry.patientId !== data.patientId ||
-              entry.date !== data.date ||
-              entry.time !== data.time,
-          ),
-        ];
-      },
-      error: () => {
-        this.addAppointmentLocally(formValue);
-      },
-    });
+    this.appointmentsService
+      .createAppointment(this.facilityId, requestPayload)
+      .subscribe({
+        next: ({ data }) => {
+          this.appointments = [
+            this.mapServiceAppointment(data),
+            ...this.appointments.filter(
+              (entry) =>
+                entry.patientId !== data.patientId ||
+                entry.date !== data.date ||
+                entry.time !== data.time,
+            ),
+          ];
+        },
+        error: () => {
+          this.addAppointmentLocally(formValue);
+        },
+      });
   }
 
   private addAppointmentLocally(formValue: CreateAppointmentPayload): void {
@@ -409,7 +411,7 @@ export class PatientsComponent implements OnInit {
   }
 
   private loadAppointments(): void {
-    this.appointmentsService.getAppointments().subscribe({
+    this.appointmentsService.getAppointments(this.facilityId).subscribe({
       next: ({ data }) => {
         this.appointments = data.map((appointment) =>
           this.mapServiceAppointment(appointment),
