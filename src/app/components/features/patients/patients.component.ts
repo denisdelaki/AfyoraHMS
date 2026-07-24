@@ -45,6 +45,7 @@ import {
   styleUrl: './patients.component.css',
 })
 export class PatientsComponent implements OnInit {
+  facilityId: string | number = '';
   private readonly dialog = inject(MatDialog);
   private readonly patientsService = inject(PatientsService);
   private readonly appointmentsService = inject(AppointmentsService);
@@ -62,71 +63,71 @@ export class PatientsComponent implements OnInit {
   searchTerm = '';
 
   patients: Patient[] = [
-    {
-      id: 'P001',
-      name: 'John Smith',
-      age: 45,
-      gender: 'Male',
-      phone: '+1 555-0101',
-      email: 'john.smith@email.com',
-      bloodGroup: 'O+',
-      lastVisit: '2024-02-20',
-      status: 'Active',
-    },
-    {
-      id: 'P002',
-      name: 'Sarah Johnson',
-      age: 32,
-      gender: 'Female',
-      phone: '+1 555-0102',
-      email: 'sarah.j@email.com',
-      bloodGroup: 'A+',
-      lastVisit: '2024-02-18',
-      status: 'Active',
-    },
-    {
-      id: 'P003',
-      name: 'Michael Brown',
-      age: 58,
-      gender: 'Male',
-      phone: '+1 555-0103',
-      email: 'm.brown@email.com',
-      bloodGroup: 'B+',
-      lastVisit: '2024-02-15',
-      status: 'Admitted',
-    },
-    {
-      id: 'P004',
-      name: 'Emma Davis',
-      age: 28,
-      gender: 'Female',
-      phone: '+1 555-0104',
-      email: 'emma.d@email.com',
-      bloodGroup: 'AB+',
-      lastVisit: '2024-02-22',
-      status: 'Active',
-    },
+    // {
+    //   id: 'P001',
+    //   name: 'John Smith',
+    //   age: 45,
+    //   gender: 'Male',
+    //   phone: '+1 555-0101',
+    //   email: 'john.smith@email.com',
+    //   bloodGroup: 'O+',
+    //   lastVisit: '2024-02-20',
+    //   status: 'Active',
+    // },
+    // {
+    //   id: 'P002',
+    //   name: 'Sarah Johnson',
+    //   age: 32,
+    //   gender: 'Female',
+    //   phone: '+1 555-0102',
+    //   email: 'sarah.j@email.com',
+    //   bloodGroup: 'A+',
+    //   lastVisit: '2024-02-18',
+    //   status: 'Active',
+    // },
+    // {
+    //   id: 'P003',
+    //   name: 'Michael Brown',
+    //   age: 58,
+    //   gender: 'Male',
+    //   phone: '+1 555-0103',
+    //   email: 'm.brown@email.com',
+    //   bloodGroup: 'B+',
+    //   lastVisit: '2024-02-15',
+    //   status: 'Admitted',
+    // },
+    // {
+    //   id: 'P004',
+    //   name: 'Emma Davis',
+    //   age: 28,
+    //   gender: 'Female',
+    //   phone: '+1 555-0104',
+    //   email: 'emma.d@email.com',
+    //   bloodGroup: 'AB+',
+    //   lastVisit: '2024-02-22',
+    //   status: 'Active',
+    // },
   ];
 
   appointments: Appointment[] = [
-    {
-      patientId: 'P001',
-      patientName: 'John Smith',
-      date: '2024-02-26',
-      time: '10:00 AM',
-      doctor: 'Dr. Emily Chen',
-      department: 'Cardiology',
-      status: 'Scheduled',
-    },
-    {
-      patientId: 'P002',
-      patientName: 'Sarah Johnson',
-      date: '2024-02-28',
-      time: '02:00 PM',
-      doctor: 'Dr. James Wilson',
-      department: 'General',
-      status: 'Scheduled',
-    },
+    // {
+    //   patientId: 'P001',
+    //   patientName: 'John Smith',
+    //   date: '2024-02-26',
+    //   time: '10:00 AM',
+    //   doctor: 'Dr. Emily Chen',
+    //   department: 'Cardiology',
+    //   status: 'Scheduled',
+    // },
+    // {
+    //   patientId: 'P002',
+    //   patientName: 'Sarah Johnson',
+    //   date: '2024-02-28',
+    //   time: '02:00 PM',
+    //   doctor: 'Dr. James Wilson',
+    //   department: 'General',
+    //   status: 'Scheduled',
+    // },
   ];
 
   visitHistory: VisitHistory[] = [
@@ -151,6 +152,8 @@ export class PatientsComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.facilityId =
+      JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
     this.loadPatients();
     this.loadAppointments();
   }
@@ -163,8 +166,9 @@ export class PatientsComponent implements OnInit {
 
     return this.patients.filter(
       (patient) =>
-        patient.name.toLowerCase().includes(term) ||
-        patient.id.toLowerCase().includes(term),
+        `${patient.firstName} ${patient.lastName}`
+          .toLowerCase()
+          .includes(term) || patient.id.toLowerCase().includes(term),
     );
   }
 
@@ -189,6 +193,7 @@ export class PatientsComponent implements OnInit {
       }
 
       this.addPatient(result);
+      this.loadPatients();
     });
   }
 
@@ -223,6 +228,10 @@ export class PatientsComponent implements OnInit {
   }
 
   private addPatient(formValue: RegisterPatientPayload): void {
+    if (!this.facilityId) {
+      return;
+    }
+
     const requestPayload: RegisterPatientRequest = {
       firstName: formValue.firstName,
       lastName: formValue.lastName,
@@ -235,6 +244,7 @@ export class PatientsComponent implements OnInit {
       address: formValue.address,
       emergencyContact: formValue.emergencyContact,
       medicalHistory: formValue.medicalHistory,
+      facilityId: this.facilityId,
     };
 
     this.patientsService.registerPatient(requestPayload).subscribe({
@@ -256,7 +266,8 @@ export class PatientsComponent implements OnInit {
     this.patients = [
       {
         id: nextId,
-        name: `${formValue.firstName} ${formValue.lastName}`.trim(),
+        firstName: formValue.firstName,
+        lastName: formValue.lastName,
         age: formValue.age ?? 0,
         gender: formValue.gender ?? '',
         phone: formValue.phone ?? '',
@@ -307,7 +318,8 @@ export class PatientsComponent implements OnInit {
     this.appointments = [
       {
         patientId: patient.id,
-        patientName: patient.name,
+        firstName: patient.firstName,
+        lastName: patient.lastName,
         date: formValue.date.toISOString().slice(0, 10),
         time: formValue.time,
         doctor: formValue.doctor,
@@ -334,18 +346,21 @@ export class PatientsComponent implements OnInit {
       address: formValue.address,
       emergencyContact: formValue.emergencyContact,
       medicalHistory: formValue.medicalHistory,
+      facilityId: this.facilityId,
     };
 
-    this.patientsService.updatePatient(patientId, updatePayload).subscribe({
-      next: ({ data }) => {
-        this.patients = this.patients.map((patient) =>
-          patient.id === patientId ? data : patient,
-        );
-      },
-      error: () => {
-        this.updatePatientLocally(patientId, formValue);
-      },
-    });
+    this.patientsService
+      .updatePatient(patientId, updatePayload, this.facilityId)
+      .subscribe({
+        next: (data) => {
+          this.patients = this.patients.map((patient) =>
+            patient.id === patientId ? { ...patient, ...data } : patient,
+          );
+        },
+        error: () => {
+          this.updatePatientLocally(patientId, formValue);
+        },
+      });
   }
 
   private updatePatientLocally(
@@ -359,12 +374,18 @@ export class PatientsComponent implements OnInit {
 
       return {
         ...patient,
-        name: `${formValue.firstName} ${formValue.lastName}`.trim(),
+        firstName: formValue.firstName ?? '',
+        lastName: formValue.lastName ?? '',
         age: formValue.age ?? 0,
         gender: formValue.gender ?? '',
         phone: formValue.phone ?? '',
         email: formValue.email ?? '',
         bloodGroup: formValue.bloodGroup ?? '',
+        dob: formValue.dob ?? '',
+        address: formValue.address ?? '',
+        emergencyContact: formValue.emergencyContact ?? '',
+        medicalHistory: formValue.medicalHistory ?? '',
+        facilityId: this.facilityId,
       };
     });
   }
@@ -378,9 +399,10 @@ export class PatientsComponent implements OnInit {
   }
 
   private loadPatients(): void {
-    this.patientsService.getPatients().subscribe({
-      next: ({ data }) => {
-        this.patients = data.items;
+    this.patientsService.getPatients(this.facilityId).subscribe({
+      next: (data) => {
+        console.log('Fetched patients from API:', data);
+        this.patients = data;
       },
       error: () => {},
     });
@@ -400,7 +422,8 @@ export class PatientsComponent implements OnInit {
   private mapServiceAppointment(appointment: ServiceAppointment): Appointment {
     return {
       patientId: appointment.patientId,
-      patientName: appointment.patientName,
+      firstName: appointment.firstName,
+      lastName: appointment.lastName,
       date: appointment.date,
       time: appointment.time,
       doctor: appointment.doctor,

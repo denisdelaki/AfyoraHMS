@@ -24,9 +24,9 @@
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Gender</mat-label>
         <mat-select formControlName="gender" placeholder="Select gender">
-          <mat-option value="Male">Male</mat-option>
-          <mat-option value="Female">Female</mat-option>
-          <mat-option value="Other">Other</mat-option>
+          <mat-option value="male">Male</mat-option>
+          <mat-option value="female">Female</mat-option>
+          <mat-option value="other">Other</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
@@ -37,6 +37,7 @@
         <input
           matInput
           type="tel"
+          maxlength="12"
           formControlName="phone"
           placeholder="+1 555-0000"
         />
@@ -55,8 +56,12 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Blood Group</mat-label>
-        <input matInput formControlName="bloodGroup" placeholder="O+" />
+        <mat-label>Select blood group</mat-label>
+        <mat-select formControlName="bloodGroup">
+          <mat-option *ngFor="let group of bloodGroups" [value]="group.value">
+            {{ group.label }}
+          </mat-option>
+        </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full">
@@ -84,6 +89,7 @@
       <mat-label>Emergency Contact</mat-label>
       <input
         matInput
+        maxlength="12"
         formControlName="emergencyContact"
         placeholder="Name &amp; Phone"
       />

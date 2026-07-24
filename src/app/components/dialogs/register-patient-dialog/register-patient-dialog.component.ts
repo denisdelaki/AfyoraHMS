@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -31,11 +32,22 @@ interface RegisterPatientDialogData {
     MatDatepickerModule,
     MatIconModule,
     MatSelectModule,
+    CommonModule,
   ],
   templateUrl: './register-patient-dialog.component.html',
   styleUrl: './register-patient-dialog.component.css',
 })
 export class RegisterPatientDialogComponent {
+  bloodGroups = [
+    { value: 'A+', label: 'A+' },
+    { value: 'A-', label: 'A-' },
+    { value: 'B+', label: 'B+' },
+    { value: 'B-', label: 'B-' },
+    { value: 'O+', label: 'O+' },
+    { value: 'O-', label: 'O-' },
+    { value: 'AB+', label: 'AB+' },
+    { value: 'AB-', label: 'AB-' },
+  ];
   readonly today = new Date();
   private readonly formBuilder = inject(FormBuilder);
   private readonly data = inject<RegisterPatientDialogData | null>(
@@ -66,15 +78,15 @@ export class RegisterPatientDialogComponent {
   });
 
   constructor() {
+    console.log('Patient to edit:', this.patientToEdit);
+    console.log('data:', this.data);
     if (!this.patientToEdit) {
       return;
     }
 
-    const [firstName, ...lastNameParts] = this.patientToEdit.name.split(' ');
-
     this.registerForm.patchValue({
-      firstName: firstName ?? '',
-      lastName: lastNameParts.join(' '),
+      firstName: this.patientToEdit.firstName ?? '',
+      lastName: this.patientToEdit.lastName ?? '',
       age: this.patientToEdit.age,
       gender: this.patientToEdit.gender,
       phone: this.patientToEdit.phone,

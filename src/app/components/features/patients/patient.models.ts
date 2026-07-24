@@ -7,7 +7,8 @@ import {
 export type Patient = PatientModel;
 export type Appointment = {
   patientId: string;
-  patientName: string;
+  lastName: string;
+  firstName: string;
   date: string;
   time: string;
   doctor: string;

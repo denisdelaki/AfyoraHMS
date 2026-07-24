@@ -16,7 +16,9 @@
         class="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
       >
         <div>
-          <p class="font-semibold">{{ appointment.patientName }}</p>
+          <p class="font-semibold">
+            {{ appointment.firstName }} {{ appointment.lastName }}
+          </p>
           <p class="text-sm text-slate-600">
             {{ appointment.date }} • {{ appointment.time }} •
             {{ appointment.department }}

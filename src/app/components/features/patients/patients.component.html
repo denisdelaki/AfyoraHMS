@@ -50,7 +50,9 @@
 
         <ng-container matColumnDef="name">
           <th mat-header-cell *matHeaderCellDef>Name</th>
-          <td mat-cell *matCellDef="let patient">{{ patient.name }}</td>
+          <td mat-cell *matCellDef="let patient">
+            {{ patient.firstName + " " + patient.lastName }}
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="ageGender">
@@ -85,7 +87,7 @@
           <td mat-cell *matCellDef="let patient">
             <mat-chip-set>
               <mat-chip [class]="getStatusClass(patient.status)">{{
-                patient.status
+                patient.is_active ? "Active" : "Inactive"
               }}</mat-chip>
             </mat-chip-set>
           </td>

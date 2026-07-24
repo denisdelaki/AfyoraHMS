@@ -6,7 +6,7 @@
       <mat-select formControlName="patientId">
         @for (patient of data.patients; track patient.id) {
           <mat-option [value]="patient.id">
-            {{ patient.name }} ({{ patient.id }})
+            {{ patient.firstName }} {{ patient.lastName }} ({{ patient.id }})
           </mat-option>
         }
       </mat-select>

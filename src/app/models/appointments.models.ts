@@ -8,7 +8,8 @@ export type AppointmentStatus =
 export type Appointment = {
   id: string;
   patientId: string;
-  patientName: string;
+  firstName: string;
+  lastName: string;
   date: string;
   time: string;
   doctor: string;
