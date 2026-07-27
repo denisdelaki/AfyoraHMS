@@ -13,7 +13,7 @@
   @for (appointment of appointments; track appointment.id) {
     <mat-card class="p-5">
       <div
-        class="flex flex-col md:flex-row md:items-center md:justify-between gap-2"
+        class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
       >
         <div>
           <p class="font-semibold">
@@ -24,8 +24,39 @@
             {{ appointment.department }}
           </p>
         </div>
-        <div class="text-sm text-slate-600">
-          {{ appointment.doctor }} • {{ appointment.status }}
+
+        <div class="flex flex-col items-start md:items-end gap-2">
+          <div class="text-sm text-slate-600">
+            {{ appointment.doctor }}
+          </div>
+
+          <span
+            class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
+            [class]="statusClasses(appointment.status)"
+          >
+            Status: {{ appointment.status }}
+          </span>
+
+          <div class="flex flex-wrap gap-2">
+            <button
+              mat-stroked-button
+              color="warn"
+              type="button"
+              (click)="cancelAppointment(appointment)"
+              [disabled]="!canCancel(appointment)"
+            >
+              Cancel
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="rescheduleAppointment(appointment)"
+              [disabled]="!canReschedule(appointment)"
+            >
+              Reschedule
+            </button>
+          </div>
         </div>
       </div>
     </mat-card>

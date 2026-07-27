@@ -36,19 +36,27 @@
       <div class="space-y-3 py-4">
         @for (
           appointment of data.appointments;
-          track appointment.date + appointment.time
+          track appointment.date +
+            appointment.time +
+            appointment.doctor +
+            $index
         ) {
           <mat-card class="!p-4 !shadow-none !border !border-gray-200">
             <div class="flex justify-between items-start gap-4">
               <div>
-                <p class="font-medium">{{ appointment.doctor }}</p>
+                <p class="font-medium">
+                  {{ displayDoctor(appointment.doctor) }}
+                </p>
                 <p class="text-sm text-gray-600">
-                  {{ appointment.department }}
+                  {{ displayDepartment(appointment.department) }}
                 </p>
               </div>
-              <mat-chip-set>
-                <mat-chip>{{ appointment.status }}</mat-chip>
-              </mat-chip-set>
+              <span
+                class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
+                [class]="statusClasses(appointment.status)"
+              >
+                Status: {{ appointment.status }}
+              </span>
             </div>
             <div class="mt-3 flex items-center gap-3 text-sm text-gray-600">
               <span class="flex items-center gap-1">
@@ -57,6 +65,26 @@
               </span>
               <span>{{ appointment.time }}</span>
             </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button
+                mat-stroked-button
+                color="warn"
+                type="button"
+                (click)="cancelAppointment(appointment)"
+                [disabled]="!canCancel(appointment)"
+              >
+                Cancel
+              </button>
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="rescheduleAppointment(appointment)"
+                [disabled]="!canReschedule(appointment)"
+              >
+                Reschedule
+              </button>
+            </div>
           </mat-card>
         }
       </div>
@@ -64,7 +92,10 @@
 
     <mat-tab label="Visit History">
       <div class="space-y-3 py-4">
-        @for (visit of data.visitHistory; track visit.date + visit.doctor) {
+        @for (
+          visit of data.visitHistory;
+          track visit.date + visit.doctor + $index
+        ) {
           <mat-card class="!p-4 !shadow-none !border !border-gray-200">
             <div class="flex justify-between items-start mb-2 gap-4">
               <p class="font-medium">{{ visit.date }}</p>

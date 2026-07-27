@@ -98,7 +98,6 @@ export class AddEmployeeDialogComponent implements OnInit {
   onSubmit(): void {
     if (this.employeeForm.valid) {
       const formValue = this.employeeForm.value;
-      console.log('Form Value:', formValue);
       const newEmployee = {
         name: `${formValue.firstName} ${formValue.lastName}`,
         role: formValue.role,

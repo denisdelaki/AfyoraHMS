@@ -292,9 +292,24 @@ export class PatientsComponent implements OnInit {
     this.appointmentsService
       .createAppointment(this.facilityId, requestPayload)
       .subscribe({
-        next: ({ data }) => {
+        next: (data: any) => {
+          const appointment: ServiceAppointment = {
+            id: data.id,
+            patientId: data.patientId,
+            firstName:
+              this.patients.find((patient) => patient.id === data.patientId)
+                ?.firstName ?? '',
+            lastName:
+              this.patients.find((patient) => patient.id === data.patientId)
+                ?.lastName ?? '',
+            date: data.date,
+            time: data.time,
+            doctor: data.doctor,
+            department: data.department,
+            status: data.status,
+          };
           this.appointments = [
-            this.mapServiceAppointment(data),
+            this.mapServiceAppointment(appointment),
             ...this.appointments.filter(
               (entry) =>
                 entry.patientId !== data.patientId ||
@@ -403,7 +418,6 @@ export class PatientsComponent implements OnInit {
   private loadPatients(): void {
     this.patientsService.getPatients(this.facilityId).subscribe({
       next: (data) => {
-        console.log('Fetched patients from API:', data);
         this.patients = data;
       },
       error: () => {},
@@ -412,8 +426,9 @@ export class PatientsComponent implements OnInit {
 
   private loadAppointments(): void {
     this.appointmentsService.getAppointments(this.facilityId).subscribe({
-      next: ({ data }) => {
-        this.appointments = data.map((appointment) =>
+      next: (data) => {
+        const appointmentsData = data || [];
+        this.appointments = appointmentsData.map((appointment) =>
           this.mapServiceAppointment(appointment),
         );
       },
@@ -423,6 +438,7 @@ export class PatientsComponent implements OnInit {
 
   private mapServiceAppointment(appointment: ServiceAppointment): Appointment {
     return {
+      id: appointment.id,
       patientId: appointment.patientId,
       firstName: appointment.firstName,
       lastName: appointment.lastName,
@@ -444,15 +460,18 @@ export class PatientsComponent implements OnInit {
       maxHeight: '90vh',
       data: {
         patient,
-        appointments: this.appointments.filter(
-          (appointment) => appointment.patientId === patient.id,
-        ),
+        appointments: this.appointments
+          .filter((appointment) => appointment.patientId === patient.id)
+          .map((appointment) => ({
+            ...appointment,
+          })),
         visitHistory,
       },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (!result || result.action !== 'update') {
+        this.loadPatients();
         return;
       }
 

@@ -68,8 +68,6 @@ export class LoginComponent {
     this.isSubmitting = true;
     this.authService.login(payload).subscribe({
       next: (resp) => {
-        console.log('Login successful:', resp);
-
         let firstName = 'User';
         const storedUser = localStorage.getItem('afyora.user');
         if (storedUser) {
@@ -99,7 +97,6 @@ export class LoginComponent {
           err?.error?.message ||
           'Login failed. Please try again.';
 
-        console.error('Login failed:', errorMessage);
         this.snackBar.open(errorMessage, 'Close', {
           duration: 4000,
           horizontalPosition: 'end',

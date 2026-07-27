@@ -1,4 +1,8 @@
-<h2 mat-dialog-title>Book Appointment</h2>
+<h2 mat-dialog-title>
+  {{
+    data.mode === "reschedule" ? "Reschedule Appointment" : "Book Appointment"
+  }}
+</h2>
 <mat-dialog-content>
   <form [formGroup]="appointmentForm" class="space-y-4 py-2">
     <mat-form-field appearance="fill" class="w-full">
@@ -47,12 +51,24 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Doctor</mat-label>
-        <input matInput formControlName="doctor" placeholder="Dr. Emily Chen" />
+        <mat-select formControlName="doctor">
+          @for (doctor of doctors; track doctor.id) {
+            <mat-option [value]="doctor.id">
+              {{ doctor.name }}
+            </mat-option>
+          }
+        </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Department</mat-label>
-        <input matInput formControlName="department" placeholder="Cardiology" />
+        <mat-select formControlName="department">
+          @for (department of departments; track department.id) {
+            <mat-option [value]="department.id">
+              {{ department.name }}
+            </mat-option>
+          }
+        </mat-select>
       </mat-form-field>
     </div>
   </form>
@@ -60,6 +76,6 @@
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Cancel</button>
   <button mat-flat-button color="primary" (click)="onBookAppointment()">
-    Book Appointment
+    {{ submitLabel }}
   </button>
 </mat-dialog-actions>

@@ -78,8 +78,6 @@ export class RegisterPatientDialogComponent {
   });
 
   constructor() {
-    console.log('Patient to edit:', this.patientToEdit);
-    console.log('data:', this.data);
     if (!this.patientToEdit) {
       return;
     }

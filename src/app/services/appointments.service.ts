@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import {
   ApiResponse,
@@ -14,12 +14,12 @@ export class AppointmentsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = apiUrl('/appointments');
 
-  getAppointments(
-    facilityId: string | number,
-  ): Observable<ApiResponse<Appointment[]>> {
-    return this.http.get<ApiResponse<Appointment[]>>(
-      `${this.baseUrl}/?facilityId=${encodeURIComponent(facilityId)}/`,
-    );
+  getAppointments(facilityId: string | number): Observable<Appointment[]> {
+    return this.http
+      .get<
+        ApiResponse<Appointment[]>
+      >(`${this.baseUrl}/?facilityId=${encodeURIComponent(facilityId)}/`)
+      .pipe(map((response) => response.results || []));
   }
 
   getAppointmentsByPatient(
