@@ -20,9 +20,14 @@ import {
   VisitHistory,
 } from '../../features/patients/patient.models';
 import { AppointmentBookingDialogComponent } from '../appointment-booking-dialog/appointment-booking-dialog.component';
+import {
+  AddVisitRecordDialogComponent,
+  VisitRecordFormValue,
+} from '../add-visit-record-dialog/add-visit-record-dialog.component';
 import { AppointmentsService } from '../../../services/appointments.service';
 import { DepartmentService } from '../../../services/department.service';
 import { EmployeeService } from '../../../services/employee.service';
+import { PatientsService } from '../../../services/patients.service';
 import { forkJoin } from 'rxjs';
 
 type PatientAppointment = Appointment & { id?: string };
@@ -56,6 +61,7 @@ export class PatientProfileDialogComponent implements OnInit {
   );
   private readonly snackBar = inject(MatSnackBar);
   private readonly appointmentsService = inject(AppointmentsService);
+  private readonly patientsService = inject(PatientsService);
   private readonly departmentService = inject(DepartmentService);
   private readonly employeeService = inject(EmployeeService);
   data = inject<PatientProfileDialogData>(MAT_DIALOG_DATA);
@@ -65,6 +71,9 @@ export class PatientProfileDialogComponent implements OnInit {
   ngOnInit(): void {
     this.facilityId =
       JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
+    this.data.visitHistory = this.data.visitHistory.map((record) =>
+      this.normalizeVisitRecord(record),
+    );
 
     forkJoin({
       employees: this.employeeService.fetchEmployees(this.facilityId),
@@ -89,6 +98,88 @@ export class PatientProfileDialogComponent implements OnInit {
         this.departmentNames = new Map();
       },
     });
+  }
+
+  openAddVisitRecordDialog(): void {
+    const dialogRef = this.dialog.open(AddVisitRecordDialogComponent, {
+      width: '90vw',
+      maxWidth: '640px',
+      maxHeight: '90vh',
+      data: {
+        mode: 'create',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) {
+        return;
+      }
+
+      this.createVisitRecord(result);
+    });
+  }
+
+  openEditVisitRecordDialog(visitRecord: VisitHistory): void {
+    const dialogRef = this.dialog.open(AddVisitRecordDialogComponent, {
+      width: '90vw',
+      maxWidth: '640px',
+      maxHeight: '90vh',
+      data: {
+        mode: 'edit',
+        initialValue: {
+          date: visitRecord.date,
+          doctor: visitRecord.doctor,
+          diagnosis: visitRecord.diagnosis,
+          prescription: visitRecord.prescription,
+          amountBilled: String(visitRecord.amountBilled ?? '0.00'),
+          whatHappened: visitRecord.whatHappened,
+        },
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) {
+        return;
+      }
+
+      this.updateVisitRecord(visitRecord, result);
+    });
+  }
+
+  deleteVisitRecord(visitRecord: VisitHistory): void {
+    if (!confirm('Delete this visit record?')) {
+      return;
+    }
+
+    if (!visitRecord.id) {
+      this.data.visitHistory = this.data.visitHistory.filter(
+        (entry) => entry !== visitRecord,
+      );
+      this.snackBar.open('Visit record deleted.', 'Close', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    this.patientsService
+      .deletePatientVisitHistory(
+        this.data.patient.id,
+        visitRecord.id,
+        this.facilityId,
+      )
+      .subscribe({
+        next: () => {
+          this.data.visitHistory = this.data.visitHistory.filter(
+            (entry) => entry.id !== visitRecord.id,
+          );
+          this.snackBar.open('Visit record deleted.', 'Close', {
+            duration: 3000,
+          });
+        },
+        error: (error) => {
+          this.showApiError(error, 'Unable to delete visit record.');
+        },
+      });
   }
 
   cancelAppointment(appointment: PatientAppointment): void {
@@ -237,6 +328,111 @@ export class PatientProfileDialogComponent implements OnInit {
     return String(value ?? '').trim();
   }
 
+  private createVisitRecord(formValue: VisitRecordFormValue): void {
+    this.patientsService
+      .createPatientVisitHistory(
+        this.data.patient.id,
+        formValue,
+        this.facilityId,
+      )
+      .subscribe({
+        next: (response) => {
+          const createdRecord = this.normalizeVisitRecord(
+            (response.results || response.data) ?? {
+              ...formValue,
+              facility: this.facilityId,
+            },
+          );
+          this.data.visitHistory = [createdRecord, ...this.data.visitHistory];
+          this.snackBar.open('Visit record added successfully.', 'Close', {
+            duration: 3000,
+          });
+        },
+        error: () => {
+          const localRecord = this.normalizeVisitRecord({
+            ...formValue,
+          });
+          this.data.visitHistory = [localRecord, ...this.data.visitHistory];
+          this.snackBar.open(
+            'Visit record saved locally. Sync with server failed.',
+            'Close',
+            {
+              duration: 5000,
+            },
+          );
+        },
+      });
+  }
+
+  private updateVisitRecord(
+    currentRecord: VisitHistory,
+    formValue: VisitRecordFormValue,
+  ): void {
+    if (!currentRecord.id) {
+      this.patchVisitRecord(currentRecord, formValue);
+      this.snackBar.open('Visit record updated.', 'Close', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    this.patientsService
+      .updatePatientVisitHistory(
+        this.data.patient.id,
+        currentRecord.id,
+        formValue,
+        this.facilityId,
+      )
+      .subscribe({
+        next: (response) => {
+          const updatedRecord = this.normalizeVisitRecord(
+            (response.results || response.data) ?? {
+              ...currentRecord,
+              ...formValue,
+            },
+          );
+          this.patchVisitRecord(currentRecord, updatedRecord);
+          this.snackBar.open('Visit record updated.', 'Close', {
+            duration: 3000,
+          });
+        },
+        error: () => {
+          this.patchVisitRecord(currentRecord, formValue);
+          this.snackBar.open(
+            'Visit record updated locally. Sync with server failed.',
+            'Close',
+            {
+              duration: 5000,
+            },
+          );
+        },
+      });
+  }
+
+  private patchVisitRecord(
+    targetRecord: VisitHistory,
+    update: Partial<VisitHistory>,
+  ): void {
+    this.data.visitHistory = this.data.visitHistory.map((record) =>
+      record === targetRecord
+        ? this.normalizeVisitRecord({ ...record, ...update })
+        : record,
+    );
+  }
+
+  private normalizeVisitRecord(record: Partial<VisitHistory>): VisitHistory {
+    return {
+      id: record.id,
+      date: record.date || new Date().toISOString().slice(0, 10),
+      doctor: record.doctor || (record as { servedBy?: string }).servedBy || '',
+      diagnosis: record.diagnosis || '',
+      prescription: record.prescription || '',
+      amountBilled: record.amountBilled ?? '0.00',
+      whatHappened:
+        record.whatHappened || (record as { happened?: string }).happened || '',
+    };
+  }
+
   private parseDate(value: string): Date {
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
@@ -247,7 +443,9 @@ export class PatientProfileDialogComponent implements OnInit {
     updated: PatientAppointment,
   ): void {
     this.data.appointments = this.data.appointments.map((item) =>
-      item.id === appointmentId ? { ...item, ...updated } : item,
+      item.id === appointmentId
+        ? { ...item, ...updated, facility: this.facilityId }
+        : item,
     );
   }
 

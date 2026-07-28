@@ -1,0 +1,62 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="visitForm" class="space-y-4 py-2">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Visit Date</mat-label>
+      <input matInput type="date" formControlName="date" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Doctor</mat-label>
+      <input
+        matInput
+        formControlName="doctor"
+        placeholder="e.g. Dr. Jane Doe"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Diagnosis</mat-label>
+      <input
+        matInput
+        formControlName="diagnosis"
+        placeholder="e.g. Annual Checkup"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Prescription</mat-label>
+      <input matInput formControlName="prescription" placeholder="e.g. None" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Amount Billed</mat-label>
+      <input
+        matInput
+        type="number"
+        min="0"
+        step="0.01"
+        formControlName="amountBilled"
+        placeholder="0.00"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>What Happened</mat-label>
+      <textarea
+        matInput
+        rows="4"
+        formControlName="whatHappened"
+        placeholder="Document consultation notes, treatment, and outcomes"
+      ></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="save()">
+    {{ submitLabel }}
+  </button>
+</mat-dialog-actions>

@@ -35,8 +35,11 @@ export type RegisterPatientRequest = {
 export type UpdatePatientRequest = Partial<RegisterPatientRequest>;
 
 export type VisitHistory = {
+  id?: string;
   date: string;
   doctor: string;
   diagnosis: string;
   prescription: string;
+  amountBilled: number | string;
+  whatHappened: string;
 };

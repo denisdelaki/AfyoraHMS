@@ -131,24 +131,24 @@ export class PatientsComponent implements OnInit {
   ];
 
   visitHistory: VisitHistory[] = [
-    {
-      date: '2024-02-20',
-      doctor: 'Dr. Chen',
-      diagnosis: 'Hypertension Follow-up',
-      prescription: 'Amlodipine 5mg',
-    },
-    {
-      date: '2024-01-15',
-      doctor: 'Dr. Wilson',
-      diagnosis: 'Annual Checkup',
-      prescription: 'None',
-    },
-    {
-      date: '2023-12-10',
-      doctor: 'Dr. Taylor',
-      diagnosis: 'Flu',
-      prescription: 'Oseltamivir 75mg',
-    },
+    // {
+    //   date: '2024-02-20',
+    //   doctor: 'Dr. Chen',
+    //   diagnosis: 'Hypertension Follow-up',
+    //   prescription: 'Amlodipine 5mg',
+    // },
+    // {
+    //   date: '2024-01-15',
+    //   doctor: 'Dr. Wilson',
+    //   diagnosis: 'Annual Checkup',
+    //   prescription: 'None',
+    // },
+    // {
+    //   date: '2023-12-10',
+    //   doctor: 'Dr. Taylor',
+    //   diagnosis: 'Flu',
+    //   prescription: 'Oseltamivir 75mg',
+    // },
   ];
 
   ngOnInit(): void {
@@ -198,14 +198,16 @@ export class PatientsComponent implements OnInit {
   }
 
   openPatientDialog(patient: Patient): void {
-    this.patientsService.getPatientVisitHistory(patient.id).subscribe({
-      next: ({ data }) => {
-        this.showPatientDialog(patient, data);
-      },
-      error: () => {
-        this.showPatientDialog(patient, this.visitHistory);
-      },
-    });
+    this.patientsService
+      .getPatientVisitHistory(patient.id, this.facilityId)
+      .subscribe({
+        next: (data) => {
+          this.showPatientDialog(patient, data);
+        },
+        error: () => {
+          this.showPatientDialog(patient, this.visitHistory);
+        },
+      });
   }
 
   openAppointmentDialog(): void {
