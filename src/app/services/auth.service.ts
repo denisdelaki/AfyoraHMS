@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, finalize, tap } from 'rxjs';
+import { map, Observable, finalize, tap, throwError } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import {
   ApiResponse,
@@ -53,19 +53,35 @@ export class AuthService {
 
   refreshToken(refreshToken: string): Observable<ApiResponse<LoginResponse>> {
     return this.http.post<ApiResponse<LoginResponse>>(
-      `${this.baseUrl}/refresh`,
+      `${this.baseUrl}/refresh/`,
       {
         refreshToken,
       },
     );
   }
 
-  logout(): Observable<ApiResponse<null>> {
-    return this.http.post<ApiResponse<null>>(`${this.baseUrl}/logout`, {}).pipe(
-      finalize(() => {
-        this.clearAuthData();
+  refreshSession(): Observable<void> {
+    const storedRefreshToken = this.getStoredRefreshToken();
+    if (!storedRefreshToken) {
+      return throwError(() => new Error('Refresh token is missing.'));
+    }
+
+    return this.refreshToken(storedRefreshToken).pipe(
+      tap((response) => {
+        this.saveLoginSession(response);
       }),
+      map(() => void 0),
     );
+  }
+
+  logout(): Observable<ApiResponse<null>> {
+    return this.http
+      .post<ApiResponse<null>>(`${this.baseUrl}/logout/`, {})
+      .pipe(
+        finalize(() => {
+          this.clearAuthData();
+        }),
+      );
   }
 
   clearAuthData(): void {
@@ -113,5 +129,13 @@ export class AuthService {
 
   private isStorageAvailable(): boolean {
     return typeof localStorage !== 'undefined';
+  }
+
+  private getStoredRefreshToken(): string | null {
+    if (!this.isStorageAvailable()) {
+      return null;
+    }
+
+    return localStorage.getItem(this.storageKeys.refreshToken);
   }
 }
