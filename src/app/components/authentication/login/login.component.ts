@@ -93,7 +93,7 @@ export class LoginComponent {
       },
       error: (err) => {
         const errorMessage =
-          err?.details?.non_field_errors?.[0] ||
+          err?.error?.details?.non_field_errors?.[0] ||
           err?.error?.message ||
           'Login failed. Please try again.';
 
