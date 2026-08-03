@@ -157,6 +157,8 @@ export class PatientProfileDialogComponent implements OnInit {
       );
       this.snackBar.open('Visit record deleted.', 'Close', {
         duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
       });
       return;
     }
@@ -174,10 +176,20 @@ export class PatientProfileDialogComponent implements OnInit {
           );
           this.snackBar.open('Visit record deleted.', 'Close', {
             duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
           });
         },
         error: (error) => {
-          this.showApiError(error, 'Unable to delete visit record.');
+          this.snackBar.open(
+            error?.error?.message || 'Unable to delete visit record.',
+            'Close',
+            {
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top',
+            },
+          );
         },
       });
   }
@@ -256,11 +268,20 @@ export class PatientProfileDialogComponent implements OnInit {
             });
             this.snackBar.open('Appointment updated successfully.', 'Close', {
               duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top',
             });
-            this.dialogRef.close();
           },
           error: (error) => {
-            this.showApiError(error, 'Unable to reschedule appointment.');
+            this.snackBar.open(
+              error?.error?.message || 'Unable to reschedule appointment.',
+              'Close',
+              {
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top',
+              },
+            );
           },
         });
     });
@@ -346,6 +367,8 @@ export class PatientProfileDialogComponent implements OnInit {
           this.data.visitHistory = [createdRecord, ...this.data.visitHistory];
           this.snackBar.open('Visit record added successfully.', 'Close', {
             duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
           });
         },
         error: () => {

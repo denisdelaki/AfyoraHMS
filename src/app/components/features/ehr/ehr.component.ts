@@ -20,7 +20,7 @@ import {
   EhrRecord,
   RadiologyImage,
 } from '../../../models';
-import { EhrService } from '../../../services';
+import { EhrService, PatientsService } from '../../../services';
 
 @Component({
   selector: 'app-ehr',
@@ -41,6 +41,8 @@ import { EhrService } from '../../../services';
 export class EhrComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly ehrService = inject(EhrService);
+  private readonly patientService = inject(PatientsService);
+  facilityId: string | number = '';
 
   searchTerm = '';
   selectedPatient: EhrPatient | null = null;
@@ -110,12 +112,87 @@ export class EhrComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.ehrService.getPatients().subscribe({
-      next: ({ data }) => {
-        this.patients = data;
+    this.facilityId =
+      JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
+    // this.ehrService.getPatients().subscribe({
+    //   next: ({ data }) => {
+    //     this.patients = data;
+    //   },
+    //   error: () => {},
+    // });
+    this.getPatientsRecords();
+  }
+
+  private getPatientsRecords(): void {
+    this.patientService.getPatients(this.facilityId).subscribe({
+      next: (data) => {
+        this.patients = data.map((patient) => ({
+          id: patient.id,
+          name: patient.firstName + ' ' + patient.lastName,
+          age: patient.age,
+          gender: patient.gender,
+        }));
       },
       error: () => {},
     });
+
+    if (this.patients.length > 0) {
+      this.patients.forEach((patient) => {
+        this.loadPatientsVisitHistory(patient.id);
+        this.loadPatientRadiology(patient.id);
+      });
+    }
+  }
+
+  private loadPatientsVisitHistory(patientId: string): void {
+    this.patientService
+      .getPatientVisitHistory(patientId, this.facilityId)
+      .subscribe({
+        next: (data) => {
+          this.ehrRecords = data.map((record) => ({
+            id: record.id || '',
+            patientId: patientId,
+            date: record.date,
+            doctor: record.doctor,
+            diagnosis: record.diagnosis,
+            prescriptions: Array.isArray(record.prescription)
+              ? record.prescription
+              : (record.prescription || '')
+                  .split('\n')
+                  .map((item) => item.trim())
+                  .filter(Boolean),
+            labResults: [
+              {
+                test: 'Blood Pressure',
+                result: '140/90 mmHg',
+                status: 'Abnormal',
+              },
+              {
+                test: 'Cholesterol',
+                result: '220 mg/dL',
+                status: 'High',
+              },
+            ],
+            notes: record.whatHappened,
+          }));
+        },
+        error: () => {},
+      });
+  }
+
+  private getLabResults(patientVisitId: string): EhrLabResult[] {
+    return [
+      {
+        test: 'Blood Pressure',
+        result: '140/90 mmHg',
+        status: 'Abnormal',
+      },
+      {
+        test: 'Cholesterol',
+        result: '220 mg/dL',
+        status: 'High',
+      },
+    ];
   }
 
   get filteredPatients(): EhrPatient[] {
