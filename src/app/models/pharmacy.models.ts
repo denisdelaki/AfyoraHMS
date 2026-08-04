@@ -9,18 +9,16 @@ export type Drug = {
   manufacturer: string;
 };
 
-export type PrescriptionDrug = {
-  name: string;
-  quantity: number;
-  dosage: string;
-};
 
 export type Prescription = {
   id: string;
-  patient: string;
   patientId: string;
-  doctor: string;
-  drugs: PrescriptionDrug[];
+  doctorId: string;
+  drugs: {
+    name: string;
+    quantity: number;
+    dosage: string;
+  }[];
   status: 'Pending' | 'Dispensed';
   date: string;
 };

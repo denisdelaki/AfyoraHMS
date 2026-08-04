@@ -110,9 +110,8 @@ export class PharmacyComponent implements OnInit {
   prescriptions: Prescription[] = [
     {
       id: 'RX001',
-      patient: 'John Smith',
       patientId: 'P001',
-      doctor: 'Dr. Emily Chen',
+      doctorId: 'D001',
       drugs: [
         { name: 'Amlodipine 5mg', quantity: 30, dosage: 'Once daily' },
         { name: 'Lisinopril 10mg', quantity: 30, dosage: 'Once daily' },
@@ -122,9 +121,8 @@ export class PharmacyComponent implements OnInit {
     },
     {
       id: 'RX002',
-      patient: 'Sarah Johnson',
       patientId: 'P002',
-      doctor: 'Dr. James Wilson',
+      doctorId: 'D002',
       drugs: [
         {
           name: 'Amoxicillin 500mg',

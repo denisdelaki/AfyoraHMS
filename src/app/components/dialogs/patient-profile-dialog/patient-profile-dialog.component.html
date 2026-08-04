@@ -118,16 +118,55 @@
           <mat-card class="!p-4 !shadow-none !border !border-gray-200">
             <div class="flex justify-between items-start mb-2 gap-4">
               <p class="font-medium">{{ visit.date }}</p>
-              <p class="text-sm text-gray-600">{{ visit.doctor }}</p>
+              <p class="text-sm text-gray-600">
+                {{ displayDoctor(visit.doctor) }}
+              </p>
             </div>
             <p class="text-sm mb-1">
               <span class="font-medium">Diagnosis:</span>
               {{ visit.diagnosis }}
             </p>
-            <p class="text-sm mb-1">
-              <span class="font-medium">Prescription:</span>
-              {{ visit.prescription }}
-            </p>
+
+            <div class="mt-2 mb-2">
+              <p class="text-sm font-medium mb-1">Prescriptions:</p>
+              @if (visit.prescriptions.length === 0) {
+                <p class="text-sm text-gray-400 italic">None</p>
+              }
+              @for (rx of visit.prescriptions; track $index) {
+                <div
+                  class="rounded border border-gray-100 bg-gray-50 px-3 py-2 mb-2"
+                >
+                  <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs text-gray-500">{{ rx.date }}</p>
+                    <span
+                      class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      [class]="
+                        rx.status === 'Dispensed'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-amber-100 text-amber-700'
+                      "
+                      >{{ rx.status }}</span
+                    >
+                  </div>
+                  @if (rx.drugs.length === 0) {
+                    <p class="text-xs text-gray-400 italic">No drugs listed</p>
+                  }
+                  @for (drug of rx.drugs; track $index) {
+                    <div class="flex items-center gap-2 text-sm py-0.5">
+                      <mat-icon class="!w-4 !h-4 !text-base text-blue-500"
+                        >medication</mat-icon
+                      >
+                      <span class="font-medium">{{ drug.name }}</span>
+                      <span class="text-gray-500">— {{ drug.dosage }}</span>
+                      <span class="text-gray-400 text-xs"
+                        >× {{ drug.quantity }}</span
+                      >
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
             <p class="text-sm mb-1">
               <span class="font-medium">Amount Billed:</span>
               {{ visit.amountBilled }}

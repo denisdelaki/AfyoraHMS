@@ -20,6 +20,7 @@ import {
   EhrRecord,
   RadiologyImage,
 } from '../../../models';
+import { Prescription } from '../../../models/pharmacy.models';
 import { EhrService, PatientsService } from '../../../services';
 
 @Component({
@@ -47,11 +48,9 @@ export class EhrComponent implements OnInit {
   searchTerm = '';
   selectedPatient: EhrPatient | null = null;
 
-  patients: EhrPatient[] = [
-    { id: 'P001', name: 'John Smith', age: 45, gender: 'Male' },
-    { id: 'P002', name: 'Sarah Johnson', age: 32, gender: 'Female' },
-    { id: 'P003', name: 'Michael Brown', age: 58, gender: 'Male' },
-  ];
+  patients: EhrPatient[] = [];
+  patientLabResults: EhrLabResult[] = [];
+  patientPrescriptions: Prescription[] = [];
 
   ehrRecords: EhrRecord[] = [
     {
@@ -61,12 +60,57 @@ export class EhrComponent implements OnInit {
       doctor: 'Dr. Emily Chen',
       diagnosis: 'Hypertension',
       prescriptions: [
-        'Amlodipine 5mg - Once daily',
-        'Lisinopril 10mg - Once daily',
+        {
+          id: 'RX-001',
+          patientId: 'P001',
+          doctorId: 'D001',
+          drugs: [
+            {
+              name: 'Amlodipine 5mg',
+              quantity: 30,
+              dosage: 'once daily in the morning',
+            },
+            {
+              name: 'Lisinopril 10mg',
+              quantity: 30,
+              dosage: 'once daily in the morning',
+            },
+          ],
+          status: 'Pending',
+          date: '2024-02-20',
+        },
+        {
+          id: 'RX-002',
+          patientId: 'P001',
+          doctorId: 'D001',
+          drugs: [
+            {
+              name: 'Lisinopril 10mg',
+              quantity: 30,
+              dosage: 'once daily in the morning',
+            },
+          ],
+          status: 'Pending',
+          date: '2024-02-20',
+        },
       ],
       labResults: [
-        { test: 'Blood Pressure', result: '140/90 mmHg', status: 'Abnormal' },
-        { test: 'Cholesterol', result: '220 mg/dL', status: 'High' },
+        {
+          id: '1',
+          patientId: 'P001',
+          date: '2024-02-20',
+          test: 'Blood Pressure',
+          result: '140/90 mmHg',
+          status: 'Abnormal',
+        },
+        {
+          id: '2',
+          patientId: 'P001',
+          date: '2024-02-20',
+          test: 'Cholesterol',
+          result: '220 mg/dL',
+          status: 'High',
+        },
       ],
       notes:
         'Patient shows signs of uncontrolled hypertension. Adjusted medication dosage.',
@@ -80,11 +124,21 @@ export class EhrComponent implements OnInit {
       prescriptions: [],
       labResults: [
         {
+          id: '3',
+          patientId: 'P001',
+          date: '2024-01-15',
           test: 'Complete Blood Count',
           result: 'Normal',
           status: 'Normal',
         },
-        { test: 'Blood Sugar', result: '95 mg/dL', status: 'Normal' },
+        {
+          id: '4',
+          patientId: 'P001',
+          date: '2024-01-15',
+          test: 'Blood Sugar',
+          result: '95 mg/dL',
+          status: 'Normal',
+        },
       ],
       notes: 'All vital signs within normal range. Patient in good health.',
     },
@@ -106,7 +160,7 @@ export class EhrComponent implements OnInit {
       date: '2024-01-20',
       type: 'CT Scan - Abdomen',
       radiologist: 'Dr. Michael Lee',
-      findings: 'Normal abdominal anatomy',
+      findings: ' Normal abdominal anatomy',
       status: 'Completed',
     },
   ];
@@ -132,16 +186,16 @@ export class EhrComponent implements OnInit {
           age: patient.age,
           gender: patient.gender,
         }));
+
+        if (this.patients.length > 0) {
+          this.patients.forEach((patient) => {
+            this.loadPatientsVisitHistory(patient.id);
+            this.loadPatientRadiology(patient.id);
+          });
+        }
       },
       error: () => {},
     });
-
-    if (this.patients.length > 0) {
-      this.patients.forEach((patient) => {
-        this.loadPatientsVisitHistory(patient.id);
-        this.loadPatientRadiology(patient.id);
-      });
-    }
   }
 
   private loadPatientsVisitHistory(patientId: string): void {
@@ -149,25 +203,27 @@ export class EhrComponent implements OnInit {
       .getPatientVisitHistory(patientId, this.facilityId)
       .subscribe({
         next: (data) => {
+          console.log('Visit history for patient:', patientId, data);
           this.ehrRecords = data.map((record) => ({
             id: record.id || '',
             patientId: patientId,
             date: record.date,
             doctor: record.doctor,
             diagnosis: record.diagnosis,
-            prescriptions: Array.isArray(record.prescription)
-              ? record.prescription
-              : (record.prescription || '')
-                  .split('\n')
-                  .map((item) => item.trim())
-                  .filter(Boolean),
+            prescriptions: record.prescriptions ?? [],
             labResults: [
               {
+                id: '1',
+                patientId: patientId,
+                date: new Date().toISOString(),
                 test: 'Blood Pressure',
                 result: '140/90 mmHg',
                 status: 'Abnormal',
               },
               {
+                id: '2',
+                patientId: patientId,
+                date: new Date().toISOString(),
                 test: 'Cholesterol',
                 result: '220 mg/dL',
                 status: 'High',
@@ -175,24 +231,17 @@ export class EhrComponent implements OnInit {
             ],
             notes: record.whatHappened,
           }));
+          if (this.ehrRecords.length > 0) {
+            this.patientLabResults = this.ehrRecords.flatMap(
+              (record) => record.labResults,
+            );
+            this.patientPrescriptions = this.ehrRecords.flatMap(
+              (record) => record.prescriptions,
+            );
+          }
         },
         error: () => {},
       });
-  }
-
-  private getLabResults(patientVisitId: string): EhrLabResult[] {
-    return [
-      {
-        test: 'Blood Pressure',
-        result: '140/90 mmHg',
-        status: 'Abnormal',
-      },
-      {
-        test: 'Cholesterol',
-        result: '220 mg/dL',
-        status: 'High',
-      },
-    ];
   }
 
   get filteredPatients(): EhrPatient[] {
@@ -209,11 +258,11 @@ export class EhrComponent implements OnInit {
   }
 
   get allPrescriptions(): Array<{
-    prescription: string;
+    prescription: Prescription;
     doctor: string;
     date: string;
   }> {
-    return this.ehrRecords.flatMap((record) =>
+    return (this.ehrRecords ?? []).flatMap((record) =>
       record.prescriptions.map((prescription) => ({
         prescription,
         doctor: record.doctor,
@@ -228,7 +277,7 @@ export class EhrComponent implements OnInit {
     status: EhrLabResult['status'];
     date: string;
   }> {
-    return this.ehrRecords.flatMap((record) =>
+    return (this.ehrRecords ?? []).flatMap((record) =>
       record.labResults.map((lab) => ({
         test: lab.test,
         result: lab.result,
@@ -240,7 +289,7 @@ export class EhrComponent implements OnInit {
 
   selectPatient(patient: EhrPatient): void {
     this.selectedPatient = patient;
-    this.loadPatientRecords(patient.id);
+    this.loadPatientRecords(patient.id, this.facilityId);
     this.loadPatientRadiology(patient.id);
   }
 
@@ -429,7 +478,7 @@ export class EhrComponent implements OnInit {
                 ? `<p><strong>Prescriptions:</strong></p><ul>${record.prescriptions
                     .map(
                       (prescription) =>
-                        `<li>${this.escapeHtml(prescription)}</li>`,
+                        `<li>${this.escapeHtml(prescription.drugs.map((drug) => drug.name).join(', '))} - Quantity: ${this.escapeHtml(prescription.drugs.map((drug) => drug.quantity.toString()).join(', '))}, Dosage: ${this.escapeHtml(prescription.drugs.map((drug) => drug.dosage).join(', '))}</li>`,
                     )
                     .join('')}</ul>`
                 : ''
@@ -512,10 +561,7 @@ export class EhrComponent implements OnInit {
         date: new Date().toISOString().slice(0, 10),
         doctor: 'Dr. Assigned',
         diagnosis: payload.diagnosis.trim(),
-        prescriptions: payload.treatment
-          .split('\n')
-          .map((item) => item.trim())
-          .filter(Boolean),
+        prescriptions: payload.prescriptions,
         labResults: [],
         notes: payload.doctorNotes.trim() || payload.symptoms.trim(),
       },
@@ -527,10 +573,13 @@ export class EhrComponent implements OnInit {
       this.selectedPatient;
   }
 
-  private loadPatientRecords(patientId: string): void {
-    this.ehrService.getPatientRecords(patientId).subscribe({
+  private loadPatientRecords(
+    patientId: string,
+    facilityId: string | number,
+  ): void {
+    this.ehrService.getPatientRecords(patientId, facilityId).subscribe({
       next: ({ data }) => {
-        this.ehrRecords = data;
+        this.ehrRecords = data ?? [];
       },
       error: () => {},
     });

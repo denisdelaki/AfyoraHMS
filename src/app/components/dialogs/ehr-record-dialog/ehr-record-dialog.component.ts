@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { EhrLabResult, Prescription } from '../../../models';
 
 export interface EhrDialogPatient {
   id: string;
@@ -20,11 +21,15 @@ export interface EhrRecordDialogData {
 }
 
 export interface CreateEhrRecordPayload {
+  id: string;
   patientId: string;
   diagnosis: string;
   symptoms: string;
   treatment: string;
   doctorNotes: string;
+  prescriptions: Prescription[];
+  labResults: EhrLabResult[];
+  notes: string;
 }
 
 @Component({

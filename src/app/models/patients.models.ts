@@ -1,3 +1,5 @@
+import { Prescription } from './pharmacy.models';
+
 export type PatientStatus = 'Active' | 'Admitted' | 'Discharged';
 
 export type Patient = {
@@ -39,7 +41,7 @@ export type VisitHistory = {
   date: string;
   doctor: string;
   diagnosis: string;
-  prescription: string;
+  prescriptions: Prescription[];
   amountBilled: number | string;
   whatHappened: string;
 };

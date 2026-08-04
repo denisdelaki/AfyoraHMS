@@ -1,3 +1,5 @@
+import { Prescription } from './pharmacy.models';
+
 export type EhrPatient = {
   id: string;
   name: string;
@@ -8,6 +10,9 @@ export type EhrPatient = {
 export type LabResultStatus = 'Normal' | 'Abnormal' | 'High';
 
 export type EhrLabResult = {
+  id: string;
+  patientId: string;
+  date: string;
   test: string;
   result: string;
   status: LabResultStatus;
@@ -19,7 +24,7 @@ export type EhrRecord = {
   date: string;
   doctor: string;
   diagnosis: string;
-  prescriptions: string[];
+  prescriptions: Prescription[];
   labResults: EhrLabResult[];
   notes: string;
 };

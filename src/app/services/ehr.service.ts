@@ -13,15 +13,20 @@ import {
 @Injectable({ providedIn: 'root' })
 export class EhrService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = apiUrl('/ehr');
+  private readonly baseUrl = apiUrl('');
 
   getPatients(): Observable<ApiResponse<EhrPatient[]>> {
-    return this.http.get<ApiResponse<EhrPatient[]>>(`${this.baseUrl}/patients`);
+    return this.http.get<ApiResponse<EhrPatient[]>>(
+      `${this.baseUrl}/patients/`,
+    );
   }
 
-  getPatientRecords(patientId: string): Observable<ApiResponse<EhrRecord[]>> {
+  getPatientRecords(
+    patientId: string,
+    facilityId: string | number,
+  ): Observable<ApiResponse<EhrRecord[]>> {
     return this.http.get<ApiResponse<EhrRecord[]>>(
-      `${this.baseUrl}/patients/${encodeURIComponent(patientId)}/records`,
+      `${this.baseUrl}patients/${encodeURIComponent(patientId)}/ehr/?facilityId=${encodeURIComponent(facilityId)}/`,
     );
   }
 
@@ -29,7 +34,7 @@ export class EhrService {
     patientId: string,
   ): Observable<ApiResponse<RadiologyImage[]>> {
     return this.http.get<ApiResponse<RadiologyImage[]>>(
-      `${this.baseUrl}/patients/${encodeURIComponent(patientId)}/radiology`,
+      `${this.baseUrl}patients/${encodeURIComponent(patientId)}/radiology/`,
     );
   }
 
@@ -37,7 +42,7 @@ export class EhrService {
     payload: CreateEhrRecordRequest,
   ): Observable<ApiResponse<EhrRecord>> {
     return this.http.post<ApiResponse<EhrRecord>>(
-      `${this.baseUrl}/records`,
+      `${this.baseUrl}records/`,
       payload,
     );
   }

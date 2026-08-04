@@ -108,14 +108,21 @@
 
       <mat-tab label="Prescriptions">
         <div class="flex flex-col gap-4 py-4">
-          <mat-card class="p-4" *ngFor="let item of allPrescriptions">
+          <mat-card class="p-4" *ngFor="let item of patientPrescriptions">
             <div class="flex items-start justify-between gap-4">
               <div class="flex gap-3">
                 <mat-icon class="text-blue-600">medication</mat-icon>
                 <div>
-                  <p class="m-0 font-semibold">{{ item.prescription }}</p>
+                  <p class="m-0 font-semibold">
+                    <ng-container
+                      *ngFor="let drug of item.drugs; let last = last"
+                    >
+                      {{ drug.name }} {{ drug.dosage
+                      }}<ng-container *ngIf="!last">, </ng-container>
+                    </ng-container>
+                  </p>
                   <p class="mt-1 text-sm text-gray-500">
-                    Prescribed by {{ item.doctor }} on {{ item.date }}
+                    Prescribed by {{ item.doctorId }} on {{ item.date }}
                   </p>
                 </div>
               </div>
@@ -129,7 +136,7 @@
 
       <mat-tab label="Lab Results">
         <div class="flex flex-col gap-4 py-4">
-          <mat-card class="p-4" *ngFor="let lab of allLabResults">
+          <mat-card class="p-4" *ngFor="let lab of patientLabResults">
             <div class="flex items-start justify-between gap-4">
               <div class="flex gap-3">
                 <mat-icon class="text-green-600">science</mat-icon>

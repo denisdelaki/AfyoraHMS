@@ -22,13 +22,17 @@ import {
 import { AppointmentBookingDialogComponent } from '../appointment-booking-dialog/appointment-booking-dialog.component';
 import {
   AddVisitRecordDialogComponent,
+  DoctorOption,
+  PrescriptionEntry,
   VisitRecordFormValue,
 } from '../add-visit-record-dialog/add-visit-record-dialog.component';
 import { AppointmentsService } from '../../../services/appointments.service';
 import { DepartmentService } from '../../../services/department.service';
 import { EmployeeService } from '../../../services/employee.service';
 import { PatientsService } from '../../../services/patients.service';
+import { Prescription } from '../../../models/pharmacy.models';
 import { forkJoin } from 'rxjs';
+import { Employee } from '../../../models/employee.model';
 
 type PatientAppointment = Appointment & { id?: string };
 
@@ -67,6 +71,7 @@ export class PatientProfileDialogComponent implements OnInit {
   data = inject<PatientProfileDialogData>(MAT_DIALOG_DATA);
   private doctorNames = new Map<string, string>();
   private departmentNames = new Map<string, string>();
+  private doctors: DoctorOption[] = [];
 
   ngOnInit(): void {
     this.facilityId =
@@ -80,6 +85,10 @@ export class PatientProfileDialogComponent implements OnInit {
       departments: this.departmentService.fetchDepartments(this.facilityId),
     }).subscribe({
       next: ({ employees, departments }) => {
+        this.doctors = employees.map((e: Employee) => ({
+          id: this.normalizeId(e.id),
+          name: e.name,
+        }));
         this.doctorNames = new Map(
           employees.map((employee) => [
             this.normalizeId(employee.id),
@@ -94,6 +103,7 @@ export class PatientProfileDialogComponent implements OnInit {
         );
       },
       error: () => {
+        this.doctors = [];
         this.doctorNames = new Map();
         this.departmentNames = new Map();
       },
@@ -107,6 +117,7 @@ export class PatientProfileDialogComponent implements OnInit {
       maxHeight: '90vh',
       data: {
         mode: 'create',
+        doctors: this.doctors,
       },
     });
 
@@ -126,11 +137,12 @@ export class PatientProfileDialogComponent implements OnInit {
       maxHeight: '90vh',
       data: {
         mode: 'edit',
+        doctors: this.doctors,
         initialValue: {
           date: visitRecord.date,
           doctor: visitRecord.doctor,
           diagnosis: visitRecord.diagnosis,
-          prescription: visitRecord.prescription,
+          prescriptions: visitRecord.prescriptions,
           amountBilled: String(visitRecord.amountBilled ?? '0.00'),
           whatHappened: visitRecord.whatHappened,
         },
@@ -434,7 +446,9 @@ export class PatientProfileDialogComponent implements OnInit {
 
   private patchVisitRecord(
     targetRecord: VisitHistory,
-    update: Partial<VisitHistory>,
+    update: Partial<Omit<VisitHistory, 'prescriptions'>> & {
+      prescriptions?: (Prescription | PrescriptionEntry)[];
+    },
   ): void {
     this.data.visitHistory = this.data.visitHistory.map((record) =>
       record === targetRecord
@@ -443,16 +457,34 @@ export class PatientProfileDialogComponent implements OnInit {
     );
   }
 
-  private normalizeVisitRecord(record: Partial<VisitHistory>): VisitHistory {
+  private normalizeVisitRecord(
+    record: Partial<Omit<VisitHistory, 'prescriptions'>> & {
+      prescriptions?: (Prescription | PrescriptionEntry)[];
+    } & Record<string, unknown>,
+  ): VisitHistory {
+    const rawPrescriptions = record['prescriptions'];
+    const prescriptions: Prescription[] = Array.isArray(rawPrescriptions)
+      ? rawPrescriptions.map((p) => ({
+          id: (p as Prescription).id ?? '',
+          patientId: (p as Prescription).patientId ?? '',
+          doctorId: (p as Prescription).doctorId ?? '',
+          drugs: p.drugs ?? [],
+          status: p.status,
+          date: p.date,
+        }))
+      : [];
     return {
-      id: record.id,
-      date: record.date || new Date().toISOString().slice(0, 10),
-      doctor: record.doctor || (record as { servedBy?: string }).servedBy || '',
-      diagnosis: record.diagnosis || '',
-      prescription: record.prescription || '',
-      amountBilled: record.amountBilled ?? '0.00',
+      id: record['id'] as string | undefined,
+      date: (record['date'] as string) || new Date().toISOString().slice(0, 10),
+      doctor:
+        (record['doctor'] as string) || (record['servedBy'] as string) || '',
+      diagnosis: (record['diagnosis'] as string) || '',
+      prescriptions,
+      amountBilled: record['amountBilled'] ?? '0.00',
       whatHappened:
-        record.whatHappened || (record as { happened?: string }).happened || '',
+        (record['whatHappened'] as string) ||
+        (record['happened'] as string) ||
+        '',
     };
   }
 
