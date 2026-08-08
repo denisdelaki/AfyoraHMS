@@ -90,11 +90,14 @@
           >
             <mat-form-field appearance="fill" class="w-full">
               <mat-label>Drug Name</mat-label>
-              <input
-                matInput
+              <mat-select
                 formControlName="name"
-                placeholder="e.g. Amoxicillin"
-              />
+                (selectionChange)="onDrugSelectionChange(pi, di)"
+              >
+                <mat-option *ngFor="let drug of drugs" [value]="drug.name">
+                  {{ drug.name }}
+                </mat-option>
+              </mat-select>
             </mat-form-field>
 
             <mat-form-field appearance="fill" class="w-full">
@@ -154,6 +157,7 @@
         type="number"
         min="0"
         step="0.01"
+        readonly
         formControlName="amountBilled"
         placeholder="0.00"
       />

@@ -28,6 +28,31 @@ export class PharmacyService {
     );
   }
 
+  updateDrug(
+    drugId: string,
+    payload: Partial<CreateDrugRequest>,
+    facilityId: string | number,
+  ): Observable<Drug> {
+    return this.http
+      .patch<
+        ApiResponse<Drug> | Drug
+      >(`${this.baseUrl}/drugs/${encodeURIComponent(drugId)}/?facilityId=${encodeURIComponent(facilityId)}/`, payload)
+      .pipe(
+        map((response) => {
+          if (
+            response &&
+            typeof response === 'object' &&
+            ('data' in response || 'results' in response)
+          ) {
+            const apiResponse = response as ApiResponse<Drug>;
+            return apiResponse.results ?? apiResponse.data;
+          }
+
+          return response as Drug;
+        }),
+      );
+  }
+
   getPrescriptions(facilityId: string | number): Observable<Prescription[]> {
     return this.http
       .get<{

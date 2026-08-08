@@ -248,6 +248,7 @@ export class PharmacyComponent implements OnInit {
             horizontalPosition: 'end',
             verticalPosition: 'top',
           });
+          this.loadDrugs();
           this.loadPrescriptions();
         },
         error: () => {
