@@ -33,6 +33,7 @@ import { PatientsService } from '../../../services/patients.service';
 import { Prescription } from '../../../models/pharmacy.models';
 import { forkJoin } from 'rxjs';
 import { Employee } from '../../../models/employee.model';
+import { PharmacyService } from '../../../services/pharmacy.service';
 
 type PatientAppointment = Appointment & { id?: string };
 
@@ -68,6 +69,7 @@ export class PatientProfileDialogComponent implements OnInit {
   private readonly patientsService = inject(PatientsService);
   private readonly departmentService = inject(DepartmentService);
   private readonly employeeService = inject(EmployeeService);
+  private readonly pharmacyService = inject(PharmacyService);
   data = inject<PatientProfileDialogData>(MAT_DIALOG_DATA);
   private doctorNames = new Map<string, string>();
   private departmentNames = new Map<string, string>();
@@ -163,6 +165,14 @@ export class PatientProfileDialogComponent implements OnInit {
       return;
     }
 
+    const prescriptionIds = Array.from(
+      new Set(
+        (visitRecord.prescriptions ?? [])
+          .map((item) => this.normalizeId(item.id))
+          .filter((id) => id.length > 0),
+      ),
+    );
+
     if (!visitRecord.id) {
       this.data.visitHistory = this.data.visitHistory.filter(
         (entry) => entry !== visitRecord,
@@ -186,10 +196,43 @@ export class PatientProfileDialogComponent implements OnInit {
           this.data.visitHistory = this.data.visitHistory.filter(
             (entry) => entry.id !== visitRecord.id,
           );
-          this.snackBar.open('Visit record deleted.', 'Close', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top',
+
+          if (!prescriptionIds.length) {
+            this.snackBar.open('Visit record deleted.', 'Close', {
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top',
+            });
+            return;
+          }
+
+          forkJoin(
+            prescriptionIds.map((prescriptionId) =>
+              this.pharmacyService.deletePrescription(
+                prescriptionId,
+                this.facilityId,
+              ),
+            ),
+          ).subscribe({
+            next: () => {
+              this.snackBar.open('Visit record deleted.', 'Close', {
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top',
+              });
+            },
+            error: (error) => {
+              console.error('Error deleting associated prescriptions:', error);
+              this.snackBar.open(
+                'Visit record deleted, but some prescriptions could not be deleted.',
+                'Close',
+                {
+                  duration: 5000,
+                  horizontalPosition: 'end',
+                  verticalPosition: 'top',
+                },
+              );
+            },
           });
         },
         error: (error) => {
@@ -468,7 +511,12 @@ export class PatientProfileDialogComponent implements OnInit {
           id: (p as Prescription).id ?? '',
           patientId: (p as Prescription).patientId ?? '',
           doctorId: (p as Prescription).doctorId ?? '',
-          drugs: p.drugs ?? [],
+          drugs: (p.drugs ?? []).map((d) => ({
+            id: (d as { id?: string }).id ?? '',
+            name: d.name,
+            quantity: d.quantity,
+            dosage: d.dosage,
+          })),
           status: p.status,
           date: p.date,
         }))

@@ -73,12 +73,6 @@ export class PatientsService {
     patientId: string,
     facilityId: string | number,
   ): Observable<VisitHistory[]> {
-    console.log(
-      'Fetching visit history for patient:',
-      patientId,
-      'Facility ID:',
-      facilityId,
-    );
     return this.http
       .get<
         ApiResponse<VisitHistory[]>

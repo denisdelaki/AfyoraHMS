@@ -55,87 +55,101 @@ export class PharmacyComponent implements OnInit {
   activeTab: PharmacyTab = 'catalog';
 
   drugs: Drug[] = [
-    {
-      id: 'D001',
-      name: 'Amlodipine',
-      category: 'Cardiovascular',
-      stock: 450,
-      minStock: 100,
-      price: 12.5,
-      expiryDate: '2025-06-15',
-      manufacturer: 'PharmaCorp',
-    },
-    {
-      id: 'D002',
-      name: 'Lisinopril',
-      category: 'Cardiovascular',
-      stock: 380,
-      minStock: 100,
-      price: 15,
-      expiryDate: '2025-08-20',
-      manufacturer: 'MedLife',
-    },
-    {
-      id: 'D003',
-      name: 'Metformin',
-      category: 'Diabetes',
-      stock: 85,
-      minStock: 100,
-      price: 8.5,
-      expiryDate: '2024-12-30',
-      manufacturer: 'HealthGen',
-    },
-    {
-      id: 'D004',
-      name: 'Amoxicillin',
-      category: 'Antibiotic',
-      stock: 320,
-      minStock: 150,
-      price: 18,
-      expiryDate: '2025-03-15',
-      manufacturer: 'BioPharm',
-    },
-    {
-      id: 'D005',
-      name: 'Ibuprofen',
-      category: 'Pain Relief',
-      stock: 45,
-      minStock: 100,
-      price: 6.5,
-      expiryDate: '2024-11-20',
-      manufacturer: 'PharmaCorp',
-    },
+    // {
+    //   id: 'D001',
+    //   name: 'Amlodipine',
+    //   category: 'Cardiovascular',
+    //   stock: 450,
+    //   minStock: 100,
+    //   price: 12.5,
+    //   expiryDate: '2025-06-15',
+    //   manufacturer: 'PharmaCorp',
+    // },
+    // {
+    //   id: 'D002',
+    //   name: 'Lisinopril',
+    //   category: 'Cardiovascular',
+    //   stock: 380,
+    //   minStock: 100,
+    //   price: 15,
+    //   expiryDate: '2025-08-20',
+    //   manufacturer: 'MedLife',
+    // },
+    // {
+    //   id: 'D003',
+    //   name: 'Metformin',
+    //   category: 'Diabetes',
+    //   stock: 85,
+    //   minStock: 100,
+    //   price: 8.5,
+    //   expiryDate: '2024-12-30',
+    //   manufacturer: 'HealthGen',
+    // },
+    // {
+    //   id: 'D004',
+    //   name: 'Amoxicillin',
+    //   category: 'Antibiotic',
+    //   stock: 320,
+    //   minStock: 150,
+    //   price: 18,
+    //   expiryDate: '2025-03-15',
+    //   manufacturer: 'BioPharm',
+    // },
+    // {
+    //   id: 'D005',
+    //   name: 'Ibuprofen',
+    //   category: 'Pain Relief',
+    //   stock: 45,
+    //   minStock: 100,
+    //   price: 6.5,
+    //   expiryDate: '2024-11-20',
+    //   manufacturer: 'PharmaCorp',
+    // },
   ];
 
   prescriptions: Prescription[] = [
-    {
-      id: 'RX001',
-      patientId: 'P001',
-      doctorId: 'D001',
-      drugs: [
-        { name: 'Amlodipine 5mg', quantity: 30, dosage: 'Once daily' },
-        { name: 'Lisinopril 10mg', quantity: 30, dosage: 'Once daily' },
-      ],
-      status: 'Pending',
-      date: '2024-02-24',
-    },
-    {
-      id: 'RX002',
-      patientId: 'P002',
-      doctorId: 'D002',
-      drugs: [
-        {
-          name: 'Amoxicillin 500mg',
-          quantity: 21,
-          dosage: 'Three times daily',
-        },
-      ],
-      status: 'Dispensed',
-      date: '2024-02-23',
-    },
+    // {
+    //   id: 'RX001',
+    //   patientId: 'P001',
+    //   doctorId: 'D001',
+    //   drugs: [
+    //     {
+    //       id: 'd001',
+    //       name: 'Amlodipine 5mg',
+    //       quantity: 30,
+    //       dosage: 'Once daily',
+    //     },
+    //     {
+    //       id: 'd002',
+    //       name: 'Lisinopril 10mg',
+    //       quantity: 30,
+    //       dosage: 'Once daily',
+    //     },
+    //   ],
+    //   status: 'Pending',
+    //   date: '2024-02-24',
+    // },
+    // {
+    //   id: 'RX002',
+    //   patientId: 'P002',
+    //   doctorId: 'D002',
+    //   drugs: [
+    //     {
+    //       id: 'd004',
+    //       name: 'Amoxicillin 500mg',
+    //       quantity: 21,
+    //       dosage: 'Three times daily',
+    //     },
+    //   ],
+    //   status: 'Dispensed',
+    //   date: '2024-02-23',
+    // },
   ];
+  facilityId: string | number = '';
 
   ngOnInit(): void {
+    this.facilityId =
+      JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
     this.loadDrugs();
     this.loadPrescriptions();
   }
@@ -188,7 +202,7 @@ export class PharmacyComponent implements OnInit {
   }
 
   addDrugToCatalog(newDrug: AddDrugPayload): void {
-    this.pharmacyService.createDrug(newDrug).subscribe({
+    this.pharmacyService.createDrug(newDrug, this.facilityId).subscribe({
       next: ({ data }) => {
         this.drugs = [
           data,
@@ -214,41 +228,46 @@ export class PharmacyComponent implements OnInit {
   }
 
   dispensePrescription(prescriptionId: string): void {
-    this.pharmacyService.dispensePrescription(prescriptionId).subscribe({
-      next: ({ data }) => {
-        this.prescriptions = [
-          data,
-          ...this.prescriptions.filter((entry) => entry.id !== data.id),
-        ];
-      },
-      error: () => {
-        this.prescriptions = this.prescriptions.map((prescription) => {
-          if (prescription.id !== prescriptionId) {
-            return prescription;
-          }
+    this.pharmacyService
+      .dispensePrescription(prescriptionId, this.facilityId)
+      .subscribe({
+        next: ({ data }) => {
+          this.prescriptions = [
+            data,
+            ...this.prescriptions.filter((entry) => entry.id !== data.id),
+          ];
+        },
+        error: () => {
+          this.prescriptions = this.prescriptions.map((prescription) => {
+            if (prescription.id !== prescriptionId) {
+              return prescription;
+            }
 
-          return {
-            ...prescription,
-            status: 'Dispensed',
-          };
-        });
-      },
-    });
+            return {
+              ...prescription,
+              status: 'Dispensed',
+            };
+          });
+        },
+      });
+    this.loadPrescriptions();
   }
 
   private loadDrugs(): void {
-    this.pharmacyService.getDrugs().subscribe({
-      next: ({ data }) => {
-        this.drugs = data.items;
+    this.pharmacyService.getDrugs(this.facilityId).subscribe({
+      next: (data) => {
+        console.log('Drugs loaded:', data);
+        this.drugs = data;
       },
       error: () => {},
     });
   }
 
   private loadPrescriptions(): void {
-    this.pharmacyService.getPrescriptions().subscribe({
-      next: ({ data }) => {
-        this.prescriptions = data.items;
+    this.pharmacyService.getPrescriptions(this.facilityId).subscribe({
+      next: (data) => {
+        console.log('Prescriptions loaded:', data);
+        this.prescriptions = data;
       },
       error: () => {},
     });

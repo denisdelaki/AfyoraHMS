@@ -1,0 +1,54 @@
+{
+  "drugCategories": [
+    {
+      "category": "Analgesics",
+      "description": "Pain relievers",
+      "examples": ["Paracetamol", "Ibuprofen", "Morphine"]
+    },
+    {
+      "category": "Antibiotics",
+      "description": "Treat bacterial infections",
+      "examples": ["Amoxicillin", "Azithromycin", "Ciprofloxacin"]
+    },
+    {
+      "category": "Antivirals",
+      "description": "Treat viral infections",
+      "examples": ["Acyclovir", "Valacyclovir", "Remdesivir"]
+    },
+    {
+      "category": "Antifungals",
+      "description": "Treat fungal infections",
+      "examples": ["Fluconazole", "Clotrimazole", "Ketoconazole"]
+    },
+    {
+      "category": "Antihypertensives",
+      "description": "Lower high blood pressure",
+      "examples": ["Lisinopril", "Amlodipine", "Losartan"]
+    },
+    {
+      "category": "Antidiabetics",
+      "description": "Manage blood sugar levels",
+      "examples": ["Metformin", "Insulin", "Glipizide"]
+    },
+    {
+      "category": "Antidepressants",
+      "description": "Treat depression and mood disorders",
+      "examples": ["Sertraline", "Fluoxetine", "Citalopram"]
+    },
+    {
+      "category": "Antihistamines",
+      "description": "Relieve allergy symptoms",
+      "examples": ["Cetirizine", "Loratadine", "Diphenhydramine"]
+    },
+    {
+      "category": "Statins",
+      "description": "Lower cholesterol levels",
+      "examples": ["Atorvastatin", "Simvastatin", "Rosuvastatin"]
+    },
+    {
+      "category": "Bronchodilators",
+      "description": "Open airways for respiratory conditions",
+      "examples": ["Albuterol", "Salmeterol", "Formoterol"]
+    }
+  ]
+}

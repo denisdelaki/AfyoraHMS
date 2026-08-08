@@ -19,12 +19,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 export type PrescriptionDrug = {
+  id: string;
   name: string;
   quantity: number;
   dosage: string;
 };
 
 export type PrescriptionEntry = {
+  id?: string;
   drugs: PrescriptionDrug[];
   status: 'Pending' | 'Dispensed';
   date: string;
@@ -145,13 +147,16 @@ export class AddVisitRecordDialogComponent {
       doctor: (value.doctor ?? '').trim(),
       diagnosis: (value.diagnosis ?? '').trim(),
       prescriptions: (value.prescriptions ?? []).map((p) => ({
+        id: ((p['id'] as string) ?? '').trim() || undefined,
         drugs: (
           (p['drugs'] as {
+            id?: string;
             name: string;
             quantity: number;
             dosage: string;
           }[]) ?? []
         ).map((d) => ({
+          id: ((d['id'] as string) ?? '').trim(),
           name: ((d['name'] as string) ?? '').trim(),
           quantity: Number((d['quantity'] as number) ?? 1),
           dosage: ((d['dosage'] as string) ?? '').trim(),
@@ -168,6 +173,7 @@ export class AddVisitRecordDialogComponent {
     initial?: Partial<PrescriptionEntry>,
   ): FormGroup {
     return this.formBuilder.group({
+      id: [initial?.id ?? ''],
       date: [initial?.date ?? this.todayDateValue(), [Validators.required]],
       status: [initial?.status ?? 'Pending', [Validators.required]],
       drugs: this.formBuilder.array(
@@ -180,6 +186,7 @@ export class AddVisitRecordDialogComponent {
 
   private buildDrugGroup(initial?: Partial<PrescriptionDrug>): FormGroup {
     return this.formBuilder.group({
+      id: [initial?.id ?? ''],
       name: [initial?.name ?? '', [Validators.required]],
       quantity: [
         initial?.quantity ?? 1,

@@ -66,11 +66,13 @@ export class EhrComponent implements OnInit {
           doctorId: 'D001',
           drugs: [
             {
+              id: 'd001',
               name: 'Amlodipine 5mg',
               quantity: 30,
               dosage: 'once daily in the morning',
             },
             {
+              id: 'd002',
               name: 'Lisinopril 10mg',
               quantity: 30,
               dosage: 'once daily in the morning',
@@ -85,6 +87,7 @@ export class EhrComponent implements OnInit {
           doctorId: 'D001',
           drugs: [
             {
+              id: 'd003',
               name: 'Lisinopril 10mg',
               quantity: 30,
               dosage: 'once daily in the morning',
@@ -203,7 +206,6 @@ export class EhrComponent implements OnInit {
       .getPatientVisitHistory(patientId, this.facilityId)
       .subscribe({
         next: (data) => {
-          console.log('Visit history for patient:', patientId, data);
           this.ehrRecords = data.map((record) => ({
             id: record.id || '',
             patientId: patientId,

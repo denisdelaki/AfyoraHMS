@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import {
   ApiResponse,
@@ -15,28 +15,68 @@ export class PharmacyService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = apiUrl('/pharmacy');
 
-  getDrugs(): Observable<ApiResponse<PaginatedResponse<Drug>>> {
-    return this.http.get<ApiResponse<PaginatedResponse<Drug>>>(
-      `${this.baseUrl}/drugs`,
+  getDrugs(facilityId: string | number): Observable<Drug[]> {
+    return this.http
+      .get<{
+        items: Drug[];
+        count: number;
+      }>(`${this.baseUrl}/drugs/?facilityId=${encodeURIComponent(facilityId)}/`)
+      .pipe(map((response) => response.items ?? []));
+  }
+
+  createDrug(
+    payload: CreateDrugRequest,
+    facilityId: string | number,
+  ): Observable<ApiResponse<Drug>> {
+    return this.http.post<ApiResponse<Drug>>(
+      `${this.baseUrl}/drugs/?facilityId=${encodeURIComponent(facilityId)}/`,
+      payload,
     );
   }
 
-  createDrug(payload: CreateDrugRequest): Observable<ApiResponse<Drug>> {
-    return this.http.post<ApiResponse<Drug>>(`${this.baseUrl}/drugs`, payload);
+  getPrescriptions(facilityId: string | number): Observable<Prescription[]> {
+    return this.http
+      .get<{
+        items: Prescription[];
+        count: number;
+      }>(
+        `${this.baseUrl}/prescriptions/?facilityId=${encodeURIComponent(facilityId)}/`,
+      )
+      .pipe(map((response) => response.items ?? []));
   }
 
-  getPrescriptions(): Observable<ApiResponse<PaginatedResponse<Prescription>>> {
-    return this.http.get<ApiResponse<PaginatedResponse<Prescription>>>(
-      `${this.baseUrl}/prescriptions`,
+  createPrescription(
+    patientId: string,
+    payload: {
+      drugs: { name: string; quantity: number; dosage: string }[];
+      status: 'Pending' | 'Dispensed';
+      date: string;
+      doctorId: string;
+    },
+    facilityId: string | number,
+  ): Observable<ApiResponse<Prescription>> {
+    return this.http.post<ApiResponse<Prescription>>(
+      `${this.baseUrl}/prescriptions/?facilityId=${encodeURIComponent(facilityId)}`,
+      { ...payload, patientId },
     );
   }
 
   dispensePrescription(
     prescriptionId: string,
+    facilityId: string | number,
   ): Observable<ApiResponse<Prescription>> {
     return this.http.patch<ApiResponse<Prescription>>(
-      `${this.baseUrl}/prescriptions/${encodeURIComponent(prescriptionId)}/dispense`,
+      `${this.baseUrl}/prescriptions/${encodeURIComponent(prescriptionId)}/dispense/?facilityId=${encodeURIComponent(facilityId)}/`,
       {},
+    );
+  }
+
+  deletePrescription(
+    prescriptionId: string,
+    facilityId: string | number,
+  ): Observable<ApiResponse<Prescription>> {
+    return this.http.delete<ApiResponse<Prescription>>(
+      `${this.baseUrl}/prescriptions/${encodeURIComponent(prescriptionId)}/?facilityId=${encodeURIComponent(facilityId)}/`,
     );
   }
 }

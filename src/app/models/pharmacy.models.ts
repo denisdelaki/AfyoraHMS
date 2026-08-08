@@ -9,12 +9,12 @@ export type Drug = {
   manufacturer: string;
 };
 
-
 export type Prescription = {
   id: string;
   patientId: string;
   doctorId: string;
   drugs: {
+    id: string;
     name: string;
     quantity: number;
     dosage: string;
