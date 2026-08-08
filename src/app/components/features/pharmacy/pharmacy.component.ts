@@ -7,6 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import {
   LucideAngularModule,
@@ -45,6 +46,7 @@ type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts';
 export class PharmacyComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly pharmacyService = inject(PharmacyService);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly Search = Search;
   readonly Plus = Plus;
@@ -231,32 +233,37 @@ export class PharmacyComponent implements OnInit {
     this.pharmacyService
       .dispensePrescription(prescriptionId, this.facilityId)
       .subscribe({
-        next: ({ data }) => {
-          this.prescriptions = [
-            data,
-            ...this.prescriptions.filter((entry) => entry.id !== data.id),
-          ];
+        next: (dispensed) => {
+          this.prescriptions = this.prescriptions.map((prescription) =>
+            prescription.id === prescriptionId
+              ? {
+                  ...prescription,
+                  ...dispensed,
+                  status: 'Dispensed',
+                }
+              : prescription,
+          );
+          this.snackBar.open('Prescription dispensed successfully.', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+          });
+          this.loadPrescriptions();
         },
         error: () => {
-          this.prescriptions = this.prescriptions.map((prescription) => {
-            if (prescription.id !== prescriptionId) {
-              return prescription;
-            }
-
-            return {
-              ...prescription,
-              status: 'Dispensed',
-            };
+          this.snackBar.open('Unable to dispense prescription.', 'Close', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
           });
+          this.loadPrescriptions();
         },
       });
-    this.loadPrescriptions();
   }
 
   private loadDrugs(): void {
     this.pharmacyService.getDrugs(this.facilityId).subscribe({
       next: (data) => {
-        console.log('Drugs loaded:', data);
         this.drugs = data;
       },
       error: () => {},
@@ -266,7 +273,6 @@ export class PharmacyComponent implements OnInit {
   private loadPrescriptions(): void {
     this.pharmacyService.getPrescriptions(this.facilityId).subscribe({
       next: (data) => {
-        console.log('Prescriptions loaded:', data);
         this.prescriptions = data;
       },
       error: () => {},

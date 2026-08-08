@@ -2,13 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { apiUrl } from '../core/api.config';
-import {
-  ApiResponse,
-  CreateDrugRequest,
-  Drug,
-  PaginatedResponse,
-  Prescription,
-} from '../models';
+import { ApiResponse, CreateDrugRequest, Drug, Prescription } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class PharmacyService {
@@ -64,11 +58,25 @@ export class PharmacyService {
   dispensePrescription(
     prescriptionId: string,
     facilityId: string | number,
-  ): Observable<ApiResponse<Prescription>> {
-    return this.http.patch<ApiResponse<Prescription>>(
-      `${this.baseUrl}/prescriptions/${encodeURIComponent(prescriptionId)}/dispense/?facilityId=${encodeURIComponent(facilityId)}/`,
-      {},
-    );
+  ): Observable<Prescription> {
+    return this.http
+      .patch<
+        ApiResponse<Prescription> | Prescription
+      >(`${this.baseUrl}/prescriptions/${encodeURIComponent(prescriptionId)}/dispense/?facilityId=${encodeURIComponent(facilityId)}/`, {})
+      .pipe(
+        map((response) => {
+          if (
+            response &&
+            typeof response === 'object' &&
+            ('data' in response || 'results' in response)
+          ) {
+            const apiResponse = response as ApiResponse<Prescription>;
+            return apiResponse.results ?? apiResponse.data;
+          }
+
+          return response as Prescription;
+        }),
+      );
   }
 
   deletePrescription(
