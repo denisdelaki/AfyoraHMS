@@ -5,6 +5,16 @@ import { apiUrl } from '../core/api.config';
 import { Department } from '../models/employee.model';
 import { ApiResponse, PaginatedResponse } from '../models';
 
+type DepartmentCreatePayload = {
+  name: string;
+  description?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  is_operational?: boolean;
+  head?: string | number | null;
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -35,28 +45,63 @@ export class DepartmentService {
         params,
       })
       .pipe(
-        map((response) => this.normalizeDepartmentList(response.results)),
+        map((response) => this.normalizeDepartmentList(response)),
         tap((departments) => this.departments.set(departments)),
       );
   }
 
-  createDepartment(payload: Omit<Department, 'id'>): Observable<Department> {
+  createDepartment(payload: DepartmentCreatePayload): Observable<Department> {
     return this.http
-      .post<ApiResponse<Department>>(this.baseUrl, payload, {
+      .post<ApiResponse<Department> | Department>(this.baseUrl, payload, {
         headers: this.buildAuthHeaders(),
       })
       .pipe(
-        map((response) => response.data),
+        map((response) => {
+          if (
+            response &&
+            typeof response === 'object' &&
+            ('data' in response || 'results' in response)
+          ) {
+            const apiResponse = response as ApiResponse<Department>;
+            return apiResponse.results ?? apiResponse.data;
+          }
+
+          return response as Department;
+        }),
         tap((created) => {
           this.departments.update((deps) => [...deps, created]);
         }),
       );
   }
 
-  private normalizeDepartmentList(
-    payload: Department[] | PaginatedResponse<Department>,
-  ): Department[] {
-    return Array.isArray(payload) ? payload : payload.items;
+  private normalizeDepartmentList(payload: unknown): Department[] {
+    if (Array.isArray(payload)) {
+      return payload as Department[];
+    }
+
+    if (!payload || typeof payload !== 'object') {
+      return [];
+    }
+
+    const structured = payload as {
+      results?: Department[];
+      items?: Department[];
+      data?: Department[];
+    };
+
+    if (Array.isArray(structured.results)) {
+      return structured.results;
+    }
+
+    if (Array.isArray(structured.items)) {
+      return structured.items;
+    }
+
+    if (Array.isArray(structured.data)) {
+      return structured.data;
+    }
+
+    return [];
   }
 
   private buildFacilityParams(facilityId?: string | number): HttpParams {

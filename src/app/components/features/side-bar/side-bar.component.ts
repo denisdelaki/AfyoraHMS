@@ -4,6 +4,7 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../services';
 import {
   BarChart3,
+  Building2,
   CreditCard,
   FileText,
   FlaskConical,
@@ -62,6 +63,7 @@ export class SideBarComponent {
     { name: 'Pharmacy', href: '/pharmacy', icon: Pill },
     { name: 'Billing', href: '/billing', icon: CreditCard },
     { name: 'Employees', href: '/employees', icon: UserCog },
+    { name: 'Departments', href: '/departments', icon: Building2 },
     { name: 'Inventory', href: '/inventory', icon: Package },
     { name: 'Laboratory', href: '/laboratory', icon: FlaskConical },
     { name: 'Radiology', href: '/radiology', icon: Scan },

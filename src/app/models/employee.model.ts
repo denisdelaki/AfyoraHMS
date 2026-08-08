@@ -21,7 +21,13 @@ export interface Department {
   id: string;
   name: string;
   description?: string;
-  facility: string | number;
+  facility?: string | number;
+  email?: string;
+  phone?: string;
+  location?: string;
+  is_operational?: boolean;
+  head?: string | number | null;
+  head_name?: string;
 }
 
 export interface Attendance {
