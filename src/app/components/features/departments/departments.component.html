@@ -23,7 +23,15 @@
     >
       <mat-form-field appearance="fill" class="w-full md:col-span-2">
         <mat-label>Department Name</mat-label>
-        <input matInput formControlName="name" placeholder="e.g. Cardiology" />
+        <input
+          matInput
+          formControlName="name"
+          placeholder="e.g. Cardiology"
+          required
+        />
+        <mat-error *ngIf="departmentForm.get('name')?.hasError('required')">
+          Department name is required
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full md:col-span-2">
@@ -42,25 +50,55 @@
           formControlName="head"
           placeholder="Enter name of head of department"
         />
+        <mat-error *ngIf="departmentForm.get('head')?.hasError('required')">
+          Head of department is required
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Email</mat-label>
         <input
           matInput
+          type="email"
           formControlName="email"
           placeholder="department@facility.com"
+          required
         />
+        <mat-error *ngIf="departmentForm.get('email')?.hasError('required')">
+          Email is required
+        </mat-error>
+        <mat-error *ngIf="departmentForm.get('email')?.hasError('email')">
+          Please enter a valid email address
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Phone</mat-label>
-        <input matInput formControlName="phone" placeholder="+254..." />
+        <input
+          matInput
+          formControlName="phone"
+          type="tel"
+          (input)="onlyNumbers($event)"
+          placeholder="254..."
+          maxlength="12"
+          required
+        />
+        <mat-error *ngIf="departmentForm.get('phone')?.hasError('required')">
+          Phone number is required
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full md:col-span-2">
         <mat-label>Location</mat-label>
-        <input matInput formControlName="location" placeholder="Floor / Wing" />
+        <input
+          matInput
+          formControlName="location"
+          placeholder="Floor / Wing"
+          required
+        />
+        <mat-error *ngIf="departmentForm.get('location')?.hasError('required')">
+          Location is required
+        </mat-error>
       </mat-form-field>
 
       <div class="md:col-span-2">
@@ -69,7 +107,7 @@
           color="primary"
           type="button"
           (click)="addDepartment()"
-          [disabled]="isSaving"
+          [disabled]="isSaving || departmentForm.invalid"
         >
           <mat-icon>add</mat-icon> Add Department
         </button>

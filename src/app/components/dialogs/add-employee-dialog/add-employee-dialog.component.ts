@@ -44,7 +44,7 @@ export class AddEmployeeDialogComponent implements OnInit {
     role: ['Doctor', Validators.required],
     department: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', Validators.required],
+    phone: ['', [Validators.required, Validators.maxLength(12)]],
     joinDate: ['', Validators.required],
     salary: ['', [Validators.required, Validators.min(0)]],
     shift: ['Morning (6 AM - 2 PM)', Validators.required],
@@ -89,6 +89,10 @@ export class AddEmployeeDialogComponent implements OnInit {
         );
       },
     });
+  }
+  onlyNumbers(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.replace(/[^0-9]/g, '');
   }
 
   onCancel(): void {

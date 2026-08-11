@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { PatientsService } from '../../../services';
+import { EmployeeService } from '../../../services/employee.service';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -23,6 +25,8 @@ import {
 import { MatIcon } from '@angular/material/icon';
 import { Drug, Prescription } from '../../../models';
 import { PharmacyService } from '../../../services';
+import { Patient } from '../patients/patient.models';
+import { Employee } from '../../../models/employee.model';
 
 type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts';
 
@@ -46,6 +50,8 @@ type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts';
 export class PharmacyComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly pharmacyService = inject(PharmacyService);
+  private readonly patientsService = inject(PatientsService);
+  private readonly employeesService = inject(EmployeeService);
   private readonly snackBar = inject(MatSnackBar);
 
   readonly Search = Search;
@@ -109,6 +115,9 @@ export class PharmacyComponent implements OnInit {
     // },
   ];
 
+  patients: Patient[] = [];
+  employees: Employee[] = [];
+
   prescriptions: Prescription[] = [
     // {
     //   id: 'RX001',
@@ -154,6 +163,44 @@ export class PharmacyComponent implements OnInit {
       JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
     this.loadDrugs();
     this.loadPrescriptions();
+    this.loadPatients();
+    this.loadEmployees();
+  }
+
+  private loadPatients(): void {
+    this.patientsService.getPatients(this.facilityId).subscribe({
+      next: (data) => {
+        this.patients = data;
+      },
+      error: (error) => {
+        console.error('Failed to load patients:', error);
+        this.patients = [];
+      },
+    });
+  }
+
+  private loadEmployees(): void {
+    this.employeesService.fetchEmployees(this.facilityId).subscribe({
+      next: (data) => {
+        this.employees = data;
+      },
+      error: (error) => {
+        console.error('Failed to load employees:', error);
+        this.employees = [];
+      },
+    });
+  }
+
+  getPatientName(patientId: string): string {
+    const patient = this.patients.find((p) => p.id === patientId);
+    return patient
+      ? `${patient.firstName} ${patient.lastName}`
+      : 'Unknown Patient';
+  }
+
+  getDoctorName(doctorId: string): string {
+    const doctor = this.employees.find((e) => e.id === doctorId);
+    return doctor ? doctor.name : 'Unknown Doctor';
   }
 
   get filteredDrugs(): Drug[] {

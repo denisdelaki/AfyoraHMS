@@ -78,25 +78,44 @@ export class PatientProfileDialogComponent implements OnInit {
   ngOnInit(): void {
     this.facilityId =
       JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
+
     this.data.visitHistory = this.data.visitHistory.map((record) =>
       this.normalizeVisitRecord(record),
     );
 
-    forkJoin({
-      employees: this.employeeService.fetchEmployees(this.facilityId),
-      departments: this.departmentService.fetchDepartments(this.facilityId),
-    }).subscribe({
-      next: ({ employees, departments }) => {
-        this.doctors = employees.map((e: Employee) => ({
-          id: this.normalizeId(e.id),
-          name: e.name,
-        }));
+    // Load employees
+    this.employeeService.fetchEmployees(this.facilityId).subscribe({
+      next: (employees) => {
+        this.doctors = employees
+          .filter(
+            (employee: Employee) =>
+              employee.role?.toLowerCase() === 'doctor' ||
+              employee.role?.toLowerCase() === 'nurse',
+          )
+          .map((employee: Employee) => ({
+            id: this.normalizeId(employee.id),
+            name: employee.name,
+          }));
+
         this.doctorNames = new Map(
-          employees.map((employee) => [
+          employees.map((employee: Employee) => [
             this.normalizeId(employee.id),
             employee.name,
           ]),
         );
+      },
+
+      error: (error) => {
+        console.error('Failed to load employees:', error);
+
+        this.doctors = [];
+        this.doctorNames = new Map();
+      },
+    });
+
+    // Load departments
+    this.departmentService.fetchDepartments(this.facilityId).subscribe({
+      next: (departments) => {
         this.departmentNames = new Map(
           departments.map((department) => [
             this.normalizeId(department.id),
@@ -104,9 +123,10 @@ export class PatientProfileDialogComponent implements OnInit {
           ]),
         );
       },
-      error: () => {
-        this.doctors = [];
-        this.doctorNames = new Map();
+
+      error: (error) => {
+        console.error('Failed to load departments:', error);
+
         this.departmentNames = new Map();
       },
     });
@@ -222,7 +242,6 @@ export class PatientProfileDialogComponent implements OnInit {
               });
             },
             error: (error) => {
-              console.error('Error deleting associated prescriptions:', error);
               this.snackBar.open(
                 'Visit record deleted, but some prescriptions could not be deleted.',
                 'Close',
@@ -384,12 +403,14 @@ export class PatientProfileDialogComponent implements OnInit {
     return 'bg-slate-100 text-slate-700 border-slate-200';
   }
 
-  displayDoctor(doctorIdOrName: string): string {
-    return (
-      this.doctorNames.get(this.normalizeId(doctorIdOrName)) ||
-      doctorIdOrName ||
-      'Unknown Doctor'
-    );
+  displayDoctor(doctorIdOrName: string | number | null | undefined): string {
+    const value = this.normalizeId(doctorIdOrName);
+
+    if (!value) {
+      return 'Unknown Doctor';
+    }
+
+    return this.doctorNames.get(value) || value;
   }
 
   displayDepartment(departmentIdOrName: string): string {

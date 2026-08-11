@@ -73,7 +73,9 @@
           matInput
           type="tel"
           formControlName="phone"
-          placeholder="+1 555-0000"
+          maxlength="12"
+          placeholder="254..."
+          (input)="onlyNumbers($event)"
         />
         <mat-error *ngIf="employeeForm.get('phone')?.hasError('required')"
           >Required</mat-error

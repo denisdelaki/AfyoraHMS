@@ -47,11 +47,16 @@ export class DepartmentsComponent implements OnInit {
   readonly departmentForm = this.formBuilder.group({
     name: ['', [Validators.required]],
     description: [''],
-    head: [''],
-    email: [''],
-    phone: [''],
-    location: [''],
+    head: ['', [Validators.required]],
+    email: ['', [Validators.required], Validators.email],
+    phone: ['', [Validators.required]],
+    location: ['', [Validators.required]],
   });
+
+  onlyNumbers(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.replace(/[^0-9]/g, '');
+  }
 
   get filteredDepartments(): Department[] {
     const term = this.searchTerm.trim().toLowerCase();
