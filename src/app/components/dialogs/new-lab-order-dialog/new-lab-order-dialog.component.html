@@ -4,13 +4,12 @@
   <form [formGroup]="form" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
     <mat-form-field appearance="fill" class="sm:col-span-2">
       <mat-label>Patient</mat-label>
-      <input
-        matInput
-        formControlName="patient"
-        placeholder="Search patient..."
-      />
+      <mat-select formControlName="patient">
+        <mat-option *ngFor="let patient of patients" [value]="patient.id">
+          {{ patient.name }}
+        </mat-option>
+      </mat-select>
     </mat-form-field>
-
     <mat-form-field appearance="fill">
       <mat-label>Patient ID</mat-label>
       <input matInput formControlName="patientId" placeholder="e.g. P005" />
@@ -18,11 +17,11 @@
 
     <mat-form-field appearance="fill">
       <mat-label>Ordered By</mat-label>
-      <input
-        matInput
-        formControlName="orderedBy"
-        placeholder="e.g. Dr. Jane Doe"
-      />
+      <mat-select formControlName="orderedBy">
+        <mat-option *ngFor="let doctor of doctors" [value]="doctor.id">
+          {{ doctor.name }}
+        </mat-option>
+      </mat-select>
     </mat-form-field>
 
     <mat-form-field appearance="fill" class="sm:col-span-2">

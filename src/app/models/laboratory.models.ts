@@ -14,6 +14,14 @@ export interface LabTest {
   price: number;
 }
 
+export interface LabTestPayload {
+  id: string;
+  name: string;
+  category: string;
+  duration: string;
+  price: number;
+}
+
 export interface LabRequest {
   id: string;
   patient: string;

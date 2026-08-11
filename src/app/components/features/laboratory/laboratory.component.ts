@@ -7,16 +7,19 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { combineLatest, map, startWith } from 'rxjs';
 import {
   LabRequest,
   LabResult,
   LabTest,
+  LabTestPayload,
   SubmitLabResultPayload,
 } from '../../../models/laboratory.models';
 import { LaboratoryService } from '../../../services/laboratory.service';
 import { EnterLabResultsDialogComponent } from '../../dialogs/enter-lab-results-dialog/enter-lab-results-dialog.component';
+import { ManageLabTestDialogComponent } from '../../dialogs/manage-lab-test-dialog/manage-lab-test-dialog.component';
 import { NewLabOrderDialogComponent } from '../../dialogs/new-lab-order-dialog/new-lab-order-dialog.component';
 
 type LaboratoryTab = 'requests' | 'results' | 'catalog';
@@ -30,6 +33,7 @@ type LaboratoryTab = 'requests' | 'results' | 'catalog';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSnackBarModule,
     MatTabsModule,
     MatIconModule,
   ],
@@ -39,6 +43,7 @@ type LaboratoryTab = 'requests' | 'results' | 'catalog';
 export class LaboratoryComponent {
   private readonly dialog = inject(MatDialog);
   private readonly laboratoryService = inject(LaboratoryService);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly tabs: LaboratoryTab[] = ['requests', 'results', 'catalog'];
@@ -124,6 +129,87 @@ export class LaboratoryComponent {
     this.laboratoryService.startTest(labId);
   }
 
+  openCreateTestDialog(): void {
+    this.dialog
+      .open(ManageLabTestDialogComponent, {
+        width: '640px',
+        maxWidth: '95vw',
+        data: { mode: 'create' },
+      })
+      .afterClosed()
+      .subscribe((payload: LabTestPayload | undefined) => {
+        if (!payload) {
+          return;
+        }
+
+        this.laboratoryService.createTest(payload).subscribe({
+          next: () => {
+            this.openSnackBar('Lab test created successfully.');
+          },
+          error: (error) => {
+            this.openSnackBar(
+              this.getErrorMessage(error, 'Unable to create lab test.'),
+            );
+          },
+        });
+      });
+  }
+
+  openEditTestDialog(testId: string): void {
+    this.laboratoryService.getTestById(testId).subscribe({
+      next: (test) => {
+        this.dialog
+          .open(ManageLabTestDialogComponent, {
+            width: '640px',
+            maxWidth: '95vw',
+            data: { mode: 'edit', test },
+          })
+          .afterClosed()
+          .subscribe((payload: LabTestPayload | undefined) => {
+            if (!payload) {
+              return;
+            }
+
+            this.laboratoryService.updateTest(testId, payload).subscribe({
+              next: () => {
+                this.openSnackBar('Lab test updated successfully.');
+              },
+              error: (error) => {
+                this.openSnackBar(
+                  this.getErrorMessage(error, 'Unable to update lab test.'),
+                );
+              },
+            });
+          });
+      },
+      error: (error) => {
+        this.openSnackBar(
+          this.getErrorMessage(error, 'Unable to load lab test.'),
+        );
+      },
+    });
+  }
+
+  deleteTest(test: LabTest): void {
+    const confirmed = window.confirm(
+      `Delete ${test.name} (${test.id}) from the test catalog?`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    this.laboratoryService.deleteTest(test.id).subscribe({
+      next: () => {
+        this.openSnackBar('Lab test deleted successfully.');
+      },
+      error: (error) => {
+        this.openSnackBar(
+          this.getErrorMessage(error, 'Unable to delete lab test.'),
+        );
+      },
+    });
+  }
+
   trackByRequest(index: number, request: LabRequest) {
     return request.id;
   }
@@ -134,5 +220,27 @@ export class LaboratoryComponent {
 
   trackByTest(index: number, test: LabTest) {
     return test.id;
+  }
+
+  private openSnackBar(message: string): void {
+    this.snackBar.open(message, 'Close', {
+      duration: 3000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+    });
+  }
+
+  private getErrorMessage(error: unknown, fallback: string): string {
+    const apiError = error as {
+      error?: { detail?: string; message?: string };
+      message?: string;
+    };
+
+    return (
+      apiError?.error?.detail ||
+      apiError?.error?.message ||
+      apiError?.message ||
+      fallback
+    );
   }
 }

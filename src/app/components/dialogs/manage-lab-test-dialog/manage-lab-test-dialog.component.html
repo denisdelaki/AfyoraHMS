@@ -1,0 +1,59 @@
+<h2 mat-dialog-title class="!mb-1">
+  {{ isEditMode ? "Edit Lab Test" : "Add Lab Test" }}
+</h2>
+<p class="text-sm text-slate-600 px-6">
+  {{
+    isEditMode
+      ? "Update the catalog details for this laboratory test."
+      : "Create a new laboratory test in the catalog."
+  }}
+</p>
+
+<mat-dialog-content>
+  <form
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4"
+  >
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Test ID</mat-label>
+      <input matInput formControlName="id" placeholder="T006" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Category</mat-label>
+      <input matInput formControlName="category" placeholder="Biochemistry" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="sm:col-span-2 w-full">
+      <mat-label>Test Name</mat-label>
+      <input
+        matInput
+        formControlName="name"
+        placeholder="Complete Blood Count (CBC)"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Turnaround Time</mat-label>
+      <input matInput formControlName="duration" placeholder="2 hours" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Price</mat-label>
+      <input matInput type="number" min="0" formControlName="price" />
+    </mat-form-field>
+
+    <div class="sm:col-span-2 flex justify-end gap-2 pt-1">
+      <button mat-stroked-button type="button" (click)="close()">Cancel</button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="form.invalid"
+      >
+        {{ isEditMode ? "Save Changes" : "Create Test" }}
+      </button>
+    </div>
+  </form>
+</mat-dialog-content>

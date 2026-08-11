@@ -348,6 +348,17 @@
 
     <mat-tab label="Test Catalog">
       <div class="py-4" *ngIf="tests$ | async as tests">
+        <div class="flex justify-end mb-4">
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="openCreateTestDialog()"
+          >
+            <mat-icon class="mr-1">add</mat-icon>
+            Add Test
+          </button>
+        </div>
+
         <mat-card class="!rounded-xl !shadow-sm">
           <div class="overflow-x-auto p-1">
             <table class="w-full min-w-[900px]">
@@ -378,6 +389,11 @@
                   >
                     Price
                   </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -390,6 +406,30 @@
                   <td class="py-3 px-4">{{ test.category }}</td>
                   <td class="py-3 px-4">{{ test.duration }}</td>
                   <td class="py-3 px-4">{{ test.price | currency }}</td>
+                  <td class="py-3 px-4">
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        mat-stroked-button
+                        color="primary"
+                        (click)="openEditTestDialog(test.id)"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        mat-stroked-button
+                        color="warn"
+                        (click)="deleteTest(test)"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr *ngIf="tests.length === 0">
+                  <td colspan="6" class="text-center text-slate-500 py-10">
+                    No lab tests found.
+                  </td>
                 </tr>
               </tbody>
             </table>
