@@ -3,6 +3,8 @@ export type FacilityType = 'hospital' | 'clinic';
 export type LoginRequest = {
   email: string;
   password: string;
+  newPassword?: string;
+  confirmPassword?: string;
   rememberMe?: boolean;
 };
 

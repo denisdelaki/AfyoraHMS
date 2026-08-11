@@ -93,30 +93,85 @@
         </div>
 
         <div>
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Password</mat-label>
-            <input
-              matInput
-              [type]="showPassword ? 'text' : 'password'"
-              placeholder="••••••••"
-              formControlName="password"
-              required
-            />
-            <button
-              mat-icon-button
-              matSuffix
-              (click)="togglePassword()"
-              type="button"
-              aria-label="Toggle password visibility"
-            >
-              <mat-icon>{{
-                showPassword ? "visibility_off" : "visibility"
-              }}</mat-icon>
-            </button>
-            @if (hasControlError("password", "required")) {
-              <mat-error> Password is required </mat-error>
-            }
-          </mat-form-field>
+          @if (isFirstTimeLogin) {
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>New Password</mat-label>
+              <input
+                matInput
+                [type]="showPassword ? 'text' : 'password'"
+                placeholder="••••••••"
+                formControlName="newPassword"
+                required
+              />
+              <button
+                mat-icon-button
+                matSuffix
+                (click)="togglePassword()"
+                type="button"
+                aria-label="Toggle password visibility"
+              >
+                <mat-icon>{{
+                  showPassword ? "visibility_off" : "visibility"
+                }}</mat-icon>
+              </button>
+              @if (hasControlError("newPassword", "required")) {
+                <mat-error> New password is required </mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Confirm New Password</mat-label>
+              <input
+                matInput
+                [type]="showPassword ? 'text' : 'password'"
+                placeholder="••••••••"
+                formControlName="confirmPassword"
+                required
+              />
+              <button
+                mat-icon-button
+                matSuffix
+                (click)="togglePassword()"
+                type="button"
+                aria-label="Toggle password visibility"
+              >
+                <mat-icon>{{
+                  showPassword ? "visibility_off" : "visibility"
+                }}</mat-icon>
+              </button>
+              @if (hasControlError("confirmPassword", "required")) {
+                <mat-error> Confirm password is required </mat-error>
+              }
+              @if (hasControlError("confirmPassword", "passwordMismatch")) {
+                <mat-error> Passwords do not match </mat-error>
+              }
+            </mat-form-field>
+          } @else {
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Password</mat-label>
+              <input
+                matInput
+                [type]="showPassword ? 'text' : 'password'"
+                placeholder="••••••••"
+                formControlName="password"
+                required
+              />
+              <button
+                mat-icon-button
+                matSuffix
+                (click)="togglePassword()"
+                type="button"
+                aria-label="Toggle password visibility"
+              >
+                <mat-icon>{{
+                  showPassword ? "visibility_off" : "visibility"
+                }}</mat-icon>
+              </button>
+              @if (hasControlError("password", "required")) {
+                <mat-error> Password is required </mat-error>
+              }
+            </mat-form-field>
+          }
         </div>
 
         <div class="flex items-center justify-between -mt-2">
