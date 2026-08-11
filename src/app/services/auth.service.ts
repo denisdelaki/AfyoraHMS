@@ -84,6 +84,13 @@ export class AuthService {
       );
   }
 
+  requestPasswordReset(email: string): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(
+      `${this.baseUrl}/password-reset/`,
+      { email },
+    );
+  }
+
   clearAuthData(): void {
     if (!this.isStorageAvailable()) {
       return;
