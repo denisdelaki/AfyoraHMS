@@ -1,5 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { Patient } from '../../../models/patients.models';
+import { PatientsService } from '../../../services/patients.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -53,6 +56,9 @@ type BillingTab = 'invoices' | 'payments';
 export class BillingComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly billingService = inject(BillingService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly patientService = inject(PatientsService);
+  facilityId: string | number = '';
 
   readonly Search = Search;
   readonly Plus = Plus;
@@ -67,7 +73,7 @@ export class BillingComponent implements OnInit {
     string,
     'sent' | 'failed'
   >();
-
+  patients: Patient[] = [];
   invoices: Invoice[] = [
     {
       id: 'INV-001',
@@ -143,8 +149,11 @@ export class BillingComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.loadInvoices();
-    this.loadPayments();
+    this.facilityId =
+      JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
+    this.loadPatients(this.facilityId);
+    this.loadInvoices(this.facilityId);
+    this.loadPayments(this.facilityId);
   }
 
   get filteredInvoices(): Invoice[] {
@@ -188,6 +197,30 @@ export class BillingComponent implements OnInit {
       }
 
       this.createInvoiceFromPayload(result);
+    });
+  }
+
+  private loadPatients(facilityId: string | number): void {
+    this.patientService.getPatients(facilityId).subscribe({
+      next: (patients) => {
+        this.patients = patients;
+        this.snackBar.open('Patients loaded successfully.', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        });
+      },
+      error: () => {
+        this.snackBar.open(
+          'Failed to load patients. Please try again later.',
+          'Close',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          },
+        );
+      },
     });
   }
 
@@ -235,7 +268,7 @@ export class BillingComponent implements OnInit {
     };
 
     this.billingService
-      .sendInvoiceReminder(payload)
+      .sendInvoiceReminder(payload, this.facilityId)
       .pipe(
         finalize(() => {
           this.sendingReminderInvoiceIds.delete(invoice.id);
@@ -382,7 +415,8 @@ export class BillingComponent implements OnInit {
       return;
     }
 
-    this.billingService.createInvoice(payload).subscribe({
+    console.log('Creating invoice with payload:', payload);
+    this.billingService.createInvoice(payload, this.facilityId).subscribe({
       next: ({ data }) => {
         this.invoices = [
           data,
@@ -419,10 +453,10 @@ export class BillingComponent implements OnInit {
       paymentMethod: null,
       insurance: payload.insurance
         ? {
-            company: payload.insurance.company,
-            coverage: payload.insurance.coverage ?? 0,
-            claim: `CLM-${Date.now().toString().slice(-5)}`,
-          }
+          company: payload.insurance.company,
+          coverage: payload.insurance.coverage ?? 0,
+          claim: `CLM-${Date.now().toString().slice(-5)}`,
+        }
         : null,
     };
 
@@ -433,7 +467,7 @@ export class BillingComponent implements OnInit {
     invoiceId: string,
     payload: RecordPaymentPayload,
   ): void {
-    this.billingService.recordPayment(invoiceId, payload).subscribe({
+    this.billingService.recordPayment(invoiceId, payload, this.facilityId).subscribe({
       next: ({ data }) => {
         const invoice = this.invoices.find((entry) => entry.id === invoiceId);
         if (!invoice) {
@@ -490,21 +524,21 @@ export class BillingComponent implements OnInit {
     this.payments = [payment, ...this.payments];
   }
 
-  private loadInvoices(): void {
-    this.billingService.getInvoices().subscribe({
+  private loadInvoices(facilityId: string | number): void {
+    this.billingService.getInvoices(facilityId).subscribe({
       next: ({ data }) => {
         this.invoices = data.items;
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
-  private loadPayments(): void {
-    this.billingService.getPayments().subscribe({
+  private loadPayments(facilityId: string | number): void {
+    this.billingService.getPayments(facilityId).subscribe({
       next: ({ data }) => {
         this.payments = data.items;
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
