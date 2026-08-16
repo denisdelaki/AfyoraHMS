@@ -32,6 +32,7 @@ import { FacilityOnboardingRequest, FacilityType } from '../../../models';
   styleUrl: './onboarding.component.css',
 })
 export class OnboardingComponent implements OnInit {
+  email: string = '';
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -102,7 +103,7 @@ export class OnboardingComponent implements OnInit {
   plans = [
     {
       name: 'Basic',
-      price: '$299',
+      price: 'Kes 2999',
       features: [
         'Up to 100 patients',
         '3 users',
@@ -112,7 +113,7 @@ export class OnboardingComponent implements OnInit {
     },
     {
       name: 'Professional',
-      price: '$599',
+      price: 'Kes 5999',
       features: [
         'Up to 500 patients',
         '15 users',
@@ -122,7 +123,7 @@ export class OnboardingComponent implements OnInit {
     },
     {
       name: 'Enterprise',
-      price: '$1299',
+      price: 'Kes 12999',
       features: [
         'Unlimited patients',
         'Unlimited users',

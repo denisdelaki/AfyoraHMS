@@ -27,8 +27,8 @@ type LabRequestApiModel = {
   id?: string;
   labId?: string;
   patient?:
-    | string
-    | { id?: string; patientId?: string; fullName?: string; name?: string };
+  | string
+  | { id?: string; patientId?: string; fullName?: string; name?: string };
   patient_id?: string;
   patientId?: string;
   patient_name?: string;
@@ -238,7 +238,7 @@ export class LaboratoryService {
   constructor() {
     this.fetchLabTests();
     this.fetchLabRequests();
-    this.fetchLabResults();
+    this.fetchLabResults(this.getCurrentFacilityId());
   }
 
   getTests() {
@@ -392,12 +392,12 @@ export class LaboratoryService {
 
     this.http
       .post<ApiResponse<LabResultApiModel> | LabResultApiModel>(
-        this.buildLabResultUrl(),
+        this.buildLabResultUrl(this.getCurrentFacilityId()),
         resultPayload,
       )
       .pipe(
         tap(() => {
-          this.fetchLabResults();
+          this.fetchLabResults(this.getCurrentFacilityId());
           this.fetchLabRequests();
         }),
         catchError((error) => {
@@ -419,10 +419,10 @@ export class LaboratoryService {
       this.resultsSubject.value.map((result) =>
         result.labId === labId
           ? {
-              ...result,
-              status: 'Approved',
-              approvedBy: 'Dr. Wilson',
-            }
+            ...result,
+            status: 'Approved',
+            approvedBy: 'Dr. Wilson',
+          }
           : result,
       ),
     );
@@ -435,7 +435,7 @@ export class LaboratoryService {
       .pipe(
         tap(() => {
           this.fetchLabRequests();
-          this.fetchLabResults();
+          this.fetchLabResults(this.getCurrentFacilityId());
         }),
         catchError((error) => {
           console.error('Failed to approve lab result on backend:', error);
@@ -512,10 +512,10 @@ export class LaboratoryService {
       });
   }
 
-  private fetchLabResults(): void {
+  fetchLabResults(facilityId: string | number): void {
     this.http
       .get<ApiResponse<LabResultApiModel[]> | LabResultApiModel[]>(
-        this.buildLabResultUrl(),
+        this.buildLabResultUrl(facilityId),
       )
       .pipe(
         map((response) => this.extractCollection<LabResultApiModel>(response)),
@@ -543,8 +543,7 @@ export class LaboratoryService {
     return `${this.labRequestUrl}/?facilityId=${encodeURIComponent(facilityId)}/`;
   }
 
-  private buildLabResultUrl(): string {
-    const facilityId = this.getCurrentFacilityId();
+  private buildLabResultUrl(facilityId: string | number): string {
     if (!facilityId) {
       return `${this.labResultUrl}/`;
     }
@@ -571,9 +570,9 @@ export class LaboratoryService {
     return `${baseUrl}?facilityId=${encodeURIComponent(facilityId)}`;
   }
 
-  private getCurrentFacilityId(): string | null {
+  private getCurrentFacilityId(): string {
     if (typeof localStorage === 'undefined') {
-      return null;
+      return '';
     }
 
     try {
@@ -584,12 +583,12 @@ export class LaboratoryService {
       } | null;
 
       if (!user?.facility) {
-        return null;
+        return '';
       }
 
       return String(user.facility);
     } catch {
-      return null;
+      return '';
     }
   }
 

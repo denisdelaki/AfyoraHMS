@@ -16,6 +16,7 @@ export type EhrLabResult = {
   test: string;
   result: string;
   status: LabResultStatus;
+  parameters: any[];
 };
 
 export type EhrRecord = {

@@ -52,7 +52,7 @@ export class HomeComponent implements OnInit {
     },
     {
       name: 'Revenue (Month)',
-      value: '$45,231',
+      value: 'Kes 45,231',
       change: '+8.2%',
       icon: DollarSign,
       color: 'bg-green-500',
@@ -167,7 +167,7 @@ export class HomeComponent implements OnInit {
       next: ({ data }) => {
         this.applyOverview(data);
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
