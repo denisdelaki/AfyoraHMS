@@ -44,6 +44,9 @@ export class OnboardingComponent implements OnInit {
   private readonly userStorageKey = 'afyora.user';
   currentStep = 0;
   isSubmitting = false;
+  isVerifyingOtp = false;
+  isResendingOtp = false;
+  otpVerified = false;
   selectedModules: string[] = [];
   facilityType: FacilityType = 'hospital';
   readonly onboardingForm = this.fb.group({
@@ -55,12 +58,12 @@ export class OnboardingComponent implements OnInit {
     licenseNumber: ['', [Validators.required]],
     numberOfBeds: [null as number | null],
     specialization: [''],
-    otp1: [''],
-    otp2: [''],
-    otp3: [''],
-    otp4: [''],
-    otp5: [''],
-    otp6: [''],
+    otp1: ['', [Validators.required, Validators.pattern(/^\d$/)]],
+    otp2: ['', [Validators.required, Validators.pattern(/^\d$/)]],
+    otp3: ['', [Validators.required, Validators.pattern(/^\d$/)]],
+    otp4: ['', [Validators.required, Validators.pattern(/^\d$/)]],
+    otp5: ['', [Validators.required, Validators.pattern(/^\d$/)]],
+    otp6: ['', [Validators.required, Validators.pattern(/^\d$/)]],
     adminFirstName: ['', [Validators.required]],
     adminLastName: ['', [Validators.required]],
     adminEmail: ['', [Validators.required, Validators.email]],
@@ -134,6 +137,7 @@ export class OnboardingComponent implements OnInit {
   ];
 
   Math = Math; // to allow Math.max usage in template
+  readonly otpControlNames = ['otp1', 'otp2', 'otp3', 'otp4', 'otp5', 'otp6'] as const;
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
@@ -143,6 +147,7 @@ export class OnboardingComponent implements OnInit {
       this.saveOnboardingDraft();
     });
   }
+
 
   handleComplete(): void {
     if (this.onboardingForm.invalid) {
@@ -190,7 +195,6 @@ export class OnboardingComponent implements OnInit {
       modules,
       selectedPlan: formValue.selectedPlan ?? '',
     };
-
     this.isSubmitting = true;
     this.authService.completeFacilityOnboarding(payload).subscribe({
       next: (response) => {
@@ -344,6 +348,160 @@ export class OnboardingComponent implements OnInit {
     this.onboardingForm.patchValue({ selectedPlan: planName });
   }
 
+  onOtpInput(index: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digit = input.value.replace(/\D/g, '').slice(-1);
+    const control = this.onboardingForm.get(this.otpControlNames[index]);
+
+    control?.setValue(digit);
+    this.otpVerified = false;
+
+    if (digit && index < this.otpControlNames.length - 1) {
+      this.focusOtpInput(index + 1);
+    }
+
+    this.verifyOtpWhenComplete();
+  }
+
+  onOtpKeydown(index: number, event: KeyboardEvent): void {
+    if (
+      event.key === 'Backspace' &&
+      !this.onboardingForm.get(this.otpControlNames[index])?.value &&
+      index > 0
+    ) {
+      this.focusOtpInput(index - 1);
+    }
+  }
+
+  onOtpPaste(event: ClipboardEvent): void {
+    event.preventDefault();
+    const digits = event.clipboardData
+      ?.getData('text')
+      .replace(/\D/g, '')
+      .slice(0, this.otpControlNames.length);
+
+    if (!digits) {
+      return;
+    }
+
+    this.otpControlNames.forEach((controlName, index) => {
+      this.onboardingForm.get(controlName)?.setValue(digits[index] ?? '');
+    });
+    this.otpVerified = false;
+    this.focusOtpInput(Math.min(digits.length, this.otpControlNames.length) - 1);
+    this.verifyOtpWhenComplete();
+  }
+
+  verifyOtp(): void {
+    if (this.isVerifyingOtp || this.otpVerified) {
+      return;
+    }
+
+    const otp = this.getOtp();
+
+    if (!/^\d{6}$/.test(otp)) {
+      this.otpControlNames.forEach((controlName) => {
+        this.onboardingForm.get(controlName)?.markAsTouched();
+      });
+      this.snackBar.open('Enter the complete 6-digit verification code.', 'Close', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+      });
+      return;
+    }
+
+    const email = this.getVerificationEmail();
+    if (!email) {
+      this.snackBar.open('An email address is required to verify the code.', 'Close', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+      });
+      return;
+    }
+
+    this.isVerifyingOtp = true;
+    this.authService.verifyOtp(email, otp).subscribe({
+      next: (response) => {
+        this.otpVerified = true;
+        this.isVerifyingOtp = false;
+        this.snackBar.open(response?.message || 'Email verified successfully.', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+        this.currentStep = 2;
+      },
+      error: (err) => {
+        this.isVerifyingOtp = false;
+        this.snackBar.open(
+          err?.error?.message || 'The verification code is invalid or has expired.',
+          'Close',
+          {
+            duration: 4000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+          },
+        );
+      },
+    });
+  }
+
+  resendOtp(): void {
+    if (this.isResendingOtp) {
+      return;
+    }
+
+    const email = this.getVerificationEmail();
+    if (!email) {
+      this.snackBar.open('An email address is required to resend the code.', 'Close', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+      });
+      return;
+    }
+
+    this.isResendingOtp = true;
+    this.authService.resendOtp(email).subscribe({
+      next: (response) => {
+        this.isResendingOtp = false;
+        this.otpVerified = false;
+        this.otpControlNames.forEach((controlName) => {
+          this.onboardingForm.get(controlName)?.reset('');
+        });
+        this.focusOtpInput(0);
+        this.snackBar.open(response?.message || 'A new verification code has been sent.', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+      },
+      error: (err) => {
+        this.isResendingOtp = false;
+        this.snackBar.open(
+          err?.error?.message || 'Unable to resend the verification code. Please try again.',
+          'Close',
+          {
+            duration: 4000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+          },
+        );
+      },
+    });
+  }
+
+  nextStep(): void {
+    if (this.currentStep === 1 && !this.otpVerified) {
+      this.verifyOtp();
+      return;
+    }
+
+    this.currentStep = Math.min(this.currentStep + 1, this.steps.length - 1);
+  }
+
   quitOnboarding(): void {
     const shouldQuit = window.confirm(
       'Are you sure you want to quit onboarding? This will clear your saved signup and onboarding data.',
@@ -363,5 +521,29 @@ export class OnboardingComponent implements OnInit {
     this.selectedModules = this.modules
       .filter((module) => this.isModuleSelected(module.key))
       .map((module) => module.label);
+  }
+
+  private verifyOtpWhenComplete(): void {
+    if (this.currentStep === 1 && !this.otpVerified && /^\d{6}$/.test(this.getOtp())) {
+      this.verifyOtp();
+    }
+  }
+
+  private getOtp(): string {
+    return this.otpControlNames
+      .map((controlName) => this.onboardingForm.get(controlName)?.value ?? '')
+      .join('');
+  }
+
+  private getVerificationEmail(): string {
+    return (
+      this.onboardingForm.get('facilityEmail')?.value ||
+      this.onboardingForm.get('adminEmail')?.value ||
+      ''
+    );
+  }
+
+  private focusOtpInput(index: number): void {
+    document.getElementById(`otp-${index}`)?.focus();
   }
 }

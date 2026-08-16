@@ -51,6 +51,19 @@ export class AuthService {
     );
   }
 
+  verifyOtp(email: string, otp: string): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.baseUrl}/verify-otp/`, {
+      email,
+      otp,
+    });
+  }
+
+  resendOtp(email: string): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(`${this.baseUrl}/resend-otp/`, {
+      email,
+    });
+  }
+
   refreshToken(refreshToken: string): Observable<ApiResponse<LoginResponse>> {
     return this.http.post<ApiResponse<LoginResponse>>(
       `${this.baseUrl}/refresh/`,
