@@ -109,7 +109,6 @@ export class NewInvoiceDialogComponent implements OnInit {
     this.patientService.getPatients(facilityId).subscribe({
       next: (patients) => {
         this.patients = patients;
-        console.log('Patients loaded:', patients);
       },
       error: () => {
         this.snackBar.open(
@@ -322,7 +321,6 @@ export class NewInvoiceDialogComponent implements OnInit {
   }
 
   onGenerateInvoice(): void {
-    console.log('Invoice form submitted:', this.invoiceForm.value);
     if (this.invoiceForm.invalid) {
       this.invoiceForm.markAllAsTouched();
       return;
@@ -337,7 +335,6 @@ export class NewInvoiceDialogComponent implements OnInit {
       ? `${selectedPatient.firstName} ${selectedPatient.lastName}`.trim()
       : value.patientId ?? '';
 
-    console.log('Invoice form value:', value);
     this.dialogRef.close({
       patient: patientName,
       patientId: (value.patientId ?? '').trim(),
@@ -349,9 +346,9 @@ export class NewInvoiceDialogComponent implements OnInit {
         })),
       insurance: company
         ? {
-            company,
-            coverage: value.coverage !== null ? Number(value.coverage) : null,
-          }
+          company,
+          coverage: value.coverage !== null ? Number(value.coverage) : null,
+        }
         : null,
     });
   }

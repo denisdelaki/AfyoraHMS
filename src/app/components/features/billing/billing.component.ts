@@ -415,7 +415,6 @@ export class BillingComponent implements OnInit {
       return;
     }
 
-    console.log('Creating invoice with payload:', payload);
     this.billingService.createInvoice(payload, this.facilityId).subscribe({
       next: ({ data }) => {
         this.invoices = [

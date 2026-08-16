@@ -133,7 +133,6 @@ export class EhrComponent implements OnInit {
       .getPatientVisitHistory(patientId, this.facilityId)
       .subscribe({
         next: (data) => {
-          console.log('Visit History for', patientId, ':', data);
           const records: EhrRecord[] = data.map((record) => ({
             id: record.id || '',
             patientId: patientId,
