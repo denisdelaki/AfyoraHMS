@@ -1,0 +1,60 @@
+<h2 mat-dialog-title class="!flex !items-center !justify-between">
+  <span>Radiology Results & Report</span>
+  <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+    {{ data.report.status }}
+  </span>
+</h2>
+
+<mat-dialog-content class="space-y-4 pt-2">
+  <div class="bg-slate-50 p-3 rounded-lg flex flex-wrap justify-between gap-2 text-sm border border-slate-200">
+    <div><span class="text-slate-500">Order ID:</span> <strong>{{ data.report.orderId }}</strong></div>
+    <div><span class="text-slate-500">Patient:</span> <strong>{{ data.report.patient }}</strong></div>
+    <div><span class="text-slate-500">Study:</span> <strong>{{ data.report.type }}</strong></div>
+    <div><span class="text-slate-500">Radiologist:</span> <strong>{{ data.report.radiologist }}</strong></div>
+    <div><span class="text-slate-500">Scan Date:</span> <strong>{{ data.report.scanDate }}</strong></div>
+  </div>
+
+  <div>
+    <h3 class="font-medium text-slate-900 mb-1">Findings</h3>
+    <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-line">
+      {{ data.report.findings }}
+    </div>
+  </div>
+
+  <div>
+    <h3 class="font-medium text-slate-900 mb-1">Impression</h3>
+    <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-line">
+      {{ data.report.impression }}
+    </div>
+  </div>
+
+  <div>
+    <h3 class="font-medium text-slate-900 mb-1">Recommendations</h3>
+    <div class="p-3 bg-slate-50/80 rounded-lg border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-line">
+      {{ data.report.recommendations }}
+    </div>
+  </div>
+
+  <div *ngIf="data.images && data.images.length > 0">
+    <h3 class="font-medium text-slate-900 mb-2">Uploaded Scan Images ({{ data.images.length }})</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-48 overflow-y-auto pr-1">
+      <div *ngFor="let image of data.images" class="rounded-lg border border-slate-200 p-1">
+        <img [src]="image.url" [alt]="image.name" class="w-full h-24 object-cover rounded cursor-pointer hover:opacity-90 transition-opacity" (click)="openPreview(image)" />
+        <p class="text-xs text-slate-600 mt-1 truncate">{{ image.name }}</p>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<div *ngIf="selectedImage" class="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center p-4" (click)="closePreview()">
+  <div class="relative max-w-4xl w-full" (click)="$event.stopPropagation()">
+    <button mat-icon-button class="!absolute -top-12 right-0 !text-white" type="button" (click)="closePreview()" aria-label="Close preview">
+      <mat-icon>close</mat-icon>
+    </button>
+    <img [src]="selectedImage.url" [alt]="selectedImage.name" class="w-full max-h-[80vh] object-contain rounded-lg" />
+  </div>
+</div>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Close</button>
+</mat-dialog-actions>

@@ -17,9 +17,12 @@ import {
   CreateRadiologyReportPayload,
   RadiologyOrder,
 } from '../../../models/radiology.models';
+import { MatOptionModule } from "@angular/material/core";
+import { MatSelectModule } from '@angular/material/select';
 
 interface AddRadiologyReportDialogData {
   order: RadiologyOrder;
+  radiologists: { id: string; name: string }[]
 }
 
 @Component({
@@ -31,6 +34,8 @@ interface AddRadiologyReportDialogData {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatOptionModule,
+    MatSelectModule
   ],
   templateUrl: './add-radiology-report-dialog.component.html',
   styleUrl: './add-radiology-report-dialog.component.css',
@@ -44,6 +49,8 @@ export class AddRadiologyReportDialogComponent {
     >,
   );
   private readonly fb = inject(NonNullableFormBuilder);
+
+  radiologists: { id: string; name: string }[] = this.data.radiologists;
 
   readonly form = this.fb.group({
     radiologist: ['', [Validators.required, Validators.maxLength(120)]],

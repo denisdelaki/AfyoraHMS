@@ -1,0 +1,87 @@
+<h2 mat-dialog-title class="!mb-1">
+  {{ isEditMode ? 'Edit Imaging Type' : 'Add Imaging Type' }}
+</h2>
+<p class="text-sm text-slate-600 px-6">
+  {{
+    isEditMode
+      ? 'Update the catalog details for this imaging type.'
+      : 'Add a new imaging type to the radiology catalog.'
+  }}
+</p>
+
+<mat-dialog-content>
+  <form
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4"
+  >
+    <!-- Full-width: Study Name -->
+    <mat-form-field appearance="fill" class="sm:col-span-2 w-full">
+      <mat-label>Study / Imaging Name</mat-label>
+      <input
+        matInput
+        formControlName="name"
+        placeholder="Chest X-Ray (PA view)"
+      />
+      <mat-error *ngIf="form.controls.name.hasError('required')">
+        Name is required.
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Modality -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Modality</mat-label>
+      <mat-select formControlName="modality">
+        <mat-option *ngFor="let m of modalities" [value]="m">{{ m }}</mat-option>
+      </mat-select>
+      <mat-error *ngIf="form.controls.modality.hasError('required')">
+        Modality is required.
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Body Part -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Body Part / Region</mat-label>
+      <input matInput formControlName="bodyPart" placeholder="Thorax" />
+      <mat-error *ngIf="form.controls.bodyPart.hasError('required')">
+        Body part is required.
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Duration -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Duration / Turnaround</mat-label>
+      <input matInput formControlName="duration" placeholder="20 minutes" />
+      <mat-error *ngIf="form.controls.duration.hasError('required')">
+        Duration is required.
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Price -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Price</mat-label>
+      <span matTextPrefix>KES&nbsp;</span>
+      <input matInput type="number" min="0" formControlName="price" />
+      <mat-error *ngIf="form.controls.price.hasError('required')">
+        Price is required.
+      </mat-error>
+      <mat-error *ngIf="form.controls.price.hasError('min')">
+        Price must be 0 or greater.
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Actions -->
+    <div class="sm:col-span-2 flex justify-end gap-2 pt-1">
+      <button mat-stroked-button type="button" (click)="close()">Cancel</button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="form.invalid"
+      >
+        <mat-icon class="mr-1">{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+        {{ isEditMode ? 'Save Changes' : 'Add to Catalog' }}
+      </button>
+    </div>
+  </form>
+</mat-dialog-content>

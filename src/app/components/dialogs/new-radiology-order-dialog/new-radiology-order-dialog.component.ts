@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import {
   NonNullableFormBuilder,
   ReactiveFormsModule,
@@ -19,9 +19,12 @@ import {
   ImagingPriority,
   ImagingType,
 } from '../../../models/radiology.models';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 
 interface NewRadiologyOrderDialogData {
   imagingTypes: ImagingType[];
+  patients: { id: string; name: string }[];
+  doctors: { id: string; name: string }[];
 }
 
 @Component({
@@ -34,11 +37,12 @@ interface NewRadiologyOrderDialogData {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatDatepickerModule
   ],
   templateUrl: './new-radiology-order-dialog.component.html',
   styleUrl: './new-radiology-order-dialog.component.css',
 })
-export class NewRadiologyOrderDialogComponent {
+export class NewRadiologyOrderDialogComponent implements OnInit {
   readonly data = inject<NewRadiologyOrderDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(
     MatDialogRef<
@@ -47,6 +51,11 @@ export class NewRadiologyOrderDialogComponent {
     >,
   );
   private readonly fb = inject(NonNullableFormBuilder);
+
+  today: Date = new Date();
+
+  patients: { id: string; name: string }[] = this.data.patients;
+  doctors: { id: string; name: string }[] = this.data.doctors;
 
   readonly priorities: ImagingPriority[] = ['Routine', 'Urgent', 'STAT'];
 
@@ -60,6 +69,12 @@ export class NewRadiologyOrderDialogComponent {
     clinicalNotes: ['', [Validators.required, Validators.maxLength(1000)]],
   });
 
+  ngOnInit(): void {
+    this.form.controls.patient.valueChanges.subscribe((patientId) => {
+      this.form.controls.patientId.setValue(patientId ?? '');
+    });
+  }
+
   close() {
     this.dialogRef.close();
   }
@@ -70,6 +85,21 @@ export class NewRadiologyOrderDialogComponent {
       return;
     }
 
-    this.dialogRef.close(this.form.getRawValue() as CreateImagingOrderPayload);
+    const rawValue = this.form.getRawValue();
+    this.dialogRef.close({
+      ...rawValue,
+      scheduledDate: this.formatDate(rawValue.scheduledDate),
+    } as CreateImagingOrderPayload);
+  }
+
+  private formatDate(value: unknown): string {
+    if (value instanceof Date && !isNaN(value.getTime())) {
+      const year = value.getFullYear();
+      const month = String(value.getMonth() + 1).padStart(2, '0');
+      const day = String(value.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    return typeof value === 'string' ? value : '';
   }
 }

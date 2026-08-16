@@ -4,41 +4,29 @@
   <form [formGroup]="form" class="space-y-4 pt-2">
     <mat-form-field appearance="fill" class="w-full">
       <mat-label>Radiologist</mat-label>
-      <input
-        matInput
-        formControlName="radiologist"
-        placeholder="e.g. Dr. Sarah Park"
-      />
+      <mat-select formControlName="radiologist">
+        <mat-option *ngFor="let radiologist of radiologists" [value]="radiologist.id">
+          {{ radiologist.name }}
+        </mat-option>
+      </mat-select>
     </mat-form-field>
 
     <mat-form-field appearance="fill" class="w-full">
       <mat-label>Findings</mat-label>
-      <textarea
-        matInput
-        rows="5"
-        formControlName="findings"
-        placeholder="Detailed findings from the imaging study..."
-      ></textarea>
+      <textarea matInput rows="5" formControlName="findings"
+        placeholder="Detailed findings from the imaging study..."></textarea>
     </mat-form-field>
 
     <mat-form-field appearance="fill" class="w-full">
       <mat-label>Impression</mat-label>
-      <textarea
-        matInput
-        rows="3"
-        formControlName="impression"
-        placeholder="Clinical impression and diagnosis..."
-      ></textarea>
+      <textarea matInput rows="3" formControlName="impression"
+        placeholder="Clinical impression and diagnosis..."></textarea>
     </mat-form-field>
 
     <mat-form-field appearance="fill" class="w-full">
       <mat-label>Recommendations</mat-label>
-      <textarea
-        matInput
-        rows="3"
-        formControlName="recommendations"
-        placeholder="Follow-up recommendations..."
-      ></textarea>
+      <textarea matInput rows="3" formControlName="recommendations"
+        placeholder="Follow-up recommendations..."></textarea>
     </mat-form-field>
   </form>
 </mat-dialog-content>

@@ -3,12 +3,15 @@ export type ImagingPriority = 'Routine' | 'Urgent' | 'STAT';
 export type RadiologyOrderStatus =
   | 'Pending'
   | 'Scheduled'
+  | 'In Progress'
   | 'Completed'
   | 'Report Ready';
 
 export interface ImagingType {
   id: string;
   name: string;
+  modality: string;
+  bodyPart: string;
   duration: string;
   price: number;
 }
@@ -29,6 +32,7 @@ export interface RadiologyOrder {
 export interface RadiologyReport {
   orderId: string;
   patient: string;
+  patientId?: string;
   type: string;
   scanDate: string;
   radiologist: string;
@@ -47,16 +51,22 @@ export interface UploadedRadiologyImage {
   uploadedAt: string;
 }
 
+export interface CreateImagingTypePayload {
+  name: string;
+  modality: string;
+  bodyPart: string;
+  duration: string;
+  price: number;
+}
+
 export interface CreateImagingOrderPayload {
   patient: string;
   patientId: string;
   orderedBy: string;
   imagingTypeId: string;
-  scheduledDate: string;
   priority: ImagingPriority;
   clinicalNotes: string;
 }
-
 export interface UploadRadiologyImagesPayload {
   orderId: string;
   files: File[];
@@ -65,6 +75,7 @@ export interface UploadRadiologyImagesPayload {
 export interface CreateRadiologyReportPayload {
   orderId: string;
   radiologist: string;
+  scanDate: string;
   findings: string;
   impression: string;
   recommendations: string;
