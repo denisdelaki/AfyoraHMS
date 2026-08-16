@@ -104,6 +104,18 @@ export class AuthService {
     );
   }
 
+  confirmPasswordReset(
+    uid: string,
+    token: string,
+    newPassword: string,
+    confirmPassword: string,
+  ): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(
+      `${this.baseUrl}/password-reset-confirm/${uid}/${token}/`,
+      { new_password: newPassword, confirm_password: confirmPassword },
+    );
+  }
+
   clearAuthData(): void {
     if (!this.isStorageAvailable()) {
       return;
