@@ -1,0 +1,70 @@
+<main class="landing">
+  <nav class="nav" aria-label="Main navigation">
+    <a class="brand" routerLink="/" aria-label="Afyora HMS home"><span class="brand-mark"><lucide-angular [img]="HeartPulse" [size]="20"></lucide-angular></span>Afyora <b>HMS</b></a>
+    <div class="nav-actions"><a routerLink="/login">Sign in</a><a class="button" routerLink="/signup">Get started</a></div>
+  </nav>
+
+  <section class="hero">
+    <div class="eyebrow">Healthcare, connected</div>
+    <h1>Run your facility with <span>clarity.</span></h1>
+    <p>Afyora HMS brings patient care, clinical records, staff, stock, billing, and reporting into one simple workspace.</p>
+    <div class="hero-actions"><a class="button button-large" routerLink="/signup">Create your account <lucide-angular [img]="ArrowRight" [size]="18"></lucide-angular></a><a class="text-link" href="#how-it-works">How it works <lucide-angular [img]="ChevronRight" [size]="17"></lucide-angular></a></div>
+    <div class="hero-preview">
+      <div class="preview-top"><span>●</span> Afyora HMS <small>Today’s overview</small></div>
+      <div class="preview-content">
+        <div class="preview-main"><p>Good morning, Care Team</p><h2>Your day, in one view.</h2><div class="stats"><div><small>Appointments</small><strong>24</strong></div><div><small>Patients seen</small><strong>18</strong></div><div><small>Actions due</small><strong>06</strong></div></div></div>
+        <div class="preview-list"><strong>Quick access</strong><span>Patients</span><span>Electronic health records</span><span>Pharmacy & inventory</span><span>Billing & reports</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-it-works" id="how-it-works">
+    <div class="section-heading"><div class="eyebrow">A simple start</div><h2>From sign-up to daily care in three steps.</h2></div>
+    <div class="steps">
+      <article><span>1</span><h3>Create your account</h3><p>Choose Hospital or Clinic and add your facility administrator details.</p></article>
+      <article><span>2</span><h3>Complete setup</h3><p>Verify your email, add facility details, choose modules, and select a plan.</p></article>
+      <article><span>3</span><h3>Use your workspace</h3><p>Sign in to the dashboard, then use the sidebar to move between your enabled modules.</p></article>
+    </div>
+  </section>
+
+  <section class="modules">
+    <div class="section-heading"><div class="eyebrow">Everything in one place</div><h2>Built around your daily workflow.</h2><p>Move easily between the tools your team uses most.</p></div>
+    <div class="module-grid">
+      @for (capability of capabilities; track capability.title) {
+        <article><span><lucide-angular [img]="capability.icon" [size]="21"></lucide-angular></span><h3>{{ capability.title }}</h3><p>{{ capability.text }}</p></article>
+      }
+    </div>
+  </section>
+
+  <section class="visual-guide">
+    <div class="section-heading"><div class="eyebrow">Visual walkthrough</div><h2>Follow the setup, one screen at a time.</h2><p>Use these screens as your guide from your first visit to a ready-to-use Afyora workspace.</p></div>
+    <div class="guide-grid">
+      <article><img src="assets/guides/login-signup.png" alt="Afyora sign-in page"><div><span>Step 1</span><h3>Sign in or create an account</h3><p>Existing users select <b>Sign in</b>. New facilities select <b>Sign up</b> to begin.</p></div></article>
+      <article><img src="assets/guides/clinic-hospital.png" alt="Facility type selection"><div><span>Step 2</span><h3>Select your facility type</h3><p>Choose <b>Hospital</b> or <b>Clinic</b> so Afyora can tailor the setup.</p></div></article>
+      <article><img src="assets/guides/facility-details.png" alt="Facility registration details"><div><span>Step 3</span><h3>Add facility details</h3><p>Enter your facility name, address, contact information, and licence details.</p></div></article>
+      <article><img src="assets/guides/email-verification.png" alt="Email verification step"><div><span>Step 4</span><h3>Verify your email</h3><p>Enter the verification code sent to your email, then continue setup.</p></div></article>
+      <article><img src="assets/guides/moduleSelection.png" alt="Module selection step"><div><span>Step 5</span><h3>Choose your modules</h3><p>Enable the services your facility needs, such as Patients, EHR, Pharmacy, and Billing.</p></div></article>
+      <article><img src="assets/guides/choosePlan.png" alt="Subscription plan selection"><div><span>Step 6</span><h3>Select a plan and launch</h3><p>Choose a subscription plan, complete setup, then enter your dashboard.</p></div></article>
+    </div>
+  </section>
+
+  <section class="navigation-guide">
+    <div class="navigation-copy"><div class="eyebrow">After sign-in</div><h2>Start at the dashboard, then use the sidebar.</h2><p>Your dashboard gives you an at-a-glance view of appointments, revenue, stock, and activity. Select an item in the left sidebar to open that workspace.</p><a class="button" routerLink="/login">Sign in to Afyora <lucide-angular [img]="ArrowRight" [size]="16"></lucide-angular></a></div>
+    <img class="dashboard-shot" src="assets/guides/dashboard.png" alt="Afyora dashboard with left-hand navigation">
+  </section>
+
+  <section class="workspaces-guide">
+    <div class="section-heading"><div class="eyebrow">Navigate by task</div><h2>Know where to go next.</h2></div>
+    <div class="workspace-guide-grid">
+      <article><img src="assets/guides/patients.png" alt="Patient Management page"><h3>Patients</h3><p>Register patients, search records, and book appointments.</p></article>
+      <article><img src="assets/guides/ehr.png" alt="Electronic Health Records page"><h3>Electronic Health Records</h3><p>Find patient histories and create or view clinical records.</p></article>
+      <article><img src="assets/guides/pharmacy.png" alt="Pharmacy Management page"><h3>Pharmacy</h3><p>Manage medicines, prescriptions, and low-stock alerts.</p></article>
+      <article><img src="assets/guides/billing.png" alt="Billing and Finance page"><h3>Billing & Finance</h3><p>Create invoices, record payments, and review balances.</p></article>
+      <article><img src="assets/guides/inventory.png" alt="Inventory Management page"><h3>Inventory</h3><p>Track supplies, equipment, vendors, and stock levels.</p></article>
+      <article><img src="assets/guides/reports.png" alt="Reports and Analytics page"><h3>Reports & Analytics</h3><p>Generate reports to understand performance across the facility.</p></article>
+    </div>
+  </section>
+
+  <section class="cta"><div class="eyebrow">Ready to begin?</div><h2>Better operations start here.</h2><p>Create your facility account and Afyora will guide you through the rest.</p><a class="button button-large" routerLink="/signup">Start setup <lucide-angular [img]="ArrowRight" [size]="18"></lucide-angular></a></section>
+  <footer><a class="brand" routerLink="/"><span class="brand-mark"><lucide-angular [img]="HeartPulse" [size]="18"></lucide-angular></span>Afyora <b>HMS</b></a><span>Healthcare operations, made simple.</span></footer>
+</main>
