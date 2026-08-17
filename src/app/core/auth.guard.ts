@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import {
   CanActivateChildFn,
   CanActivateFn,
+  CanMatchFn,
   Router,
   UrlTree,
 } from '@angular/router';
@@ -17,6 +18,9 @@ export const authGuard: CanActivateFn = (): boolean | UrlTree => {
 export const authChildGuard: CanActivateChildFn = (): boolean | UrlTree => {
   return isAuthenticated() ? true : redirectToLogin();
 };
+
+/** Prevent signed-in users from matching public-only routes such as the landing page. */
+export const publicOnlyGuard: CanMatchFn = (): boolean => !isAuthenticated();
 
 function redirectToLogin(): UrlTree {
   return inject(Router).createUrlTree(['/login']);

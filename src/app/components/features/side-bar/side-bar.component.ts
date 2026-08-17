@@ -57,7 +57,7 @@ export class SideBarComponent {
   userInitials = 'US';
 
   navigation: NavigationItem[] = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Patients', href: '/patients', icon: Users },
     { name: 'EHR', href: '/ehr', icon: FileText },
     { name: 'Pharmacy', href: '/pharmacy', icon: Pill },
