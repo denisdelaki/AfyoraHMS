@@ -1,0 +1,5 @@
+# Only the public marketing page should appear in search engines. Authenticated
+# workspaces contain private facility information and are excluded at runtime.
+User-agent: *
+Allow: /
+Sitemap: https://afyorahms.vercel.app/sitemap.xml

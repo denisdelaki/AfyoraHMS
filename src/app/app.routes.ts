@@ -5,6 +5,12 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
+    data: {
+      seo: {
+        title: 'Healthcare Management Software',
+        description: 'Afyora HMS is healthcare management software for clinics and hospitals. Manage patients, clinical records, appointments, billing, pharmacy, inventory, and reports in one workspace.',
+      },
+    },
     loadComponent: () =>
       import('./components/marketing/landing/landing.component').then(
         (m) => m.LandingComponent,
@@ -12,6 +18,7 @@ export const routes: Routes = [
   },
   {
     path: 'login',
+    data: { seo: { title: 'Sign in', description: 'Sign in to Afyora HMS.', noIndex: true } },
     loadComponent: () =>
       import('./components/authentication/login/login.component').then(
         (m) => m.LoginComponent,
@@ -19,6 +26,7 @@ export const routes: Routes = [
   },
   {
     path: 'signup',
+    data: { seo: { title: 'Create your account', description: 'Create an Afyora HMS account for your healthcare facility.', noIndex: true } },
     loadComponent: () =>
       import('./components/authentication/signup/signup.component').then(
         (m) => m.SignupComponent,
@@ -26,6 +34,7 @@ export const routes: Routes = [
   },
   {
     path: 'forgot-password',
+    data: { seo: { title: 'Reset your password', description: 'Reset your Afyora HMS password.', noIndex: true } },
     loadComponent: () =>
       import('./components/authentication/forgot-password/forgot-password.component').then(
         (m) => m.ForgotPasswordComponent,
@@ -33,6 +42,7 @@ export const routes: Routes = [
   },
   {
     path: 'reset-password',
+    data: { seo: { title: 'Choose a new password', description: 'Choose a new Afyora HMS password.', noIndex: true } },
     loadComponent: () =>
       import('./components/authentication/reset-password/reset-password.component').then(
         (m) => m.ResetPasswordComponent,
@@ -40,6 +50,7 @@ export const routes: Routes = [
   },
   {
     path: 'onboarding',
+    data: { seo: { title: 'Set up your facility', description: 'Set up your Afyora HMS facility workspace.', noIndex: true } },
     loadComponent: () =>
       import('./components/features/onboarding/onboarding.component').then(
         (m) => m.OnboardingComponent,
@@ -47,6 +58,7 @@ export const routes: Routes = [
   },
   {
     path: '',
+    data: { seo: { title: 'Facility workspace', description: 'Afyora HMS facility workspace.', noIndex: true } },
     canActivate: [authGuard],
     canActivateChild: [authChildGuard],
     loadComponent: () =>
