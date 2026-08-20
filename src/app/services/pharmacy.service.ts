@@ -15,7 +15,11 @@ export class PharmacyService {
         items: Drug[];
         count: number;
       }>(`${this.baseUrl}/drugs/?facilityId=${encodeURIComponent(facilityId)}/`)
-      .pipe(map((response) => response.items ?? []));
+      .pipe(
+        map((response) =>
+          (response?.items ?? []).filter((drug): drug is Drug => Boolean(drug)),
+        ),
+      );
   }
 
   createDrug(

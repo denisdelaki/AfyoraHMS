@@ -206,28 +206,35 @@ export class PharmacyComponent implements OnInit {
   get filteredDrugs(): Drug[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) {
-      return this.drugs;
+      return this.availableDrugs;
     }
 
-    return this.drugs.filter(
+    return this.availableDrugs.filter(
       (drug) =>
-        drug.name.toLowerCase().includes(term) ||
-        drug.category.toLowerCase().includes(term),
+        (drug.name || '').toLowerCase().includes(term) ||
+        (drug.category || '').toLowerCase().includes(term),
     );
   }
 
   get lowStockDrugs(): Drug[] {
-    return this.drugs.filter((drug) => drug.stock < drug.minStock);
+    return this.availableDrugs.filter(
+      (drug) => Number(drug.stock) < Number(drug.minStock),
+    );
   }
 
   get expiringDrugs(): Drug[] {
     const threeMonthsFromNow = new Date();
     threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
 
-    return this.drugs.filter((drug) => {
+    return this.availableDrugs.filter((drug) => {
       const expiryDate = new Date(drug.expiryDate);
-      return expiryDate <= threeMonthsFromNow;
+      return !Number.isNaN(expiryDate.getTime()) && expiryDate <= threeMonthsFromNow;
     });
+  }
+
+  /** Ignore empty records returned by the API before the template uses them. */
+  private get availableDrugs(): Drug[] {
+    return this.drugs.filter((drug): drug is Drug => Boolean(drug));
   }
 
   setActiveTab(tab: PharmacyTab): void {
@@ -312,7 +319,7 @@ export class PharmacyComponent implements OnInit {
   private loadDrugs(): void {
     this.pharmacyService.getDrugs(this.facilityId).subscribe({
       next: (data) => {
-        this.drugs = data;
+        this.drugs = data.filter((drug): drug is Drug => Boolean(drug));
       },
       error: () => {},
     });

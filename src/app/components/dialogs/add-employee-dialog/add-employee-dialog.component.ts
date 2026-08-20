@@ -61,6 +61,7 @@ export class AddEmployeeDialogComponent implements OnInit {
     { value: 'radiologist', label: 'Radiologist' },
     { value: 'accountant', label: 'Accountant' },
     { value: 'manager', label: 'Manager' },
+    { value: 'hr', label: 'Human Resources' },
     { value: 'staff', label: 'General Staff' },
   ];
   departments: Department[] = [];
