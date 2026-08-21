@@ -9,3 +9,5 @@ export * from './pharmacy.models';
 export * from './inventory.models';
 export * from './laboratory.models';
 export * from './radiology.models';
+export * from './reports.models';
+

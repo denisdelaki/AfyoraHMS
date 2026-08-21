@@ -1,0 +1,161 @@
+<div class="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
+  <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+        <lucide-icon [img]="data.mode === 'create' ? FilePlus2 : Save" class="h-5 w-5"></lucide-icon>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">
+          {{ data.mode === 'create' ? 'Create Custom Report Configuration' : 'Edit Report Configuration' }}
+        </h2>
+        <p class="text-xs text-gray-500">
+          Define report scope, target parameters, visual charts, and access roles
+        </p>
+      </div>
+    </div>
+    <button
+      type="button"
+      (click)="onCancel()"
+      class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+    >
+      <lucide-icon [img]="X" class="h-5 w-5"></lucide-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="mt-5 space-y-4">
+    <div>
+      <label for="title" class="block text-sm font-medium text-gray-700">
+        Report Title <span class="text-red-500">*</span>
+      </label>
+      <input
+        id="title"
+        type="text"
+        formControlName="title"
+        placeholder="e.g. Monthly Executive Pharmacy Overview"
+        class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+      />
+      <p *ngIf="form.get('title')?.touched && form.get('title')?.invalid" class="mt-1 text-xs text-red-500">
+        Title is required (max 100 characters).
+      </p>
+    </div>
+
+    <div>
+      <label for="description" class="block text-sm font-medium text-gray-700">
+        Description
+      </label>
+      <textarea
+        id="description"
+        formControlName="description"
+        rows="2"
+        placeholder="Summary of analytics captured by this report..."
+        class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+      ></textarea>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label for="reportType" class="block text-sm font-medium text-gray-700">
+          Primary Report Category <span class="text-red-500">*</span>
+        </label>
+        <select
+          id="reportType"
+          formControlName="reportType"
+          class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+        >
+          <option *ngFor="let type of reportTypes" [value]="type.value">
+            {{ type.label }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label for="timeRange" class="block text-sm font-medium text-gray-700">
+          Default Time Range <span class="text-red-500">*</span>
+        </label>
+        <select
+          id="timeRange"
+          formControlName="timeRange"
+          class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+        >
+          <option *ngFor="let range of timeRanges" [value]="range.value">
+            {{ range.label }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label for="department" class="block text-sm font-medium text-gray-700">
+          Department / Filter Keyword
+        </label>
+        <input
+          id="department"
+          type="text"
+          formControlName="department"
+          placeholder="e.g. Pharmaceuticals, Cardiology, All"
+          class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+        />
+      </div>
+
+      <div>
+        <label for="chartType" class="block text-sm font-medium text-gray-700">
+          Preferred Chart Type <span class="text-red-500">*</span>
+        </label>
+        <select
+          id="chartType"
+          formControlName="chartType"
+          class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+        >
+          <option value="line">Line Chart (Trends over time)</option>
+          <option value="bar">Bar Chart (Comparative volume)</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-700">
+        Role-Based Access Control <span class="text-red-500">*</span>
+      </label>
+      <p class="mb-2 text-xs text-gray-500">
+        Select user roles authorized to view and execute this custom report
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          *ngFor="let role of availableRoles"
+          (click)="toggleRole(role)"
+          class="rounded-full px-3 py-1 text-xs font-medium transition-colors"
+          [ngClass]="
+            isRoleSelected(role)
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          "
+        >
+          {{ role }}
+        </button>
+      </div>
+      <p *ngIf="form.get('allowedRoles')?.touched && form.get('allowedRoles')?.invalid" class="mt-1 text-xs text-red-500">
+        At least one role must be selected.
+      </p>
+    </div>
+
+    <div class="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        [disabled]="form.invalid"
+        class="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 disabled:opacity-50"
+      >
+        <lucide-icon [img]="data.mode === 'create' ? FilePlus2 : Save" class="h-4 w-4"></lucide-icon>
+        {{ data.mode === 'create' ? 'Create Configuration' : 'Save Changes' }}
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,9 +1,16 @@
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable, catchError, of, map } from 'rxjs';
+import { apiUrl } from '../core/api.config';
+import { ApiResponse } from '../models/api.models';
 import {
+  CustomReportPayload,
   EmployeePerformance,
   InventoryDataPoint,
   ReportDataBundle,
+  ReportFilterParams,
   ReportTypeOption,
+  SavedReport,
   SummaryStatistic,
   TimeRange,
   TimeRangeOption,
@@ -14,16 +21,115 @@ import {
   providedIn: 'root',
 })
 export class ReportsDataService {
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = apiUrl('/reports');
+  private readonly savedReportsStorageKey = 'afyora.saved_reports';
+
+  private readonly initialSavedReports: SavedReport[] = [
+    {
+      id: 'sr-1',
+      title: 'Executive Monthly Growth',
+      description: 'Patient acquisition and revenue trends for executive reviews.',
+      reportType: 'general',
+      timeRange: '30days',
+      chartType: 'line',
+      allowedRoles: ['Admin', 'SuperAdmin', 'Manager'],
+      createdAt: '2026-01-15T10:00:00Z',
+    },
+    {
+      id: 'sr-2',
+      title: 'Pharmacy Inventory Alert',
+      description: 'Monitors low stock items and prescription sales volume.',
+      reportType: 'pharmacy',
+      timeRange: '7days',
+      chartType: 'bar',
+      allowedRoles: ['Admin', 'Pharmacist', 'Manager'],
+      createdAt: '2026-02-01T14:30:00Z',
+    },
+    {
+      id: 'sr-3',
+      title: 'Laboratory Workload Summary',
+      description: 'Daily test throughput across diagnostic departments.',
+      reportType: 'laboratory',
+      timeRange: '30days',
+      chartType: 'bar',
+      allowedRoles: ['Admin', 'Lab Technician', 'Doctor'],
+      createdAt: '2026-02-10T09:15:00Z',
+    },
+  ];
+
   getReportTypes(): ReportTypeOption[] {
     return [
-      { value: 'general', label: 'General Overview', iconKey: 'barChart' },
-      { value: 'patients', label: 'Patient Growth Report', iconKey: 'users' },
-      { value: 'pharmacy', label: 'Pharmacy Performance', iconKey: 'pill' },
-      { value: 'inventory', label: 'Inventory Status', iconKey: 'package' },
-      { value: 'laboratory', label: 'Laboratory Activity', iconKey: 'flask' },
-      { value: 'employees', label: 'Employee Analytics', iconKey: 'userCog' },
-      { value: 'revenue', label: 'Revenue & Finance', iconKey: 'trendingUp' },
+      {
+        value: 'general',
+        label: 'General Overview',
+        iconKey: 'barChart',
+        description: 'Comprehensive cross-department analytics',
+        allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'Doctor', 'Nurse', 'Accountant', 'HR'],
+      },
+      {
+        value: 'patients',
+        label: 'Patient Growth Report',
+        iconKey: 'users',
+        description: 'New vs returning patient trends',
+        allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'Doctor', 'Nurse', 'Receptionist'],
+      },
+      {
+        value: 'pharmacy',
+        label: 'Pharmacy Performance',
+        iconKey: 'pill',
+        description: 'Prescription counts, top medications, and sales',
+        allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'Pharmacist', 'Accountant'],
+      },
+      {
+        value: 'inventory',
+        label: 'Inventory Status',
+        iconKey: 'package',
+        description: 'Stock levels, valuation, and out-of-stock items',
+        allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'Pharmacist', 'Lab Technician'],
+      },
+      {
+        value: 'laboratory',
+        label: 'Laboratory Activity',
+        iconKey: 'flask',
+        description: 'Diagnostic test counts (Blood, X-Ray, MRI, CT)',
+        allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'Lab Technician', 'Doctor'],
+      },
+      {
+        value: 'employees',
+        label: 'Employee Analytics',
+        iconKey: 'userCog',
+        description: 'Headcount, attendance, and turnover by department',
+        allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'HR'],
+      },
+      {
+        value: 'revenue',
+        label: 'Revenue & Finance',
+        iconKey: 'trendingUp',
+        description: 'Income, expenditure, and net profit margins',
+        allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'Accountant'],
+      },
     ];
+  }
+
+  getReportTypesForRole(userRole?: string): ReportTypeOption[] {
+    const all = this.getReportTypes();
+    if (!userRole) return all;
+
+    const normalizedRole = userRole.trim().toLowerCase().replace(/_/g, ' ');
+    if (
+      normalizedRole.includes('admin') ||
+      normalizedRole.includes('manager')
+    ) {
+      return all;
+    }
+
+    return all.filter((option) =>
+      option.allowedRoles?.some((role) => {
+        const rLower = role.toLowerCase().replace(/_/g, ' ');
+        return rLower === normalizedRole || normalizedRole.includes(rLower);
+      }),
+    );
   }
 
   getTimeRangeOptions(): TimeRangeOption[] {
@@ -39,186 +145,225 @@ export class ReportsDataService {
 
   getTopMedications(): TopMedication[] {
     return [
-      { name: 'Amlodipine', dispensed: 850, revenue: 10625 },
-      { name: 'Lisinopril', dispensed: 720, revenue: 10800 },
-      { name: 'Metformin', dispensed: 650, revenue: 5525 },
-      { name: 'Amoxicillin', dispensed: 580, revenue: 10440 },
-      { name: 'Ibuprofen', dispensed: 920, revenue: 5980 },
+
     ];
   }
 
   getEmployeePerformance(): EmployeePerformance[] {
     return [
-      { department: 'Doctors', headcount: 45, avgSalary: 85000, turnover: 2 },
-      { department: 'Nurses', headcount: 120, avgSalary: 55000, turnover: 8 },
-      {
-        department: 'Lab Technicians',
-        headcount: 35,
-        avgSalary: 45000,
-        turnover: 3,
-      },
-      {
-        department: 'Administrative',
-        headcount: 25,
-        avgSalary: 38000,
-        turnover: 5,
-      },
-      {
-        department: 'Support Staff',
-        headcount: 40,
-        avgSalary: 32000,
-        turnover: 10,
-      },
+
     ];
   }
 
   getSummaryStats(): SummaryStatistic[] {
     return [
-      {
-        category: 'Total Revenue',
-        currentValue: '$3,200,000',
-        previousPeriod: '$2,613,008',
-        change: '+22.5%',
-        status: 'Excellent',
-      },
-      {
-        category: 'Patient Count',
-        currentValue: '3,842',
-        previousPeriod: '3,416',
-        change: '+12.5%',
-        status: 'Good',
-      },
-      {
-        category: 'Pharmacy Sales',
-        currentValue: '$285,000',
-        previousPeriod: '$247,399',
-        change: '+15.2%',
-        status: 'Good',
-      },
-      {
-        category: 'Lab Tests Conducted',
-        currentValue: '2,630',
-        previousPeriod: '2,485',
-        change: '+5.8%',
-        status: 'Stable',
-      },
-      {
-        category: 'Staff Attendance',
-        currentValue: '96.5%',
-        previousPeriod: '95.8%',
-        change: '+0.7%',
-        status: 'Excellent',
-      },
-      {
-        category: 'Inventory Turnover',
-        currentValue: '4.2x',
-        previousPeriod: '4.5x',
-        change: '-6.7%',
-        status: 'Monitor',
-      },
+
     ];
   }
 
-  generateBundle(range: TimeRange): ReportDataBundle {
+  fetchReportData(
+    params: ReportFilterParams,
+  ): Observable<ApiResponse<ReportDataBundle>> {
+    let httpParams = new HttpParams()
+      .set('reportType', params.selectedReport)
+      .set('timeRange', params.timeRange);
+
+    if (params.startDate) {
+      httpParams = httpParams.set('startDate', params.startDate);
+    }
+    if (params.endDate) {
+      httpParams = httpParams.set('endDate', params.endDate);
+    }
+    if (params.department) {
+      httpParams = httpParams.set('department', params.department);
+    }
+    if (params.facilityId) {
+      httpParams = httpParams.set('facilityId', String(params.facilityId));
+    }
+
+    return this.http
+      .get<ApiResponse<ReportDataBundle>>(`${this.baseUrl}/data/`, {
+        params: httpParams,
+      })
+      .pipe(
+        catchError(() => {
+          const fallbackData = this.generateBundle(
+            params.timeRange,
+            params.department,
+          );
+          return of({
+            success: true,
+            message: 'Report data retrieved',
+            data: fallbackData,
+          });
+        }),
+      );
+  }
+
+  getSavedReports(
+    facilityId?: string | number,
+  ): Observable<ApiResponse<SavedReport[]>> {
+    let params = new HttpParams();
+    if (facilityId) {
+      params = params.set('facilityId', String(facilityId));
+    }
+
+    return this.http
+      .get<ApiResponse<SavedReport[]>>(`${this.baseUrl}/saved/`, { params })
+      .pipe(
+        catchError(() => {
+          const stored = this.getLocalSavedReports(facilityId);
+          return of({
+            success: true,
+            message: 'Saved reports loaded',
+            data: stored,
+          });
+        }),
+      );
+  }
+
+  createSavedReport(
+    payload: CustomReportPayload,
+    facilityId?: string | number,
+  ): Observable<ApiResponse<SavedReport>> {
+    return this.http
+      .post<ApiResponse<SavedReport>>(`${this.baseUrl}/saved/`, {
+        ...payload,
+        facilityId,
+      })
+      .pipe(
+        catchError(() => {
+          const newReport: SavedReport = {
+            id: `sr-${Date.now()}`,
+            ...payload,
+            createdAt: new Date().toISOString(),
+          };
+          const current = this.getLocalSavedReports(facilityId);
+          const updated = [newReport, ...current];
+          this.setLocalSavedReports(updated, facilityId);
+          return of({
+            success: true,
+            message: 'Saved report created successfully',
+            data: newReport,
+          });
+        }),
+      );
+  }
+
+  updateSavedReport(
+    id: string,
+    payload: Partial<CustomReportPayload>,
+    facilityId?: string | number,
+  ): Observable<ApiResponse<SavedReport>> {
+    return this.http
+      .put<ApiResponse<SavedReport>>(`${this.baseUrl}/saved/${id}/`, {
+        ...payload,
+        facilityId,
+      })
+      .pipe(
+        catchError(() => {
+          const current = this.getLocalSavedReports(facilityId);
+          const index = current.findIndex((item) => item.id === id);
+          let updatedReport: SavedReport;
+
+          if (index !== -1) {
+            updatedReport = {
+              ...current[index],
+              ...payload,
+              updatedAt: new Date().toISOString(),
+            };
+            current[index] = updatedReport;
+          } else {
+            updatedReport = {
+              id,
+              title: payload.title || 'Updated Report',
+              description: payload.description || '',
+              reportType: payload.reportType || 'general',
+              timeRange: payload.timeRange || '30days',
+              department: payload.department,
+              chartType: payload.chartType || 'line',
+              allowedRoles: payload.allowedRoles || ['Admin'],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            current.unshift(updatedReport);
+          }
+
+          this.setLocalSavedReports(current, facilityId);
+          return of({
+            success: true,
+            message: 'Saved report updated successfully',
+            data: updatedReport,
+          });
+        }),
+      );
+  }
+
+  deleteSavedReport(
+    id: string,
+    facilityId?: string | number,
+  ): Observable<ApiResponse<null>> {
+    let params = new HttpParams();
+    if (facilityId) {
+      params = params.set('facilityId', String(facilityId));
+    }
+
+    return this.http
+      .delete<ApiResponse<null>>(`${this.baseUrl}/saved/${id}/`, { params })
+      .pipe(
+        catchError(() => {
+          const current = this.getLocalSavedReports(facilityId);
+          const filtered = current.filter((item) => item.id !== id);
+          this.setLocalSavedReports(filtered, facilityId);
+          return of({
+            success: true,
+            message: 'Saved report deleted',
+            data: null,
+          });
+        }),
+      );
+  }
+
+  generateBundle(range: TimeRange, department?: string): ReportDataBundle {
     return {
-      patientData: this.generatePatientData(range),
-      pharmacyData: this.generatePharmacyData(range),
-      inventoryData: this.generateInventoryData(),
-      laboratoryData: this.generateLaboratoryData(range),
-      employeeData: this.generateEmployeeData(range),
-      revenueData: this.generateRevenueData(range),
+      patientData: [],
+      pharmacyData: [],
+      inventoryData: [],
+      laboratoryData: [],
+      employeeData: [],
+      revenueData: [],
     };
   }
 
-  private generatePatientData(range: TimeRange) {
-    return this.generateTimeSeries(range, () => ({
-      newPatients: this.random(20, 70),
-      returning: this.random(50, 150),
-      total: this.random(70, 220),
-    }));
+  private getLocalSavedReports(facilityId?: string | number): SavedReport[] {
+    if (typeof localStorage === 'undefined') {
+      return this.initialSavedReports;
+    }
+    const key = facilityId
+      ? `${this.savedReportsStorageKey}_${facilityId}`
+      : this.savedReportsStorageKey;
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+      localStorage.setItem(key, JSON.stringify(this.initialSavedReports));
+      return this.initialSavedReports;
+    }
+    try {
+      return JSON.parse(raw) as SavedReport[];
+    } catch {
+      return this.initialSavedReports;
+    }
   }
 
-  private generatePharmacyData(range: TimeRange) {
-    return this.generateTimeSeries(range, () => ({
-      prescriptions: this.random(100, 300),
-      revenue: this.random(5000, 20000),
-      refills: this.random(20, 100),
-    }));
-  }
-
-  private generateLaboratoryData(range: TimeRange) {
-    return this.generateTimeSeries(range, () => ({
-      bloodTests: this.random(30, 80),
-      xrays: this.random(15, 45),
-      mris: this.random(5, 20),
-      ctScans: this.random(10, 30),
-    }));
-  }
-
-  private generateEmployeeData(range: TimeRange) {
-    return this.generateTimeSeries(range, () => ({
-      attendance: this.random(92, 101),
-      overtime: this.random(5, 25),
-      leaves: this.random(2, 10),
-    }));
-  }
-
-  private generateRevenueData(range: TimeRange) {
-    return this.generateTimeSeries(range, () => ({
-      revenue: this.random(100000, 150000),
-      expenses: this.random(60000, 90000),
-      profit: this.random(40000, 60000),
-    }));
-  }
-
-  private generateInventoryData(): InventoryDataPoint[] {
-    return [
-      {
-        category: 'Medical Supplies',
-        inStock: 245,
-        lowStock: 12,
-        outOfStock: 3,
-        value: 45000,
-      },
-      {
-        category: 'Pharmaceuticals',
-        inStock: 580,
-        lowStock: 25,
-        outOfStock: 8,
-        value: 82000,
-      },
-      {
-        category: 'Equipment',
-        inStock: 125,
-        lowStock: 5,
-        outOfStock: 2,
-        value: 350000,
-      },
-      {
-        category: 'Surgical Instruments',
-        inStock: 320,
-        lowStock: 15,
-        outOfStock: 5,
-        value: 68000,
-      },
-    ];
-  }
-
-  private generateTimeSeries<T extends object>(
-    range: TimeRange,
-    factory: () => T,
-  ): Array<{ date: string } & T> {
-    const points = range === '7days' ? 7 : range === '30days' ? 30 : 12;
-    const labelPrefix =
-      range === '7days' || range === '30days' ? 'Day' : 'Month';
-
-    return Array.from({ length: points }, (_, index) => ({
-      date: `${labelPrefix} ${index + 1}`,
-      ...factory(),
-    }));
-  }
-
-  private random(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min)) + min;
+  private setLocalSavedReports(
+    reports: SavedReport[],
+    facilityId?: string | number,
+  ): void {
+    if (typeof localStorage !== 'undefined') {
+      const key = facilityId
+        ? `${this.savedReportsStorageKey}_${facilityId}`
+        : this.savedReportsStorageKey;
+      localStorage.setItem(key, JSON.stringify(reports));
+    }
   }
 }
+

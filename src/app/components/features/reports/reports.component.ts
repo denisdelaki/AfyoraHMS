@@ -1,37 +1,52 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ChartConfiguration, ChartOptions } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import * as XLSX from 'xlsx';
 import {
   BarChart3,
+  Building2,
   Calendar,
   Download,
+  Edit3,
+  FilePlus2,
   FileText,
   Filter,
   FlaskConical,
+  Loader2,
   LucideAngularModule,
   Package,
   Pill,
+  Play,
+  Plus,
+  ShieldCheck,
+  Trash2,
   TrendingUp,
   UserCog,
   Users,
 } from 'lucide-angular';
 import {
+  CustomReportPayload,
   EmployeePerformance,
   InventoryDataPoint,
   MetricCard,
   ReportDataBundle,
   ReportType,
   ReportTypeOption,
+  SavedReport,
   SummaryStatistic,
   TimeRange,
   TimeRangeOption,
   TopMedication,
 } from '../../../models/reports.models';
 import { ReportsDataService } from '../../../services/reports-data.service';
+import {
+  ReportConfigDialogComponent,
+  ReportConfigDialogData,
+} from '../../dialogs/report-config-dialog/report-config-dialog.component';
 
 @Component({
   selector: 'app-reports',
@@ -41,6 +56,7 @@ import { ReportsDataService } from '../../../services/reports-data.service';
     BaseChartDirective,
     LucideAngularModule,
     MatSnackBarModule,
+    MatDialogModule,
   ],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.css',
@@ -48,6 +64,7 @@ import { ReportsDataService } from '../../../services/reports-data.service';
 export class ReportsComponent implements OnInit {
   private readonly reportsDataService = inject(ReportsDataService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   readonly Filter = Filter;
   readonly FileText = FileText;
@@ -60,22 +77,33 @@ export class ReportsComponent implements OnInit {
   readonly FlaskConical = FlaskConical;
   readonly UserCog = UserCog;
   readonly BarChart3 = BarChart3;
+  readonly ShieldCheck = ShieldCheck;
+  readonly Plus = Plus;
+  readonly FilePlus2 = FilePlus2;
+  readonly Play = Play;
+  readonly Edit3 = Edit3;
+  readonly Trash2 = Trash2;
+  readonly Loader2 = Loader2;
+  readonly Building2 = Building2;
 
-  readonly reportTypes: ReportTypeOption[] =
-    this.reportsDataService.getReportTypes();
-  readonly timeRanges: TimeRangeOption[] =
-    this.reportsDataService.getTimeRangeOptions();
+  userRole = 'Admin';
+  facilityId: string | number = '';
+  reportTypes: ReportTypeOption[] = [];
+  timeRanges: TimeRangeOption[] = [];
 
   selectedReport: ReportType = 'general';
   timeRange: TimeRange = '30days';
   startDate = '';
   endDate = '';
+  departmentFilter = '';
   reportGenerated = true;
+  isLoading = false;
 
-  topMedications: TopMedication[] = this.reportsDataService.getTopMedications();
-  employeePerformance: EmployeePerformance[] =
-    this.reportsDataService.getEmployeePerformance();
-  summaryStats: SummaryStatistic[] = this.reportsDataService.getSummaryStats();
+  savedReports: SavedReport[] = [];
+
+  topMedications: TopMedication[] = [];
+  employeePerformance: EmployeePerformance[] = [];
+  summaryStats: SummaryStatistic[] = [];
 
   reportData!: ReportDataBundle;
 
@@ -135,7 +163,48 @@ export class ReportsComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.extractUserSession();
+    this.timeRanges = this.reportsDataService.getTimeRangeOptions();
+    this.reportTypes = this.reportsDataService.getReportTypesForRole(
+      this.userRole,
+    );
+
+    if (this.reportTypes.length > 0) {
+      this.selectedReport = this.reportTypes[0].value;
+    }
+
+    this.topMedications = this.reportsDataService.getTopMedications();
+    this.employeePerformance =
+      this.reportsDataService.getEmployeePerformance();
+    this.summaryStats = this.reportsDataService.getSummaryStats();
+
+    this.loadSavedReports();
     this.generateReport();
+  }
+
+  private extractUserSession(): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+    const rawUser = localStorage.getItem('afyora.user');
+    if (rawUser) {
+      try {
+        const parsed = JSON.parse(rawUser);
+        this.userRole = parsed.role || 'Admin';
+        this.facilityId =
+          JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
+      } catch {
+        this.userRole = 'Admin';
+      }
+    } else {
+      this.facilityId =
+        JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
+    }
+  }
+
+  get canManageCustomReports(): boolean {
+    const role = this.userRole.toLowerCase().replace(/_/g, ' ');
+    return role.includes('admin') || role.includes('manager');
   }
 
   onSelectionChange(): void {
@@ -143,10 +212,163 @@ export class ReportsComponent implements OnInit {
   }
 
   generateReport(): void {
-    this.reportData = this.reportsDataService.generateBundle(this.timeRange);
-    this.buildMetricCards();
-    this.buildCharts();
-    this.reportGenerated = true;
+    this.isLoading = true;
+    this.reportsDataService
+      .fetchReportData({
+        selectedReport: this.selectedReport,
+        timeRange: this.timeRange,
+        startDate: this.startDate,
+        endDate: this.endDate,
+        department: this.departmentFilter,
+        facilityId: this.facilityId,
+      })
+      .subscribe({
+        next: (response) => {
+          if (response.data) {
+            this.reportData = response.data;
+            if (response.data.topMedications) {
+              this.topMedications = response.data.topMedications;
+            }
+            if (response.data.employeePerformance) {
+              this.employeePerformance = response.data.employeePerformance;
+            }
+            if (response.data.summaryStats) {
+              this.summaryStats = response.data.summaryStats;
+            }
+          } else {
+            this.reportData = this.reportsDataService.generateBundle(
+              this.timeRange,
+              this.departmentFilter,
+            );
+          }
+          this.buildMetricCards();
+          this.buildCharts();
+          this.reportGenerated = true;
+          this.isLoading = false;
+        },
+        error: () => {
+          this.reportData = this.reportsDataService.generateBundle(
+            this.timeRange,
+            this.departmentFilter,
+          );
+          this.buildMetricCards();
+          this.buildCharts();
+          this.reportGenerated = true;
+          this.isLoading = false;
+        },
+      });
+  }
+
+  loadSavedReports(): void {
+    this.reportsDataService.getSavedReports(this.facilityId).subscribe({
+      next: (res) => {
+        if (res.data) {
+          const roleLower = this.userRole.toLowerCase();
+          const isAdmin = ['admin', 'superadmin', 'manager'].includes(
+            roleLower,
+          );
+
+          this.savedReports = res.data.filter(
+            (report) =>
+              isAdmin ||
+              report.allowedRoles.some(
+                (r) => r.toLowerCase() === roleLower,
+              ),
+          );
+        }
+      },
+    });
+  }
+
+  openCreateReportDialog(): void {
+    const dialogRef = this.dialog.open(ReportConfigDialogComponent, {
+      width: '640px',
+      data: { mode: 'create', userRole: this.userRole } as ReportConfigDialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((payload: CustomReportPayload | undefined) => {
+      if (payload) {
+        this.reportsDataService.createSavedReport(payload, this.facilityId).subscribe({
+          next: () => {
+            this.snackBar.open(
+              'Custom report configuration saved successfully!',
+              'Close',
+              {
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top',
+                panelClass: ['app-snackbar-success'],
+              },
+            );
+            this.loadSavedReports();
+          },
+        });
+      }
+    });
+  }
+
+  openEditReportDialog(report: SavedReport): void {
+    const dialogRef = this.dialog.open(ReportConfigDialogComponent, {
+      width: '640px',
+      data: {
+        mode: 'edit',
+        report,
+        userRole: this.userRole,
+      } as ReportConfigDialogData,
+    });
+
+    dialogRef.afterClosed().subscribe((payload: CustomReportPayload | undefined) => {
+      if (payload) {
+        this.reportsDataService
+          .updateSavedReport(report.id, payload, this.facilityId)
+          .subscribe({
+            next: () => {
+              this.snackBar.open(
+                'Report configuration updated successfully!',
+                'Close',
+                {
+                  duration: 3000,
+                  horizontalPosition: 'end',
+                  verticalPosition: 'top',
+                  panelClass: ['app-snackbar-success'],
+                },
+              );
+              this.loadSavedReports();
+            },
+          });
+      }
+    });
+  }
+
+  runSavedReport(report: SavedReport): void {
+    this.selectedReport = report.reportType;
+    this.timeRange = report.timeRange;
+    if (report.department) {
+      this.departmentFilter = report.department;
+    }
+    this.generateReport();
+    this.snackBar.open(`Running saved report: ${report.title}`, 'Close', {
+      duration: 3000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+    });
+  }
+
+  deleteSavedReport(report: SavedReport): void {
+    if (!confirm(`Are you sure you want to delete "${report.title}"?`)) {
+      return;
+    }
+
+    this.reportsDataService.deleteSavedReport(report.id, this.facilityId).subscribe({
+      next: () => {
+        this.snackBar.open('Saved report deleted', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+        this.loadSavedReports();
+      },
+    });
   }
 
   exportReport(): void {
@@ -318,203 +540,80 @@ export class ReportsComponent implements OnInit {
 
   private buildMetricCards(): void {
     this.generalMetrics = [
-      {
-        title: 'Patients',
-        value: '3,842',
-        change: '+12.5%',
-        iconKey: 'users',
-        accentClass: 'text-blue-500',
-      },
-      {
-        title: 'Revenue',
-        value: '$3.2M',
-        change: '+22.5%',
-        iconKey: 'trendingUp',
-        accentClass: 'text-green-500',
-      },
-      {
-        title: 'Pharmacy',
-        value: '$285K',
-        change: '+15.2%',
-        iconKey: 'pill',
-        accentClass: 'text-purple-500',
-      },
-      {
-        title: 'Inventory',
-        value: '$545K',
-        iconKey: 'package',
-        accentClass: 'text-yellow-500',
-      },
-      {
-        title: 'Lab Tests',
-        value: '2,630',
-        iconKey: 'flask',
-        accentClass: 'text-teal-500',
-      },
-      {
-        title: 'Staff',
-        value: '265',
-        iconKey: 'userCog',
-        accentClass: 'text-indigo-500',
-      },
+
     ];
 
     this.patientMetrics = [
-      {
-        title: 'Total Patients',
-        value: '3,842',
-        change: '+12.5%',
-        iconKey: 'users',
-        accentClass: 'text-blue-500',
-      },
-      {
-        title: 'New Patients',
-        value: '892',
-        change: '+18.3%',
-        iconKey: 'trendingUp',
-        accentClass: 'text-green-500',
-      },
-      {
-        title: 'Returning',
-        value: '2,950',
-        change: '+10.2%',
-        iconKey: 'users',
-        accentClass: 'text-purple-500',
-      },
+
     ];
 
     this.pharmacyMetrics = [
-      {
-        title: 'Revenue',
-        value: '$285K',
-        change: '+15.2%',
-        iconKey: 'trendingUp',
-        accentClass: 'text-green-500',
-      },
-      {
-        title: 'Prescriptions',
-        value: '4,520',
-        change: '+8.7%',
-        iconKey: 'pill',
-        accentClass: 'text-purple-500',
-      },
-      {
-        title: 'Refills',
-        value: '1,450',
-        change: '+5.3%',
-        iconKey: 'pill',
-        accentClass: 'text-blue-500',
-      },
+
     ];
 
     this.inventoryMetrics = [
-      {
-        title: 'Total Value',
-        value: '$545K',
-        iconKey: 'package',
-        accentClass: 'text-yellow-500',
-      },
-      {
-        title: 'In Stock',
-        value: '1,270',
-        iconKey: 'package',
-        accentClass: 'text-green-500',
-      },
-      {
-        title: 'Low Stock',
-        value: '57',
-        iconKey: 'package',
-        accentClass: 'text-orange-500',
-      },
-      {
-        title: 'Out of Stock',
-        value: '18',
-        iconKey: 'package',
-        accentClass: 'text-red-500',
-      },
+
     ];
 
-    this.laboratoryMetrics = [
-      {
-        title: 'Blood Tests',
-        value: '1,240',
-        iconKey: 'flask',
-        accentClass: 'text-red-500',
-      },
-      {
-        title: 'X-Rays',
-        value: '685',
-        iconKey: 'flask',
-        accentClass: 'text-blue-500',
-      },
-      {
-        title: 'MRI Scans',
-        value: '285',
-        iconKey: 'flask',
-        accentClass: 'text-purple-500',
-      },
-      {
-        title: 'CT Scans',
-        value: '420',
-        iconKey: 'flask',
-        accentClass: 'text-teal-500',
-      },
-    ];
+    this.laboratoryMetrics = [];
 
     this.employeeMetrics = [
-      {
-        title: 'Total Employees',
-        value: '265',
-        iconKey: 'userCog',
-        accentClass: 'text-blue-500',
-      },
-      {
-        title: 'Avg. Attendance',
-        value: '96.5%',
-        iconKey: 'trendingUp',
-        accentClass: 'text-green-500',
-      },
-      {
-        title: 'Turnover Rate',
-        value: '10.6%',
-        iconKey: 'userCog',
-        accentClass: 'text-orange-500',
-      },
+
     ];
 
     this.revenueMetrics = [
-      {
-        title: 'Total Revenue',
-        value: '$3.2M',
-        change: '+22.5%',
-        iconKey: 'trendingUp',
-        accentClass: 'text-green-500',
-      },
-      {
-        title: 'Total Expenses',
-        value: '$2.1M',
-        change: '+8.3%',
-        iconKey: 'trendingUp',
-        accentClass: 'text-blue-500',
-      },
-      {
-        title: 'Net Profit',
-        value: '$1.1M',
-        change: '+45.8%',
-        iconKey: 'trendingUp',
-        accentClass: 'text-purple-500',
-      },
+
     ];
   }
 
-  private buildCharts(): void {
-    const labels = this.reportData.patientData.map((entry) => entry.date);
+  private generateDateRange(): string[] {
+    const dates: string[] = [];
+    let end = new Date();
+    let start = new Date();
 
+    if (this.startDate && this.endDate) {
+      start = new Date(this.startDate);
+      end = new Date(this.endDate);
+    } else {
+      switch (this.timeRange) {
+        case '7days':
+          start.setDate(start.getDate() - 7);
+          break;
+        case '30days':
+          start.setDate(start.getDate() - 30);
+          break;
+        case '3months':
+          start.setDate(start.getDate() - 90);
+          break;
+        case '6months':
+          start.setDate(start.getDate() - 180);
+          break;
+        case '1year':
+          start.setDate(start.getDate() - 365);
+          break;
+        default:
+          start.setDate(start.getDate() - 30);
+      }
+    }
+
+    // Generate dates
+    let current = new Date(start);
+    while (current <= end) {
+      dates.push(current.toISOString().split('T')[0]);
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  }
+
+  private buildCharts(): void {
+    const allDates = this.generateDateRange();
+
+    const patientMap = new Map(this.reportData.patientData?.map(e => [e.date, e]) || []);
     this.patientChartData = {
-      labels,
+      labels: allDates,
       datasets: [
         {
-          data: this.reportData.patientData.map((entry) => entry.newPatients),
+          data: allDates.map(d => patientMap.get(d)?.newPatients || 0),
           label: 'New Patients',
           borderColor: '#3b82f6',
           backgroundColor: 'rgba(59,130,246,0.25)',
@@ -522,7 +621,7 @@ export class ReportsComponent implements OnInit {
           tension: 0.35,
         },
         {
-          data: this.reportData.patientData.map((entry) => entry.returning),
+          data: allDates.map(d => patientMap.get(d)?.returning || 0),
           label: 'Returning Patients',
           borderColor: '#10b981',
           backgroundColor: 'rgba(16,185,129,0.20)',
@@ -532,13 +631,12 @@ export class ReportsComponent implements OnInit {
       ],
     };
 
+    const pharmacyMap = new Map(this.reportData.pharmacyData?.map(e => [e.date, e]) || []);
     this.pharmacyChartData = {
-      labels: this.reportData.pharmacyData.map((entry) => entry.date),
+      labels: allDates,
       datasets: [
         {
-          data: this.reportData.pharmacyData.map(
-            (entry) => entry.prescriptions,
-          ),
+          data: allDates.map(d => pharmacyMap.get(d)?.prescriptions || 0),
           label: 'Prescriptions',
           borderColor: '#8b5cf6',
           backgroundColor: 'rgba(139,92,246,0.18)',
@@ -546,7 +644,7 @@ export class ReportsComponent implements OnInit {
           tension: 0.35,
         },
         {
-          data: this.reportData.pharmacyData.map((entry) => entry.revenue),
+          data: allDates.map(d => pharmacyMap.get(d)?.revenue || 0),
           label: 'Revenue ($)',
           borderColor: '#10b981',
           backgroundColor: 'rgba(16,185,129,0.18)',
@@ -557,10 +655,10 @@ export class ReportsComponent implements OnInit {
     };
 
     this.inventoryChartData = {
-      labels: this.reportData.inventoryData.map((entry) => entry.category),
+      labels: (this.reportData.inventoryData || []).map((entry) => entry.category),
       datasets: [
         {
-          data: this.reportData.inventoryData.map((entry) => entry.value),
+          data: (this.reportData.inventoryData || []).map((entry) => entry.value),
           label: 'Value ($)',
           backgroundColor: '#f59e0b',
           borderRadius: 6,
@@ -568,37 +666,39 @@ export class ReportsComponent implements OnInit {
       ],
     };
 
+    const labMap = new Map(this.reportData.laboratoryData?.map(e => [e.date, e]) || []);
     this.laboratoryChartData = {
-      labels: this.reportData.laboratoryData.map((entry) => entry.date),
+      labels: allDates,
       datasets: [
         {
-          data: this.reportData.laboratoryData.map((entry) => entry.bloodTests),
+          data: allDates.map(d => labMap.get(d)?.bloodTests || 0),
           label: 'Blood Tests',
           backgroundColor: '#ef4444',
         },
         {
-          data: this.reportData.laboratoryData.map((entry) => entry.xrays),
+          data: allDates.map(d => labMap.get(d)?.xrays || 0),
           label: 'X-Rays',
           backgroundColor: '#3b82f6',
         },
         {
-          data: this.reportData.laboratoryData.map((entry) => entry.mris),
+          data: allDates.map(d => labMap.get(d)?.mris || 0),
           label: 'MRI Scans',
           backgroundColor: '#8b5cf6',
         },
         {
-          data: this.reportData.laboratoryData.map((entry) => entry.ctScans),
+          data: allDates.map(d => labMap.get(d)?.ctScans || 0),
           label: 'CT Scans',
           backgroundColor: '#14b8a6',
         },
       ],
     };
 
+    const employeeMap = new Map(this.reportData.employeeData?.map(e => [e.date, e]) || []);
     this.employeeChartData = {
-      labels: this.reportData.employeeData.map((entry) => entry.date),
+      labels: allDates,
       datasets: [
         {
-          data: this.reportData.employeeData.map((entry) => entry.attendance),
+          data: allDates.map(d => employeeMap.get(d)?.attendance || 0),
           label: 'Attendance %',
           borderColor: '#10b981',
           backgroundColor: 'rgba(16,185,129,0.20)',
@@ -606,13 +706,13 @@ export class ReportsComponent implements OnInit {
           tension: 0.35,
         },
         {
-          data: this.reportData.employeeData.map((entry) => entry.overtime),
+          data: allDates.map(d => employeeMap.get(d)?.overtime || 0),
           label: 'Overtime Hours',
           borderColor: '#f59e0b',
           tension: 0.35,
         },
         {
-          data: this.reportData.employeeData.map((entry) => entry.leaves),
+          data: allDates.map(d => employeeMap.get(d)?.leaves || 0),
           label: 'Leaves Taken',
           borderColor: '#ef4444',
           tension: 0.35,
@@ -620,11 +720,12 @@ export class ReportsComponent implements OnInit {
       ],
     };
 
+    const revenueMap = new Map(this.reportData.revenueData?.map(e => [e.date, e]) || []);
     this.revenueAreaChartData = {
-      labels: this.reportData.revenueData.map((entry) => entry.date),
+      labels: allDates,
       datasets: [
         {
-          data: this.reportData.revenueData.map((entry) => entry.revenue),
+          data: allDates.map(d => revenueMap.get(d)?.revenue || 0),
           label: 'Revenue ($)',
           borderColor: '#10b981',
           backgroundColor: 'rgba(16,185,129,0.20)',
@@ -632,7 +733,7 @@ export class ReportsComponent implements OnInit {
           tension: 0.35,
         },
         {
-          data: this.reportData.revenueData.map((entry) => entry.expenses),
+          data: allDates.map(d => revenueMap.get(d)?.expenses || 0),
           label: 'Expenses ($)',
           borderColor: '#ef4444',
           backgroundColor: 'rgba(239,68,68,0.15)',
@@ -643,10 +744,10 @@ export class ReportsComponent implements OnInit {
     };
 
     this.profitChartData = {
-      labels: this.reportData.revenueData.map((entry) => entry.date),
+      labels: allDates,
       datasets: [
         {
-          data: this.reportData.revenueData.map((entry) => entry.profit),
+          data: allDates.map(d => revenueMap.get(d)?.profit || 0),
           label: 'Profit ($)',
           backgroundColor: '#8b5cf6',
           borderRadius: 6,
@@ -655,25 +756,26 @@ export class ReportsComponent implements OnInit {
     };
 
     this.departmentActivityChartData = {
-      labels,
+      labels: allDates,
       datasets: [
         {
-          data: this.reportData.patientData.map((entry) => entry.total),
+          data: allDates.map(d => patientMap.get(d)?.total || 0),
           label: 'Patients',
           borderColor: '#3b82f6',
           tension: 0.35,
         },
         {
-          data: this.reportData.pharmacyData.map(
-            (entry) => entry.prescriptions,
-          ),
+          data: allDates.map(d => pharmacyMap.get(d)?.prescriptions || 0),
           label: 'Prescriptions',
           borderColor: '#8b5cf6',
           tension: 0.35,
         },
         {
-          data: this.reportData.laboratoryData.map(
-            (entry) => entry.bloodTests + entry.xrays,
+          data: allDates.map(d => 
+            (labMap.get(d)?.bloodTests || 0) + 
+            (labMap.get(d)?.xrays || 0) + 
+            (labMap.get(d)?.mris || 0) + 
+            (labMap.get(d)?.ctScans || 0)
           ),
           label: 'Lab Tests',
           borderColor: '#14b8a6',
@@ -687,3 +789,4 @@ export class ReportsComponent implements OnInit {
     return this.reportData.inventoryData;
   }
 }
+

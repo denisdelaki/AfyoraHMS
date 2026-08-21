@@ -1,3 +1,17 @@
+export type UserRole =
+  | 'Admin'
+  | 'SuperAdmin'
+  | 'Doctor'
+  | 'Nurse'
+  | 'Pharmacist'
+  | 'Lab Technician'
+  | 'Radiologist'
+  | 'Accountant'
+  | 'HR'
+  | 'Receptionist'
+  | 'Manager'
+  | string;
+
 export type ReportType =
   | 'general'
   | 'patients'
@@ -19,18 +33,53 @@ export interface ReportTypeOption {
   value: ReportType;
   label: string;
   iconKey:
-    | 'barChart'
-    | 'users'
-    | 'pill'
-    | 'package'
-    | 'flask'
-    | 'userCog'
-    | 'trendingUp';
+  | 'barChart'
+  | 'users'
+  | 'pill'
+  | 'package'
+  | 'flask'
+  | 'userCog'
+  | 'trendingUp';
+  allowedRoles?: string[];
+  description?: string;
 }
 
 export interface TimeRangeOption {
   value: TimeRange;
   label: string;
+}
+
+export interface ReportFilterParams {
+  selectedReport: ReportType;
+  timeRange: TimeRange;
+  startDate?: string;
+  endDate?: string;
+  department?: string;
+  facilityId?: string | number;
+}
+
+export interface SavedReport {
+  id: string;
+  title: string;
+  description: string;
+  reportType: ReportType;
+  timeRange: TimeRange;
+  department?: string;
+  chartType: 'line' | 'bar';
+  allowedRoles: string[];
+  createdAt: string;
+  updatedAt?: string;
+  createdBy?: string;
+}
+
+export interface CustomReportPayload {
+  title: string;
+  description: string;
+  reportType: ReportType;
+  timeRange: TimeRange;
+  department?: string;
+  chartType: 'line' | 'bar';
+  allowedRoles: string[];
 }
 
 export interface MetricCard {
@@ -113,4 +162,8 @@ export interface ReportDataBundle {
   laboratoryData: LaboratoryDataPoint[];
   employeeData: EmployeeDataPoint[];
   revenueData: RevenueDataPoint[];
+  topMedications?: TopMedication[];
+  employeePerformance?: EmployeePerformance[];
+  summaryStats?: SummaryStatistic[];
 }
+
