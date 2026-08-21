@@ -6,6 +6,7 @@ export interface Supply {
   minStock: number;
   unit: string;
   price: number;
-  vendor: string;
+  vendor: string | number;
+  vendorName?: string;
   lastOrdered: string;
 }

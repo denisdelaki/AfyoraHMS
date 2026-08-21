@@ -1,5 +1,5 @@
-<h2 mat-dialog-title class="!mb-1">Add New Item</h2>
-<p class="text-sm text-slate-600 px-6">Create a new inventory supply record.</p>
+<h2 mat-dialog-title class="!mb-1">{{ isEdit ? 'Edit' : 'Add New' }} {{ form.get('type')?.value }}</h2>
+<p class="text-sm text-slate-600 px-6">{{ isEdit ? 'Update existing' : 'Create a new' }} inventory record.</p>
 <mat-dialog-content>
   <form
     [formGroup]="form"
@@ -25,30 +25,75 @@
       <input matInput formControlName="category" />
     </mat-form-field>
 
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Initial Stock</mat-label>
-      <input matInput type="number" formControlName="stock" />
-    </mat-form-field>
+    <!-- Supply specific fields -->
+    <ng-container *ngIf="form.get('type')?.value === 'Supply'">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Current Stock</mat-label>
+        <input matInput type="number" formControlName="stock" />
+      </mat-form-field>
 
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Minimum Stock</mat-label>
-      <input matInput type="number" formControlName="minStock" />
-    </mat-form-field>
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Minimum Stock</mat-label>
+        <input matInput type="number" formControlName="minStock" />
+      </mat-form-field>
 
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Unit</mat-label>
-      <input matInput formControlName="unit" placeholder="boxes, packs" />
-    </mat-form-field>
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Unit</mat-label>
+        <input matInput formControlName="unit" placeholder="boxes, packs" />
+      </mat-form-field>
 
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Price per Unit</mat-label>
-      <input matInput type="number" formControlName="price" />
-    </mat-form-field>
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Price per Unit</mat-label>
+        <input matInput type="number" formControlName="price" />
+      </mat-form-field>
 
-    <mat-form-field appearance="fill" class="sm:col-span-2 w-full">
-      <mat-label>Vendor</mat-label>
-      <input matInput formControlName="vendor" />
-    </mat-form-field>
+      <mat-form-field appearance="fill" class="sm:col-span-2 w-full">
+        <mat-label>Vendor</mat-label>
+        <mat-select formControlName="vendor">
+          <mat-option *ngFor="let vendor of vendors" [value]="vendor.id">
+            {{ vendor.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </ng-container>
+
+    <!-- Equipment specific fields -->
+    <ng-container *ngIf="form.get('type')?.value === 'Equipment'">
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="Operational">Operational</mat-option>
+          <mat-option value="Under Maintenance">Under Maintenance</mat-option>
+          <mat-option value="Out of Order">Out of Order</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Location</mat-label>
+        <input matInput formControlName="location" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Last Maintenance</mat-label>
+        <input matInput [matDatepicker]="lastMaintPicker" formControlName="lastMaintenance" />
+        <mat-datepicker-toggle matIconSuffix [for]="lastMaintPicker"></mat-datepicker-toggle>
+        <mat-datepicker #lastMaintPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Next Maintenance</mat-label>
+        <input matInput [matDatepicker]="nextMaintPicker" formControlName="nextMaintenance" />
+        <mat-datepicker-toggle matIconSuffix [for]="nextMaintPicker"></mat-datepicker-toggle>
+        <mat-datepicker #nextMaintPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="sm:col-span-2 w-full">
+        <mat-label>Purchase Date</mat-label>
+        <input matInput [matDatepicker]="purchasePicker" formControlName="purchaseDate" />
+        <mat-datepicker-toggle matIconSuffix [for]="purchasePicker"></mat-datepicker-toggle>
+        <mat-datepicker #purchasePicker></mat-datepicker>
+      </mat-form-field>
+    </ng-container>
 
     <div class="sm:col-span-2 flex justify-end gap-2 pt-1">
       <button mat-stroked-button type="button" (click)="close()">Cancel</button>
@@ -58,7 +103,7 @@
         type="submit"
         [disabled]="form.invalid"
       >
-        Add to Inventory
+        {{ isEdit ? 'Save Changes' : 'Add to Inventory' }}
       </button>
     </div>
   </form>

@@ -1,0 +1,41 @@
+<h2 mat-dialog-title class="!mb-1">{{ isEdit ? 'Edit Vendor' : 'Add New Vendor' }}</h2>
+<p class="text-sm text-slate-600 px-6">{{ isEdit ? 'Update vendor details.' : 'Register a new vendor for the facility.' }}</p>
+<mat-dialog-content>
+  <form
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    mat-dialog-content
+    class="flex flex-col gap-3 pt-4"
+  >
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Vendor Name</mat-label>
+      <input matInput formControlName="name" placeholder="E.g., Medical Supplies Co." />
+      <mat-error *ngIf="form.get('name')?.hasError('required')">Name is required</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Phone Number</mat-label>
+      <input matInput formControlName="contact" placeholder="E.g., +1234567890" />
+      <mat-error *ngIf="form.get('contact')?.hasError('required')">Phone Number is required</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Email Address</mat-label>
+      <input matInput type="email" formControlName="email" placeholder="E.g., contact@vendor.com" />
+      <mat-error *ngIf="form.get('email')?.hasError('required')">Email is required</mat-error>
+      <mat-error *ngIf="form.get('email')?.hasError('email')">Please enter a valid email address</mat-error>
+    </mat-form-field>
+
+    <div class="flex justify-end gap-2 pt-2">
+      <button mat-stroked-button type="button" (click)="close()">Cancel</button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="form.invalid"
+      >
+        {{ isEdit ? 'Save Changes' : 'Add Vendor' }}
+      </button>
+    </div>
+  </form>
+</mat-dialog-content>

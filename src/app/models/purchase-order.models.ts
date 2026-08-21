@@ -6,10 +6,11 @@ export interface PurchaseOrderItem {
 
 export interface PurchaseOrder {
   id: string;
-  vendor: string;
+  vendor: string | number;
+  vendorName?: string;
   items: PurchaseOrderItem[];
   total: number;
-  status: 'Pending' | 'Delivered';
+  status: 'Pending' | 'Delivered' | 'Approved' | 'Shipped' | 'Cancelled';
   orderDate: string;
   expectedDate: string;
 }

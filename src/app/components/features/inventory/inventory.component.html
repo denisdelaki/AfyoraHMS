@@ -6,15 +6,35 @@
       <h1 class="text-2xl font-semibold mb-1">Inventory Management</h1>
       <p class="text-slate-600">Manage medical supplies and equipment</p>
     </div>
-    <button
-      mat-flat-button
-      color="primary"
-      class="!rounded-lg"
-      (click)="openAddDialog()"
-    >
-      <mat-icon class="mr-1">add</mat-icon>
-      Add Item
-    </button>
+    <div class="flex gap-2">
+      <button
+        mat-stroked-button
+        color="warn"
+        class="!rounded-lg"
+        (click)="reorderLowStock()"
+      >
+        <mat-icon class="mr-1">shopping_cart</mat-icon>
+        Reorder Low Stock
+      </button>
+      <button
+        mat-stroked-button
+        color="primary"
+        class="!rounded-lg"
+        (click)="printSupplyReport()"
+      >
+        <mat-icon class="mr-1">print</mat-icon>
+        Print Report
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        class="!rounded-lg"
+        (click)="openAddDialog()"
+      >
+        <mat-icon class="mr-1">add</mat-icon>
+        Add Item
+      </button>
+    </div>
   </div>
 
   <mat-card
@@ -150,6 +170,11 @@
                   >
                     Status
                   </th>
+                  <th
+                    class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase text-right"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody *ngIf="filteredSupplies$ | async as suppliesList">
@@ -172,7 +197,7 @@
                     </div>
                   </td>
                   <td class="py-3 px-4">{{ supply.price | currency }}</td>
-                  <td class="py-3 px-4">{{ supply.vendor }}</td>
+                  <td class="py-3 px-4">{{ supply.vendorName || supply.vendor }}</td>
                   <td class="py-3 px-4">
                     <span
                       class="text-xs font-semibold px-2.5 py-1 rounded-full"
@@ -189,9 +214,14 @@
                       }}
                     </span>
                   </td>
+                  <td class="py-3 px-4 text-right">
+                    <button mat-icon-button class="!text-slate-500 hover:!text-blue-600" (click)="editItem(supply, 'Supply')">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  </td>
                 </tr>
                 <tr *ngIf="suppliesList.length === 0">
-                  <td colspan="7" class="text-center text-slate-500 py-10">
+                  <td colspan="8" class="text-center text-slate-500 py-10">
                     No matching supplies found.
                   </td>
                 </tr>
@@ -246,6 +276,11 @@
                 >
                   Status
                 </th>
+                <th
+                  class="py-3 px-4 text-xs font-semibold text-slate-600 uppercase text-right"
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -271,6 +306,11 @@
                     {{ item.status }}
                   </span>
                 </td>
+                <td class="py-3 px-4 text-right">
+                  <button mat-icon-button class="!text-slate-500 hover:!text-blue-600" (click)="editItem(item, 'Equipment')">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -279,10 +319,14 @@
     </mat-tab>
 
     <mat-tab label="Vendors">
-      <div
-        class="py-4 grid grid-cols-1 lg:grid-cols-2 gap-4"
-        *ngIf="vendors$ | async as vendorList"
-      >
+      <div class="py-4">
+        <div class="flex justify-end mb-4">
+          <button mat-flat-button color="primary" class="!rounded-lg" (click)="openAddVendorDialog()">
+            <mat-icon class="mr-1">add</mat-icon>
+            Add Vendor
+          </button>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" *ngIf="vendors$ | async as vendorList">
         <mat-card
           class="!rounded-xl !shadow-sm"
           *ngFor="let vendor of vendorList; trackBy: trackById"
@@ -293,10 +337,15 @@
                 <h3 class="text-lg font-semibold">{{ vendor.name }}</h3>
                 <p class="text-sm text-slate-500">{{ vendor.id }}</p>
               </div>
-              <span
-                class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700"
-                >Active</span
-              >
+              <div class="flex items-center gap-2">
+                <span
+                  class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700"
+                  >Active</span
+                >
+                <button mat-icon-button class="!text-slate-500 hover:!text-blue-600" (click)="openAddVendorDialog(vendor)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+              </div>
             </div>
 
             <div class="space-y-2 text-sm">
@@ -320,6 +369,7 @@
           </div>
         </mat-card>
       </div>
+      </div>
     </mat-tab>
 
     <mat-tab label="Purchase Orders">
@@ -334,7 +384,7 @@
             >
               <div>
                 <p class="font-semibold text-lg">
-                  {{ order.id }} - {{ order.vendor }}
+                  {{ order.id }} - {{ order.vendorName || order.vendor }}
                 </p>
                 <p class="text-sm text-slate-600">
                   Ordered: {{ order.orderDate }} • Expected:
