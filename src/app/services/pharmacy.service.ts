@@ -1,16 +1,18 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import { ApiResponse, CreateDrugRequest, Drug, Prescription } from '../models';
+import { DataSyncService } from './data-sync.service';
 
 @Injectable({ providedIn: 'root' })
 export class PharmacyService {
   private readonly http = inject(HttpClient);
+  private readonly dataSync = inject(DataSyncService);
   private readonly baseUrl = apiUrl('/pharmacy');
 
   getDrugs(facilityId: string | number): Observable<Drug[]> {
-    return this.http
+    return this.dataSync.query(`pharmacy:drugs:${facilityId}`, () => this.http
       .get<{
         items: Drug[];
         count: number;
@@ -19,7 +21,7 @@ export class PharmacyService {
         map((response) =>
           (response?.items ?? []).filter((drug): drug is Drug => Boolean(drug)),
         ),
-      );
+      ));
   }
 
   createDrug(
@@ -29,7 +31,7 @@ export class PharmacyService {
     return this.http.post<ApiResponse<Drug>>(
       `${this.baseUrl}/drugs/?facilityId=${encodeURIComponent(facilityId)}/`,
       payload,
-    );
+    ).pipe(tap(() => this.dataSync.invalidate(`pharmacy:drugs:${facilityId}`)));
   }
 
   updateDrug(
@@ -54,18 +56,18 @@ export class PharmacyService {
 
           return response as Drug;
         }),
-      );
+      ).pipe(tap(() => this.dataSync.invalidate(`pharmacy:drugs:${facilityId}`)));
   }
 
   getPrescriptions(facilityId: string | number): Observable<Prescription[]> {
-    return this.http
+    return this.dataSync.query(`pharmacy:prescriptions:${facilityId}`, () => this.http
       .get<{
         items: Prescription[];
         count: number;
       }>(
         `${this.baseUrl}/prescriptions/?facilityId=${encodeURIComponent(facilityId)}/`,
       )
-      .pipe(map((response) => response.items ?? []));
+      .pipe(map((response) => response.items ?? [])));
   }
 
   createPrescription(
@@ -81,7 +83,7 @@ export class PharmacyService {
     return this.http.post<ApiResponse<Prescription>>(
       `${this.baseUrl}/prescriptions/?facilityId=${encodeURIComponent(facilityId)}`,
       { ...payload, patientId },
-    );
+    ).pipe(tap(() => this.dataSync.invalidate(`pharmacy:prescriptions:${facilityId}`)));
   }
 
   dispensePrescription(
@@ -105,7 +107,7 @@ export class PharmacyService {
 
           return response as Prescription;
         }),
-      );
+      ).pipe(tap(() => this.dataSync.invalidate(`pharmacy:prescriptions:${facilityId}`)));
   }
 
   deletePrescription(
@@ -114,6 +116,6 @@ export class PharmacyService {
   ): Observable<ApiResponse<Prescription>> {
     return this.http.delete<ApiResponse<Prescription>>(
       `${this.baseUrl}/prescriptions/${encodeURIComponent(prescriptionId)}/?facilityId=${encodeURIComponent(facilityId)}/`,
-    );
+    ).pipe(tap(() => this.dataSync.invalidate(`pharmacy:prescriptions:${facilityId}`)));
   }
 }

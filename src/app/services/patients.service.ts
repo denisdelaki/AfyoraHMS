@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { map, Observable, tap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import {
   ApiResponse,
@@ -10,6 +10,7 @@ import {
   UpdatePatientRequest,
   VisitHistory,
 } from '../models';
+import { DataSyncService } from './data-sync.service';
 
 type VisitRecordPayload = {
   date: string;
@@ -27,26 +28,27 @@ type VisitRecordPayload = {
 @Injectable({ providedIn: 'root' })
 export class PatientsService {
   private readonly http = inject(HttpClient);
+  private readonly dataSync = inject(DataSyncService);
   private readonly baseUrl = apiUrl('/patients');
 
   getPatients(facilityId: string | number): Observable<Patient[]> {
-    return this.http
+    return this.dataSync.query(`patients:${facilityId}`, () => this.http
       .get<
         ApiResponse<Patient[]>
       >(`${this.baseUrl}/?facilityId=${encodeURIComponent(facilityId)}`)
-      .pipe(map((response) => response.results || []));
+      .pipe(map((response) => response.results || [])));
   }
 
   getPatientById(patientId: string): Observable<ApiResponse<Patient>> {
-    return this.http.get<ApiResponse<Patient>>(
+    return this.dataSync.query(`patients:detail:${patientId}`, () => this.http.get<ApiResponse<Patient>>(
       `${this.baseUrl}/${encodeURIComponent(patientId)}/`,
-    );
+    ));
   }
 
   registerPatient(
     payload: RegisterPatientRequest,
   ): Observable<ApiResponse<Patient>> {
-    return this.http.post<ApiResponse<Patient>>(`${this.baseUrl}/`, payload);
+    return this.http.post<ApiResponse<Patient>>(`${this.baseUrl}/`, payload).pipe(tap(() => this.dataSync.invalidate('patients:')));
   }
 
   updatePatient(
@@ -58,7 +60,7 @@ export class PatientsService {
       .patch<
         ApiResponse<Patient>
       >(`${this.baseUrl}/${encodeURIComponent(patientId)}/?facilityId=${encodeURIComponent(facilityId)}`, payload)
-      .pipe(map((response) => response));
+      .pipe(map((response) => response), tap(() => this.dataSync.invalidate('patients:')));
   }
 
   getPatientAppointments(

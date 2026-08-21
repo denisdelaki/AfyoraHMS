@@ -36,14 +36,6 @@ export class TransformIdsPipe implements PipeTransform {
     property: IdProperty | string,
     records: readonly IdentifiableRecord[] | null | undefined,
   ): string | number | null | undefined {
-    console.log(
-      'TransformIdsPipe: value:',
-      value,
-      'property:',
-      property,
-      'records:',
-      records,
-    );
     if (value === null || value === undefined || !Array.isArray(records)) {
       return value;
     }
