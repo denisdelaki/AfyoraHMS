@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import {
@@ -17,6 +18,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AuthService } from '../../../services';
 import { FacilityType, SignupRequest } from '../../../models';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { LogoComponent } from '../../features/logo/logo.component';
 
 type SelectedFacilityType = FacilityType | null;
 
@@ -33,6 +36,8 @@ type SelectedFacilityType = FacilityType | null;
     MatInputModule,
     MatIconModule,
     MatCheckboxModule,
+    MatSnackBarModule,
+    LogoComponent,
   ],
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css',
@@ -40,6 +45,7 @@ type SelectedFacilityType = FacilityType | null;
 export class SignupComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly signupDraftStorageKey = 'afyora.signupDraft';
   private readonly organizationIdStorageKey = 'afyora.organizationId';
   private readonly namePattern = /^[a-zA-Z' -]+$/;
@@ -155,6 +161,16 @@ export class SignupComponent {
             String(organizationId),
           );
         }
+
+        this.snackBar.open(
+          'Signup successful! Please check your email for verification.',
+          'Close',
+          {
+            duration: 5000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          },
+        );
 
         this.isSubmitting = false;
         this.router.navigate(['/onboarding'], {

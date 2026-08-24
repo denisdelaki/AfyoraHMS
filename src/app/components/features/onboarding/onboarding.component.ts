@@ -9,7 +9,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { LogoComponent } from '../../dialogs/logo/logo.component';
+import { LogoComponent } from '../logo/logo.component';
 import { AuthService } from '../../../services';
 import { FacilityOnboardingRequest, FacilityType } from '../../../models';
 
@@ -137,7 +137,14 @@ export class OnboardingComponent implements OnInit {
   ];
 
   Math = Math; // to allow Math.max usage in template
-  readonly otpControlNames = ['otp1', 'otp2', 'otp3', 'otp4', 'otp5', 'otp6'] as const;
+  readonly otpControlNames = [
+    'otp1',
+    'otp2',
+    'otp3',
+    'otp4',
+    'otp5',
+    'otp6',
+  ] as const;
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
@@ -147,7 +154,6 @@ export class OnboardingComponent implements OnInit {
       this.saveOnboardingDraft();
     });
   }
-
 
   handleComplete(): void {
     if (this.onboardingForm.invalid) {
@@ -247,6 +253,7 @@ export class OnboardingComponent implements OnInit {
 
   private patchFromSignupDraft(): void {
     const draft = localStorage.getItem(this.signupDraftStorageKey);
+    this.email = draft ? (JSON.parse(draft)?.email ?? '') : '';
 
     if (!draft) {
       return;
@@ -388,7 +395,9 @@ export class OnboardingComponent implements OnInit {
       this.onboardingForm.get(controlName)?.setValue(digits[index] ?? '');
     });
     this.otpVerified = false;
-    this.focusOtpInput(Math.min(digits.length, this.otpControlNames.length) - 1);
+    this.focusOtpInput(
+      Math.min(digits.length, this.otpControlNames.length) - 1,
+    );
     this.verifyOtpWhenComplete();
   }
 
@@ -403,21 +412,29 @@ export class OnboardingComponent implements OnInit {
       this.otpControlNames.forEach((controlName) => {
         this.onboardingForm.get(controlName)?.markAsTouched();
       });
-      this.snackBar.open('Enter the complete 6-digit verification code.', 'Close', {
-        duration: 3000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top',
-      });
+      this.snackBar.open(
+        'Enter the complete 6-digit verification code.',
+        'Close',
+        {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        },
+      );
       return;
     }
 
     const email = this.getVerificationEmail();
     if (!email) {
-      this.snackBar.open('An email address is required to verify the code.', 'Close', {
-        duration: 3000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top',
-      });
+      this.snackBar.open(
+        'An email address is required to verify the code.',
+        'Close',
+        {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        },
+      );
       return;
     }
 
@@ -426,17 +443,22 @@ export class OnboardingComponent implements OnInit {
       next: (response) => {
         this.otpVerified = true;
         this.isVerifyingOtp = false;
-        this.snackBar.open(response?.message || 'Email verified successfully.', 'Close', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top',
-        });
+        this.snackBar.open(
+          response?.message || 'Email verified successfully.',
+          'Close',
+          {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+          },
+        );
         this.currentStep = 2;
       },
       error: (err) => {
         this.isVerifyingOtp = false;
         this.snackBar.open(
-          err?.error?.message || 'The verification code is invalid or has expired.',
+          err?.error?.message ||
+            'The verification code is invalid or has expired.',
           'Close',
           {
             duration: 4000,
@@ -455,11 +477,15 @@ export class OnboardingComponent implements OnInit {
 
     const email = this.getVerificationEmail();
     if (!email) {
-      this.snackBar.open('An email address is required to resend the code.', 'Close', {
-        duration: 3000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top',
-      });
+      this.snackBar.open(
+        'An email address is required to resend the code.',
+        'Close',
+        {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        },
+      );
       return;
     }
 
@@ -472,16 +498,21 @@ export class OnboardingComponent implements OnInit {
           this.onboardingForm.get(controlName)?.reset('');
         });
         this.focusOtpInput(0);
-        this.snackBar.open(response?.message || 'A new verification code has been sent.', 'Close', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top',
-        });
+        this.snackBar.open(
+          response?.message || 'A new verification code has been sent.',
+          'Close',
+          {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+          },
+        );
       },
       error: (err) => {
         this.isResendingOtp = false;
         this.snackBar.open(
-          err?.error?.message || 'Unable to resend the verification code. Please try again.',
+          err?.error?.message ||
+            'Unable to resend the verification code. Please try again.',
           'Close',
           {
             duration: 4000,
@@ -524,7 +555,11 @@ export class OnboardingComponent implements OnInit {
   }
 
   private verifyOtpWhenComplete(): void {
-    if (this.currentStep === 1 && !this.otpVerified && /^\d{6}$/.test(this.getOtp())) {
+    if (
+      this.currentStep === 1 &&
+      !this.otpVerified &&
+      /^\d{6}$/.test(this.getOtp())
+    ) {
       this.verifyOtp();
     }
   }
