@@ -225,7 +225,8 @@
               <input
                 matInput
                 type="tel"
-                placeholder="+1 (555) 000-0000"
+                maxlength="13"
+                placeholder="+25412345678"
                 formControlName="phone"
                 required
               />
@@ -243,7 +244,7 @@
                 <input
                   matInput
                   [type]="showPassword ? 'text' : 'password'"
-                  placeholder="••••••••"
+                  placeholder="Enter password"
                   formControlName="password"
                   required
                 />
@@ -276,7 +277,7 @@
                 <input
                   matInput
                   [type]="showConfirmPassword ? 'text' : 'password'"
-                  placeholder="••••••••"
+                  placeholder="Confirm password"
                   formControlName="confirmPassword"
                   required
                 />

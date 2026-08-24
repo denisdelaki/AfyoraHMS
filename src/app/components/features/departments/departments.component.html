@@ -80,7 +80,7 @@
           type="tel"
           (input)="onlyNumbers($event)"
           placeholder="254..."
-          maxlength="12"
+          maxlength="13"
           required
         />
         <mat-error *ngIf="departmentForm.get('phone')?.hasError('required')">
