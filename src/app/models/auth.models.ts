@@ -11,6 +11,13 @@ export type LoginRequest = {
 export type LoginResponse = {
   accessToken: string;
   refreshToken?: string;
+  organizationId?: number | string;
+  organization_id?: number | string;
+  onboardingRequired?: boolean;
+  onboarding_required?: boolean;
+  onboardingCompleted?: boolean;
+  onboarding_completed?: boolean;
+  facilityType?: FacilityType;
   user: {
     id: string;
     fullName: string;
@@ -35,6 +42,9 @@ export type SignupResponse = {
   organization_id?: number | string;
   onboardingRequired?: boolean;
   onboarding_required?: boolean;
+  onboardingCompleted?: boolean;
+  onboarding_completed?: boolean;
+  facilityType?: FacilityType;
   message?: string;
 };
 

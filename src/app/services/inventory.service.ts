@@ -26,7 +26,7 @@ export class InventoryService {
     'token',
   ];
 
-  constructor() { }
+  constructor() {}
 
   getSupplies(facilityId: string | number): Observable<Supply[]> {
     const params = this.buildFacilityParams(facilityId);
@@ -40,11 +40,14 @@ export class InventoryService {
 
   getLowStockSupplies(facilityId: string | number): Observable<Supply[]> {
     return this.getSupplies(facilityId).pipe(
-      map((supplies) => supplies.filter((s) => s.stock < s.minStock))
+      map((supplies) => supplies.filter((s) => s.stock < s.minStock)),
     );
   }
 
-  addSupply(payload: AddInventoryItemPayload, facilityId: string | number): Observable<Supply> {
+  addSupply(
+    payload: AddInventoryItemPayload,
+    facilityId: string | number,
+  ): Observable<Supply> {
     const params = this.buildFacilityParams(facilityId);
     const body = {
       name: payload.name.trim(),
@@ -53,7 +56,7 @@ export class InventoryService {
       minStock: Number(payload.minStock),
       unit: payload.unit?.trim() || '',
       price: Number(payload.price),
-      vendor: payload.vendor
+      vendor: payload.vendor,
     };
     return this.http
       .post<ApiResponse<Supply>>(`${this.baseUrl}/supplies/`, body, {
@@ -63,7 +66,11 @@ export class InventoryService {
       .pipe(map((res) => res.data));
   }
 
-  updateSupply(id: string | number, payload: AddInventoryItemPayload, facilityId: string | number): Observable<Supply> {
+  updateSupply(
+    id: string | number,
+    payload: AddInventoryItemPayload,
+    facilityId: string | number,
+  ): Observable<Supply> {
     const params = this.buildFacilityParams(facilityId);
     const body = {
       name: payload.name.trim(),
@@ -72,7 +79,7 @@ export class InventoryService {
       minStock: Number(payload.minStock),
       unit: payload.unit?.trim(),
       price: Number(payload.price),
-      vendor: payload.vendor
+      vendor: payload.vendor,
     };
     return this.http
       .put<ApiResponse<Supply>>(`${this.baseUrl}/supplies/${id}/`, body, {
@@ -92,7 +99,10 @@ export class InventoryService {
       .pipe(map((res) => this.normalizeList(res.results || [])));
   }
 
-  addEquipment(payload: AddInventoryItemPayload, facilityId: string | number): Observable<Equipment> {
+  addEquipment(
+    payload: AddInventoryItemPayload,
+    facilityId: string | number,
+  ): Observable<Equipment> {
     const params = this.buildFacilityParams(facilityId);
     const body = {
       name: payload.name.trim(),
@@ -101,7 +111,7 @@ export class InventoryService {
       location: payload.location?.trim(),
       lastMaintenance: payload.lastMaintenance || null,
       nextMaintenance: payload.nextMaintenance || null,
-      purchaseDate: payload.purchaseDate || null
+      purchaseDate: payload.purchaseDate || null,
     };
     return this.http
       .post<ApiResponse<Equipment>>(`${this.baseUrl}/equipment/`, body, {
@@ -111,7 +121,11 @@ export class InventoryService {
       .pipe(map((res) => res.data));
   }
 
-  updateEquipment(id: string | number, payload: AddInventoryItemPayload, facilityId: string | number): Observable<Equipment> {
+  updateEquipment(
+    id: string | number,
+    payload: AddInventoryItemPayload,
+    facilityId: string | number,
+  ): Observable<Equipment> {
     const params = this.buildFacilityParams(facilityId);
     const body = {
       name: payload.name.trim(),
@@ -120,7 +134,7 @@ export class InventoryService {
       location: payload.location?.trim(),
       lastMaintenance: payload.lastMaintenance || null,
       nextMaintenance: payload.nextMaintenance || null,
-      purchaseDate: payload.purchaseDate || null
+      purchaseDate: payload.purchaseDate || null,
     };
     return this.http
       .put<ApiResponse<Equipment>>(`${this.baseUrl}/equipment/${id}/`, body, {
@@ -140,7 +154,10 @@ export class InventoryService {
       .pipe(map((res) => this.normalizeList(res.results || [])));
   }
 
-  addVendor(payload: Partial<Vendor>, facilityId: string | number): Observable<Vendor> {
+  addVendor(
+    payload: Partial<Vendor>,
+    facilityId: string | number,
+  ): Observable<Vendor> {
     const params = this.buildFacilityParams(facilityId);
     return this.http
       .post<ApiResponse<Vendor>>(`${this.baseUrl}/vendors/`, payload, {
@@ -150,7 +167,11 @@ export class InventoryService {
       .pipe(map((res) => res.data || (res as any))); // Fallback for differing formats
   }
 
-  updateVendor(id: string, payload: Partial<Vendor>, facilityId: string | number): Observable<Vendor> {
+  updateVendor(
+    id: string,
+    payload: Partial<Vendor>,
+    facilityId: string | number,
+  ): Observable<Vendor> {
     const params = this.buildFacilityParams(facilityId);
     return this.http
       .put<ApiResponse<Vendor>>(`${this.baseUrl}/vendors/${id}/`, payload, {
@@ -175,7 +196,7 @@ export class InventoryService {
     return this.http.post(
       `${this.baseUrl}/supplies/reorder_low_stock/`,
       {},
-      { headers: this.buildAuthHeaders(), params }
+      { headers: this.buildAuthHeaders(), params },
     );
   }
 
@@ -189,12 +210,19 @@ export class InventoryService {
   }
 
   private normalizeList<T>(payload: T[] | PaginatedResponse<T>): T[] {
-    console.log("payload", payload)
-    return Array.isArray(payload) ? payload : (payload as PaginatedResponse<T>).items || (payload as any).results || [];
+    return Array.isArray(payload)
+      ? payload
+      : (payload as PaginatedResponse<T>).items ||
+          (payload as any).results ||
+          [];
   }
 
   private buildFacilityParams(facilityId?: string | number): HttpParams {
-    if (facilityId === null || facilityId === undefined || `${facilityId}`.trim() === '') {
+    if (
+      facilityId === null ||
+      facilityId === undefined ||
+      `${facilityId}`.trim() === ''
+    ) {
       return new HttpParams();
     }
     return new HttpParams().set('facility', String(facilityId));

@@ -41,6 +41,7 @@ export class OnboardingComponent implements OnInit {
   private readonly signupDraftStorageKey = 'afyora.signupDraft';
   private readonly organizationIdStorageKey = 'afyora.organizationId';
   private readonly onboardingDraftStorageKey = 'afyora.onboardingDraft';
+  private readonly onboardingStatusStorageKey = 'afyora.onboardingStatus';
   private readonly userStorageKey = 'afyora.user';
   currentStep = 0;
   isSubmitting = false;
@@ -148,6 +149,16 @@ export class OnboardingComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
+      if (this.isOnboardingAlreadyComplete()) {
+        this.snackBar.open(
+          'This facility has already completed onboarding. Please log in.',
+          'Close',
+          { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top' },
+        );
+        this.router.navigate(['/login']);
+        return;
+      }
+
       this.facilityType = params['type'] === 'clinic' ? 'clinic' : 'hospital';
       this.patchFromSignupDraft();
       this.patchFromOnboardingDraft();
@@ -205,6 +216,12 @@ export class OnboardingComponent implements OnInit {
     this.authService.completeFacilityOnboarding(payload).subscribe({
       next: (response) => {
         this.saveAdminAsCurrentUser(formValue);
+        localStorage.setItem(
+          this.onboardingStatusStorageKey,
+          JSON.stringify({ organizationId, completed: true }),
+        );
+        localStorage.removeItem(this.signupDraftStorageKey);
+        localStorage.removeItem(this.onboardingDraftStorageKey);
 
         const message =
           response?.message ||
@@ -304,6 +321,7 @@ export class OnboardingComponent implements OnInit {
     try {
       const parsed = JSON.parse(draft) as {
         facilityType?: FacilityType;
+        currentStep?: number;
         formValue?: unknown;
       };
 
@@ -318,6 +336,14 @@ export class OnboardingComponent implements OnInit {
         this.facilityType = parsed.facilityType;
       }
 
+      if (
+        typeof parsed.currentStep === 'number' &&
+        parsed.currentStep >= 0 &&
+        parsed.currentStep < this.steps.length
+      ) {
+        this.currentStep = parsed.currentStep;
+      }
+
       this.updateSelectedModules();
     } catch {
       localStorage.removeItem(this.onboardingDraftStorageKey);
@@ -330,6 +356,7 @@ export class OnboardingComponent implements OnInit {
         this.onboardingDraftStorageKey,
         JSON.stringify({
           facilityType: this.facilityType,
+          currentStep: this.currentStep,
           formValue: value,
         }),
       );
@@ -453,6 +480,7 @@ export class OnboardingComponent implements OnInit {
           },
         );
         this.currentStep = 2;
+        this.persistCurrentStep();
       },
       error: (err) => {
         this.isVerifyingOtp = false;
@@ -531,21 +559,25 @@ export class OnboardingComponent implements OnInit {
     }
 
     this.currentStep = Math.min(this.currentStep + 1, this.steps.length - 1);
+    this.persistCurrentStep();
+  }
+
+  previousStep(): void {
+    this.currentStep = Math.max(0, this.currentStep - 1);
+    this.persistCurrentStep();
   }
 
   quitOnboarding(): void {
     const shouldQuit = window.confirm(
-      'Are you sure you want to quit onboarding? This will clear your saved signup and onboarding data.',
+      'Are you sure you want to quit onboarding? Your progress will be saved so you can resume later.',
     );
 
     if (!shouldQuit) {
       return;
     }
 
-    localStorage.removeItem(this.signupDraftStorageKey);
-    localStorage.removeItem(this.onboardingDraftStorageKey);
-    localStorage.removeItem(this.organizationIdStorageKey);
-    this.router.navigate(['/signup']);
+    this.persistCurrentStep();
+    this.router.navigate(['/login']);
   }
 
   private updateSelectedModules(): void {
@@ -580,5 +612,36 @@ export class OnboardingComponent implements OnInit {
 
   private focusOtpInput(index: number): void {
     document.getElementById(`otp-${index}`)?.focus();
+  }
+
+  private persistCurrentStep(): void {
+    const savedDraft = localStorage.getItem(this.onboardingDraftStorageKey);
+    let formValue: unknown = this.onboardingForm.value;
+
+    try {
+      formValue = JSON.parse(savedDraft ?? '{}')?.formValue ?? formValue;
+    } catch {
+      // Use the current form state when a stale draft cannot be parsed.
+    }
+
+    localStorage.setItem(
+      this.onboardingDraftStorageKey,
+      JSON.stringify({
+        facilityType: this.facilityType,
+        currentStep: this.currentStep,
+        formValue,
+      }),
+    );
+  }
+
+  private isOnboardingAlreadyComplete(): boolean {
+    const status = localStorage.getItem(this.onboardingStatusStorageKey);
+
+    try {
+      return JSON.parse(status ?? '{}')?.completed === true;
+    } catch {
+      localStorage.removeItem(this.onboardingStatusStorageKey);
+      return false;
+    }
   }
 }

@@ -445,7 +445,7 @@
               <button
                 mat-stroked-button
                 type="button"
-                (click)="currentStep = Math.max(0, currentStep - 1)"
+                (click)="previousStep()"
                 [disabled]="currentStep === 0"
                 class="!rounded-lg !px-6 !py-5 font-medium"
               >

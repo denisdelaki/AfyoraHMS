@@ -48,6 +48,8 @@ export class SignupComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly signupDraftStorageKey = 'afyora.signupDraft';
   private readonly organizationIdStorageKey = 'afyora.organizationId';
+  private readonly onboardingDraftStorageKey = 'afyora.onboardingDraft';
+  private readonly onboardingStatusStorageKey = 'afyora.onboardingStatus';
   private readonly namePattern = /^[a-zA-Z' -]+$/;
   private readonly phonePattern = /^\+?[0-9\s()-]{7,20}$/;
   private readonly passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
@@ -141,6 +143,7 @@ export class SignupComponent {
     this.isSubmitting = true;
     this.authService.signup(payload).subscribe({
       next: (response) => {
+        localStorage.removeItem(this.onboardingStatusStorageKey);
         localStorage.setItem(
           this.signupDraftStorageKey,
           JSON.stringify(payload),
@@ -177,10 +180,128 @@ export class SignupComponent {
           queryParams: { type: this.facilityType },
         });
       },
-      error: () => {
+      error: (err) => {
         this.isSubmitting = false;
+        this.handleExistingAccount(err, payload);
       },
     });
+  }
+
+  private handleExistingAccount(err: unknown, payload: SignupRequest): void {
+    const error = err as { error?: unknown };
+    const response = (error?.error ?? {}) as {
+      data?: unknown;
+      organizationId?: number | string;
+      organization_id?: number | string;
+      onboardingRequired?: boolean;
+      onboarding_required?: boolean;
+      onboardingCompleted?: boolean;
+      onboarding_completed?: boolean;
+      error?: string;
+      details?: Record<string, string[]>;
+      message?: string;
+    };
+    const data = (response.data ?? response) as typeof response;
+    const organizationId = data.organization_id ?? data.organizationId;
+    const onboardingComplete =
+      data.onboardingCompleted === true || data.onboarding_completed === true;
+    const onboardingIncomplete =
+      data.onboardingRequired === true ||
+      data.onboarding_required === true ||
+      data.onboardingCompleted === false ||
+      data.onboarding_completed === false;
+    const savedOrganizationId = localStorage.getItem(
+      this.organizationIdStorageKey,
+    );
+    const canResumeSavedOnboarding =
+      !onboardingComplete &&
+      !!savedOrganizationId &&
+      this.hasSavedOnboardingFor(payload.email);
+    const errorMessage = this.getSignupErrorMessage(data);
+
+    if (
+      !onboardingComplete &&
+      ((organizationId !== undefined && onboardingIncomplete) ||
+        canResumeSavedOnboarding)
+    ) {
+      localStorage.removeItem(this.onboardingStatusStorageKey);
+      localStorage.setItem(this.signupDraftStorageKey, JSON.stringify(payload));
+      localStorage.setItem(
+        this.organizationIdStorageKey,
+        String(organizationId ?? savedOrganizationId),
+      );
+      this.snackBar.open(
+        'An unfinished facility setup was found. Resuming your onboarding.',
+        'Close',
+        {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        },
+      );
+      this.router.navigate(['/onboarding'], {
+        queryParams: { type: payload.facilityType },
+      });
+      return;
+    }
+
+    if (onboardingComplete) {
+      localStorage.removeItem(this.onboardingDraftStorageKey);
+      this.snackBar.open(
+        'This facility has already completed onboarding. Please log in.',
+        'Close',
+        {
+          duration: 5000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        },
+      );
+      return;
+    }
+
+    if (/account with this email already exists/i.test(errorMessage)) {
+      this.snackBar.open(
+        'An account with this email already exists. Please log in.',
+        'Close',
+        {
+          duration: 5000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        },
+      );
+      return;
+    }
+
+    this.snackBar.open(
+      errorMessage || 'Unable to create the account. Please try again.',
+      'Close',
+      { duration: 4000, horizontalPosition: 'center', verticalPosition: 'top' },
+    );
+  }
+
+  private getSignupErrorMessage(response: {
+    message?: string;
+    error?: string;
+    details?: Record<string, string[]>;
+  }): string {
+    const validationMessage = Object.values(response.details ?? {})
+      .flat()
+      .find(Boolean);
+
+    return validationMessage || response.message || response.error || '';
+  }
+
+  private hasSavedOnboardingFor(email: string): boolean {
+    const savedDraft = localStorage.getItem(this.signupDraftStorageKey);
+
+    try {
+      return (
+        JSON.parse(savedDraft ?? '{}')?.email?.toLowerCase() ===
+        email.toLowerCase()
+      );
+    } catch {
+      return false;
+    }
   }
 
   private passwordsMatchValidator(): ValidatorFn {

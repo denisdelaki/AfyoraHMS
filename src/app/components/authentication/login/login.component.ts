@@ -16,7 +16,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services';
-import { LoginRequest } from '../../../models';
+import { FacilityType, LoginRequest, LoginResponse } from '../../../models';
 
 function passwordMatchValidator(
   group: AbstractControl,
@@ -64,6 +64,8 @@ export class LoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly organizationIdStorageKey = 'afyora.organizationId';
+  private readonly signupDraftStorageKey = 'afyora.signupDraft';
   showPassword = false;
   isSubmitting = false;
   isFirstTimeLogin = false;
@@ -107,8 +109,35 @@ export class LoginComponent {
     this.isSubmitting = true;
     this.authService.login(payload).subscribe({
       next: (resp: any) => {
-        this.isFirstTimeLogin = resp?.first_login ?? false;
+        const response = (resp?.data ?? resp) as LoginResponse & {
+          first_login?: boolean;
+          facilityType?: FacilityType;
+        };
+        this.isFirstTimeLogin = response.first_login ?? false;
         this.temporaryPassword = this.loginForm.value.password ?? '';
+
+        if (
+          response.onboardingRequired === true ||
+          response.onboarding_required === true ||
+          response.onboardingCompleted === false ||
+          response.onboarding_completed === false
+        ) {
+          const organizationId = response.organization_id ?? response.organizationId;
+          if (organizationId !== undefined) {
+            localStorage.setItem(this.organizationIdStorageKey, String(organizationId));
+          }
+          this.saveResumeDraft(response.facilityType);
+          this.isSubmitting = false;
+          this.snackBar.open(
+            'Your facility setup is not complete. Resuming onboarding.',
+            'Close',
+            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'top' },
+          );
+          this.router.navigate(['/onboarding'], {
+            queryParams: { type: response.facilityType },
+          });
+          return;
+        }
 
         if (this.isFirstTimeLogin) {
           this.loginForm.get('password')?.disable();
@@ -207,5 +236,20 @@ export class LoginComponent {
 
     this.isSubmitting = false;
     this.router.navigate(['/dashboard']);
+  }
+
+  private saveResumeDraft(facilityType?: FacilityType): void {
+    const currentDraft = localStorage.getItem(this.signupDraftStorageKey);
+    if (currentDraft) {
+      return;
+    }
+
+    localStorage.setItem(
+      this.signupDraftStorageKey,
+      JSON.stringify({
+        facilityType: facilityType ?? 'hospital',
+        email: this.loginForm.value.email ?? '',
+      }),
+    );
   }
 }
