@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authChildGuard, authGuard } from './core/auth.guard';
+import { permissionGuard } from './core/permission.guard';
 
 export const routes: Routes = [
   {
@@ -120,6 +121,8 @@ export const routes: Routes = [
       },
       {
         path: 'patients',
+        canActivate: [permissionGuard],
+        data: { permission: 'patients' },
         loadComponent: () =>
           import('./components/features/patients/patients.component').then(
             (m) => m.PatientsComponent,
@@ -127,6 +130,8 @@ export const routes: Routes = [
       },
       {
         path: 'appointments',
+        canActivate: [permissionGuard],
+        data: { permission: 'appointments' },
         loadComponent: () =>
           import('./components/features/appointments/appointments.component').then(
             (m) => m.AppointmentsComponent,
@@ -134,6 +139,8 @@ export const routes: Routes = [
       },
       {
         path: 'visit-queue',
+        canActivate: [permissionGuard],
+        data: { permission: 'visit_queue' },
         loadComponent: () =>
           import('./components/features/visit-queue/visit-queue.component').then(
             (m) => m.VisitQueueComponent,
@@ -141,6 +148,8 @@ export const routes: Routes = [
       },
       {
         path: 'ehr',
+        canActivate: [permissionGuard],
+        data: { permission: 'ehr' },
         loadComponent: () =>
           import('./components/features/ehr/ehr.component').then(
             (m) => m.EhrComponent,
@@ -148,6 +157,8 @@ export const routes: Routes = [
       },
       {
         path: 'billing',
+        canActivate: [permissionGuard],
+        data: { permission: 'billing' },
         loadComponent: () =>
           import('./components/features/billing/billing.component').then(
             (m) => m.BillingComponent,
@@ -155,6 +166,8 @@ export const routes: Routes = [
       },
       {
         path: 'inventory',
+        canActivate: [permissionGuard],
+        data: { permission: 'inventory' },
         loadComponent: () =>
           import('./components/features/inventory/inventory.component').then(
             (m) => m.InventoryComponent,
@@ -162,6 +175,8 @@ export const routes: Routes = [
       },
       {
         path: 'laboratory',
+        canActivate: [permissionGuard],
+        data: { permission: 'laboratory' },
         loadComponent: () =>
           import('./components/features/laboratory/laboratory.component').then(
             (m) => m.LaboratoryComponent,
@@ -169,6 +184,8 @@ export const routes: Routes = [
       },
       {
         path: 'pharmacy',
+        canActivate: [permissionGuard],
+        data: { permission: 'pharmacy' },
         loadComponent: () =>
           import('./components/features/pharmacy/pharmacy.component').then(
             (m) => m.PharmacyComponent,
@@ -176,6 +193,8 @@ export const routes: Routes = [
       },
       {
         path: 'radiology',
+        canActivate: [permissionGuard],
+        data: { permission: 'radiology' },
         loadComponent: () =>
           import('./components/features/radiology/radiology.component').then(
             (m) => m.RadiologyComponent,
@@ -183,6 +202,8 @@ export const routes: Routes = [
       },
       {
         path: 'reports',
+        canActivate: [permissionGuard],
+        data: { permission: 'reports' },
         loadComponent: () =>
           import('./components/features/reports/reports.component').then(
             (m) => m.ReportsComponent,
@@ -190,6 +211,8 @@ export const routes: Routes = [
       },
       {
         path: 'employees',
+        canActivate: [permissionGuard],
+        data: { permission: 'employees' },
         loadComponent: () =>
           import('./components/features/employees/employees.component').then(
             (m) => m.EmployeesComponent,
@@ -197,9 +220,20 @@ export const routes: Routes = [
       },
       {
         path: 'departments',
+        canActivate: [permissionGuard],
+        data: { permission: 'departments' },
         loadComponent: () =>
           import('./components/features/departments/departments.component').then(
             (m) => m.DepartmentsComponent,
+          ),
+      },
+      {
+        path: 'roles',
+        canActivate: [permissionGuard],
+        data: { permission: 'roles', seo: { title: 'Roles & Permissions' } },
+        loadComponent: () =>
+          import('./components/features/roles/roles.component').then(
+            (m) => m.RolesComponent,
           ),
       },
     ],

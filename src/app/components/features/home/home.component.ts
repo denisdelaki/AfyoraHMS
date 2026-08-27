@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartOptions } from 'chart.js';
@@ -37,6 +37,7 @@ import {
 } from '../../../models';
 import { DepartmentService } from '../../../services/department.service';
 import { TransformIdsPipe } from '../../../shared/pipes/transform-ids.pipe';
+import { PermissionsService } from '../../../core/permissions.service';
 
 type DashboardStatUi = DashboardStat & { icon: LucideIconData };
 type StoredUser = {
@@ -216,6 +217,8 @@ export class HomeComponent implements OnInit {
   private readonly patientsService = inject(PatientsService);
   private readonly employeesService = inject(EmployeeService);
   private readonly departmentService = inject(DepartmentService);
+  private readonly permissionsService = inject(PermissionsService);
+  private readonly route = inject(ActivatedRoute);
   employees: any[] = [];
   departments: any[] = [];
   labTests: any[] = [];
@@ -284,16 +287,40 @@ export class HomeComponent implements OnInit {
     this.now.getMonth() + 1,
   ).padStart(2, '0')}-${String(this.now.getDate()).padStart(2, '0')}`;
 
+  // Access blocked notification (set when redirected from permissionGuard)
+  blockedModule = '';
+
   ngOnInit(): void {
     const user = this.readStoredUser();
     this.facilityId = user.facility ?? '';
     this.userName = this.getUserName(user) || 'there';
     this.userId = String(user.id ?? '');
     this.role = this.normalizeRole(user.role);
+
+    // Check if we were redirected here because of a permission block
+    this.route.queryParams.subscribe(params => {
+      this.blockedModule = params['blocked'] ?? '';
+    });
+
+    // Build profile from live permissions (dynamic RBAC)
+    // facility_admin always gets full profile
+    const p = this.permissionsService;
     this.profile = {
       label: this.roleLabel(this.role),
-      ...(ROLE_PROFILES[this.role] ?? ROLE_PROFILES['staff']),
+      summary: p.isFacilityAdmin()
+        ? 'You have a complete view of facility operations.'
+        : `Here is the work and activities assigned to your role.`,
+      showFacilityOverview: p.hasPermission('dashboard_overview'),
+      showAppointments:     p.hasPermission('appointments'),
+      showLabs:             p.hasPermission('laboratory'),
+      showPharmacy:         p.hasPermission('pharmacy'),
+      showRadiology:        p.hasPermission('radiology'),
+      showTeam:             p.isFacilityAdmin() || p.hasPermission('employees'),
+      showBilling:          p.hasPermission('billing'),
+      showEmployees:        p.hasPermission('employees'),
+      showPatientSummary:   p.hasPermission('patients'),
     };
+
     this.actions = this.getActions(this.role);
     this.userDepartment = user.department || 'Not assigned';
     this.loadDepartments();

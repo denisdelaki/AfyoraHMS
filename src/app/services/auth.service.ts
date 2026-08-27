@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map, Observable, finalize, tap, throwError } from 'rxjs';
 import { apiUrl } from '../core/api.config';
+import { PermissionsService } from '../core/permissions.service';
 import {
   ApiResponse,
   FacilityOnboardingRequest,
@@ -15,6 +16,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly permissionsService = inject(PermissionsService);
   private readonly baseUrl = apiUrl('/auth');
   private readonly storageKeys = {
     user: 'afyora.user',
@@ -127,6 +129,7 @@ export class AuthService {
     localStorage.removeItem(this.signupDraftStorageKey);
     localStorage.removeItem(this.onboardingDraftStorageKey);
     localStorage.removeItem(this.organizationIdStorageKey);
+    this.permissionsService.clearPermissions();
   }
 
   private saveLoginSession(response: unknown): void {
@@ -155,7 +158,15 @@ export class AuthService {
     }
 
     if (session.user) {
-      localStorage.setItem(this.storageKeys.user, JSON.stringify(session.user));
+      const userObj = session.user as Record<string, unknown>;
+      localStorage.setItem(this.storageKeys.user, JSON.stringify(userObj));
+      // Persist permissions so PermissionsService can read them reactively
+      if (userObj?.['permissions']) {
+        this.permissionsService.setPermissions(userObj['permissions'] as any);
+      } else {
+        // Refresh from stored user object as fallback
+        this.permissionsService.refresh();
+      }
     }
   }
 

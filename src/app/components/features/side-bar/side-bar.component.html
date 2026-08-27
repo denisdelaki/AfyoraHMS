@@ -1,28 +1,16 @@
 <div class="min-h-screen bg-gray-50">
   @if (sidebarOpen) {
-    <div
-      class="fixed inset-0 bg-black/50 z-40 lg:hidden"
-      (click)="closeSidebar()"
-    ></div>
+  <div class="fixed inset-0 bg-black/50 z-40 lg:hidden" (click)="closeSidebar()"></div>
   }
 
   <aside
     class="fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-200 lg:translate-x-0"
-    [class.translate-x-0]="sidebarOpen"
-    [class.-translate-x-full]="!sidebarOpen"
-  >
+    [class.translate-x-0]="sidebarOpen" [class.-translate-x-full]="!sidebarOpen">
     <div class="h-full flex flex-col">
-      <div
-        class="h-16 flex items-center justify-between px-6 border-b border-gray-200"
-      >
+      <div class="h-16 flex items-center justify-between px-6 border-b border-gray-200">
         <div class="flex items-center gap-2">
-          <div
-            class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center"
-          >
-            <lucide-icon
-              [img]="Hospital"
-              class="w-5 h-5 text-white"
-            ></lucide-icon>
+          <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+            <lucide-icon [img]="Hospital" class="w-5 h-5 text-white"></lucide-icon>
           </div>
           <span class="font-semibold text-blue-600">Afyora HMS</span>
         </div>
@@ -33,27 +21,20 @@
       </div>
 
       <nav class="flex-1 overflow-y-auto py-4 px-3">
-        @for (item of navigation; track item.name) {
-          <a
-            [routerLink]="item.href"
-            (click)="closeSidebar()"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors"
-            [class.bg-blue-50]="isActive(item.href)"
-            [class.text-blue-600]="isActive(item.href)"
-            [class.text-gray-700]="!isActive(item.href)"
-            [class.hover:bg-gray-100]="!isActive(item.href)"
-          >
-            <lucide-icon [img]="item.icon" class="w-5 h-5"></lucide-icon>
-            <span>{{ item.name }}</span>
-          </a>
+        @for (item of navigation(); track item.name) {
+        <a [routerLink]="item.href" (click)="closeSidebar()"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors"
+          [class.bg-blue-50]="isActive(item.href)" [class.text-blue-600]="isActive(item.href)"
+          [class.text-gray-700]="!isActive(item.href)" [class.hover:bg-gray-100]="!isActive(item.href)">
+          <lucide-icon [img]="item.icon" class="w-5 h-5"></lucide-icon>
+          <span>{{ item.name }}</span>
+        </a>
         }
       </nav>
 
       <div class="p-4 border-t border-gray-200">
         <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center"
-          >
+          <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
             <span class="text-blue-600 font-semibold">{{ userInitials }}</span>
           </div>
           <div class="flex-1">
@@ -62,11 +43,8 @@
           </div>
         </div>
 
-        <button
-          type="button"
-          (click)="logout()"
-          class="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        >
+        <button type="button" (click)="logout()"
+          class="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <lucide-icon [img]="LogOut" class="w-4 h-4"></lucide-icon>
           <span>Logout</span>
         </button>
@@ -75,14 +53,8 @@
   </aside>
 
   <div class="lg:pl-64">
-    <header
-      class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6"
-    >
-      <button
-        type="button"
-        (click)="openSidebar()"
-        class="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
-      >
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6">
+      <button type="button" (click)="openSidebar()" class="lg:hidden p-2 hover:bg-gray-100 rounded-lg">
         <lucide-icon [img]="Menu" class="w-6 h-6"></lucide-icon>
       </button>
 

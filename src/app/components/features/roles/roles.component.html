@@ -1,0 +1,294 @@
+<section class="roles-page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <lucide-icon [img]="Shield" [size]="22"></lucide-icon>
+      </div>
+      <div>
+        <h1>Roles &amp; Permissions</h1>
+        <p>Create custom roles and control exactly what each employee can access.</p>
+      </div>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+      New Role
+    </button>
+  </div>
+
+  <!-- Error Banner -->
+  @if (error() && !showModal()) {
+  <div class="error-banner">
+    <lucide-icon [img]="AlertTriangle" [size]="16"></lucide-icon>
+    {{ error() }}
+  </div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <span>Loading roles…</span>
+  </div>
+  }
+
+  <!-- Empty State -->
+  @if (!loading() && roles().length === 0) {
+  <div class="empty-state">
+    <div class="empty-icon">
+      <lucide-icon [img]="Shield" [size]="40"></lucide-icon>
+    </div>
+    <h3>No roles yet</h3>
+    <p>Create your first custom role to start assigning permissions to your staff.</p>
+    <button class="btn-primary" (click)="openCreateModal()">
+      <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+      Create First Role
+    </button>
+  </div>
+  }
+
+  <!-- Roles Grid -->
+  @if (!loading() && roles().length > 0) {
+  <div class="roles-grid">
+    @for (role of roles(); track role.id) {
+    <div class="role-card" [class.expanded]="isExpanded(role.id)">
+      <div class="role-card-header">
+        <div class="role-info">
+          <div class="role-badge">
+            <lucide-icon [img]="Shield" [size]="14"></lucide-icon>
+          </div>
+          <div>
+            <h3>{{ role.name }}</h3>
+            @if (role.description) {
+            <p class="role-desc">{{ role.description }}</p>
+            }
+          </div>
+        </div>
+        <div class="role-meta">
+          <span class="pill pill-blue">
+            <lucide-icon [img]="Users" [size]="12"></lucide-icon>
+            {{ role.employee_count }} staff
+          </span>
+          <span class="pill pill-green">{{ enabledModules(role).length }} modules</span>
+        </div>
+      </div>
+
+      <!-- Enabled Modules Preview -->
+      <div class="module-chips">
+        @for (m of enabledModules(role).slice(0, 6); track m) {
+        <span class="chip chip-on">{{ getModuleLabel(m) }}</span>
+        }
+        @if (enabledModules(role).length > 6) {
+        <span class="chip chip-more">+{{ enabledModules(role).length - 6 }} more</span>
+        }
+        @if (enabledModules(role).length === 0) {
+        <span class="chip chip-none">No modules enabled</span>
+        }
+      </div>
+
+      <!-- Expandable Full Permission Matrix -->
+      @if (isExpanded(role.id)) {
+      <div class="perm-matrix">
+        @for (group of moduleGroups; track group.label) {
+        <div class="perm-group">
+          <span class="perm-group-label">{{ group.label }}</span>
+          <div class="perm-items">
+            @for (m of group.modules; track m) {
+            <span class="perm-item" [class.perm-on]="role.permissions[m]" [class.perm-off]="!role.permissions[m]">
+              <lucide-icon [img]="Check" [size]="10"></lucide-icon>
+              {{ getModuleLabel(m) }}
+            </span>
+            }
+          </div>
+        </div>
+        }
+      </div>
+      }
+
+      <!-- Actions -->
+      <div class="role-actions">
+        <button class="btn-link" (click)="toggleExpand(role.id)">
+          <lucide-icon [img]="isExpanded(role.id) ? ChevronUp : ChevronDown" [size]="14"></lucide-icon>
+          {{ isExpanded(role.id) ? 'Less' : 'Full permissions' }}
+        </button>
+        <div class="action-buttons">
+          <button class="btn-icon btn-assign" (click)="openAssignModal(role)" title="Assign to employee">
+            <lucide-icon [img]="Users" [size]="15"></lucide-icon>
+          </button>
+          <button class="btn-icon btn-edit" (click)="openEditModal(role)" title="Edit role">
+            <lucide-icon [img]="Edit2" [size]="15"></lucide-icon>
+          </button>
+          <button class="btn-icon btn-delete" (click)="confirmDelete(role)" title="Delete role">
+            <lucide-icon [img]="Trash2" [size]="15"></lucide-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  }
+
+</section>
+
+<!-- =========================================================
+     CREATE / EDIT ROLE MODAL
+     ========================================================= -->
+@if (showModal()) {
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <lucide-icon [img]="Shield" [size]="18"></lucide-icon>
+        {{ isEditing() ? 'Edit Role' : 'Create New Role' }}
+      </div>
+      <button class="modal-close" (click)="closeModal()">
+        <lucide-icon [img]="X" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      @if (error()) {
+      <div class="form-error-banner">{{ error() }}</div>
+      }
+
+      <div class="form-row">
+        <label>Role Name <span class="required">*</span></label>
+        <input type="text" [(ngModel)]="formName" placeholder="e.g. Senior Pharmacist" maxlength="100" />
+      </div>
+
+      <div class="form-row">
+        <label>Description</label>
+        <textarea [(ngModel)]="formDescription" placeholder="What does this role do?" rows="2"></textarea>
+      </div>
+
+      <div class="perm-header">
+        <span class="perm-title">Module Permissions</span>
+        <span class="perm-count">{{ enabledCount() }} of {{ allModules.length }} enabled</span>
+      </div>
+
+      <div class="perm-editor">
+        @for (group of moduleGroups; track group.label) {
+        <div class="perm-section">
+          <div class="perm-section-header" (click)="toggleGroupPermissions(group)">
+            <span class="perm-section-label">{{ group.label }}</span>
+            <div class="group-toggle" [class.partial]="isGroupPartial(group)" [class.full]="isGroupAllOn(group)">
+              @if (isGroupAllOn(group)) {
+              <lucide-icon [img]="Check" [size]="11"></lucide-icon>
+              }
+            </div>
+          </div>
+          <div class="perm-toggles">
+            @for (m of group.modules; track m) {
+            <div class="perm-toggle" [class.active]="formPermissions[m]" (click)="togglePermission(m)">
+              <div class="toggle-switch" [class.on]="formPermissions[m]">
+                <div class="toggle-knob"></div>
+              </div>
+              <span>{{ moduleLabels[m] }}</span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" (click)="closeModal()">Cancel</button>
+      <button class="btn-primary" (click)="saveRole()" [disabled]="saving()">
+        @if (saving()) {
+        <div class="btn-spinner"></div>
+        Saving…
+        } @else {
+        <lucide-icon [img]="Save" [size]="15"></lucide-icon>
+        {{ isEditing() ? 'Save Changes' : 'Create Role' }}
+        }
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- =========================================================
+     ASSIGN ROLE MODAL
+     ========================================================= -->
+@if (showAssignModal()) {
+<div class="modal-overlay" (click)="closeAssignModal()">
+  <div class="modal modal-sm" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <lucide-icon [img]="Users" [size]="18"></lucide-icon>
+        Assign "{{ assigningRole()?.name }}"
+      </div>
+      <button class="modal-close" (click)="closeAssignModal()">
+        <lucide-icon [img]="X" [size]="18"></lucide-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="assign-info">Select an employee to assign this role to. Their permissions will be updated immediately.
+      </p>
+
+      @if (assignError()) {
+      <div class="form-error-banner">{{ assignError() }}</div>
+      }
+      @if (assignSuccess()) {
+      <div class="form-success-banner">{{ assignSuccess() }}</div>
+      }
+
+      <div class="form-row">
+        <label>Select Employee</label>
+        <select [(ngModel)]="selectedEmployeeId">
+          <option value="">-- Choose employee --</option>
+          @for (emp of employees(); track emp.id) {
+          <option [value]="emp.id">{{ emp.name }} ({{ emp.role }})</option>
+          }
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" (click)="closeAssignModal()">Close</button>
+      <button class="btn-primary" (click)="assignRole()" [disabled]="assignLoading() || !selectedEmployeeId">
+        @if (assignLoading()) {
+        <div class="btn-spinner"></div>
+        Assigning…
+        } @else {
+        <lucide-icon [img]="Check" [size]="15"></lucide-icon>
+        Assign Role
+        }
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- =========================================================
+     DELETE CONFIRMATION
+     ========================================================= -->
+@if (showDeleteConfirm()) {
+<div class="modal-overlay" (click)="cancelDelete()">
+  <div class="modal modal-sm" (click)="$event.stopPropagation()">
+    <div class="modal-header danger">
+      <div class="modal-title">
+        <lucide-icon [img]="Trash2" [size]="18"></lucide-icon>
+        Delete Role
+      </div>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete <strong>"{{ deletingRole()?.name }}"</strong>?</p>
+      <p class="delete-warning">
+        <lucide-icon [img]="AlertTriangle" [size]="14"></lucide-icon>
+        This will remove the role from {{ deletingRole()?.employee_count }} employee(s). Their access will revert to
+        defaults.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" (click)="cancelDelete()">Cancel</button>
+      <button class="btn-danger" (click)="deleteRole()">
+        <lucide-icon [img]="Trash2" [size]="15"></lucide-icon>
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+}
