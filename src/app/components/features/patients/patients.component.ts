@@ -62,94 +62,11 @@ export class PatientsComponent implements OnInit {
   ];
   searchTerm = '';
 
-  patients: Patient[] = [
-    // {
-    //   id: 'P001',
-    //   name: 'John Smith',
-    //   age: 45,
-    //   gender: 'Male',
-    //   phone: '+1 555-0101',
-    //   email: 'john.smith@email.com',
-    //   bloodGroup: 'O+',
-    //   lastVisit: '2024-02-20',
-    //   status: 'Active',
-    // },
-    // {
-    //   id: 'P002',
-    //   name: 'Sarah Johnson',
-    //   age: 32,
-    //   gender: 'Female',
-    //   phone: '+1 555-0102',
-    //   email: 'sarah.j@email.com',
-    //   bloodGroup: 'A+',
-    //   lastVisit: '2024-02-18',
-    //   status: 'Active',
-    // },
-    // {
-    //   id: 'P003',
-    //   name: 'Michael Brown',
-    //   age: 58,
-    //   gender: 'Male',
-    //   phone: '+1 555-0103',
-    //   email: 'm.brown@email.com',
-    //   bloodGroup: 'B+',
-    //   lastVisit: '2024-02-15',
-    //   status: 'Admitted',
-    // },
-    // {
-    //   id: 'P004',
-    //   name: 'Emma Davis',
-    //   age: 28,
-    //   gender: 'Female',
-    //   phone: '+1 555-0104',
-    //   email: 'emma.d@email.com',
-    //   bloodGroup: 'AB+',
-    //   lastVisit: '2024-02-22',
-    //   status: 'Active',
-    // },
-  ];
+  patients: Patient[] = [];
 
-  appointments: Appointment[] = [
-    // {
-    //   patientId: 'P001',
-    //   patientName: 'John Smith',
-    //   date: '2024-02-26',
-    //   time: '10:00 AM',
-    //   doctor: 'Dr. Emily Chen',
-    //   department: 'Cardiology',
-    //   status: 'Scheduled',
-    // },
-    // {
-    //   patientId: 'P002',
-    //   patientName: 'Sarah Johnson',
-    //   date: '2024-02-28',
-    //   time: '02:00 PM',
-    //   doctor: 'Dr. James Wilson',
-    //   department: 'General',
-    //   status: 'Scheduled',
-    // },
-  ];
+  appointments: Appointment[] = [];
 
-  visitHistory: VisitHistory[] = [
-    // {
-    //   date: '2024-02-20',
-    //   doctor: 'Dr. Chen',
-    //   diagnosis: 'Hypertension Follow-up',
-    //   prescription: 'Amlodipine 5mg',
-    // },
-    // {
-    //   date: '2024-01-15',
-    //   doctor: 'Dr. Wilson',
-    //   diagnosis: 'Annual Checkup',
-    //   prescription: 'None',
-    // },
-    // {
-    //   date: '2023-12-10',
-    //   doctor: 'Dr. Taylor',
-    //   diagnosis: 'Flu',
-    //   prescription: 'Oseltamivir 75mg',
-    // },
-  ];
+  visitHistory: VisitHistory[] = [];
 
   ngOnInit(): void {
     this.facilityId =
@@ -255,6 +172,10 @@ export class PatientsComponent implements OnInit {
           data,
           ...this.patients.filter((entry) => entry.id !== data.id),
         ];
+
+        if (this.patients.length === 0) {
+          this.loadPatients();
+        }
       },
       error: () => {
         this.addPatientLocally(formValue);
@@ -422,7 +343,7 @@ export class PatientsComponent implements OnInit {
       next: (data) => {
         this.patients = data;
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -434,7 +355,7 @@ export class PatientsComponent implements OnInit {
           this.mapServiceAppointment(appointment),
         );
       },
-      error: () => {},
+      error: () => { },
     });
   }
 

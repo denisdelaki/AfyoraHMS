@@ -20,6 +20,25 @@ import {
   VisitRecordFormValue,
 } from '../../dialogs/add-visit-record-dialog/add-visit-record-dialog.component';
 
+/** Maps a backend role name to the queue station(s) that role is allowed to work at. */
+const ROLE_TO_DESTINATIONS: Record<string, QueueDestination[]> = {
+  receptionist: ['Reception'],
+  consultant: ['Consultation'],
+  doctor: ['Consultation'],
+  physician: ['Consultation'],
+  nurse: ['Consultation'],
+  lab_technician: ['Laboratory'],
+  laboratory_technician: ['Laboratory'],
+  radiologist: ['Radiology'],
+  radiology_technician: ['Radiology'],
+  pharmacist: ['Pharmacy'],
+  cashier: ['Billing'],
+  billing_officer: ['Billing'],
+  // facility_admin / admin can see everything
+  facility_admin: [...QUEUE_DESTINATIONS],
+  admin: [...QUEUE_DESTINATIONS],
+};
+
 @Component({
   selector: 'app-visit-queue',
   imports: [
@@ -43,7 +62,7 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
   facilityId: string | number = '';
   currentUser = 'Reception';
   currentStation: QueueDestination = 'Reception';
-  readonly destinations = QUEUE_DESTINATIONS;
+  userRole = '';
   patients: Patient[] = [];
   tickets: VisitTicket[] = [];
   selectedPatientId = '';
@@ -52,10 +71,32 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
   searchTerm = '';
   forwardDestinations: Record<string, QueueDestination> = {};
 
+  /** Destinations this user is allowed to view/manage based on their role. */
+  get allowedDestinations(): QueueDestination[] {
+    const role = this.userRole.toLowerCase();
+    return ROLE_TO_DESTINATIONS[role] ?? [...QUEUE_DESTINATIONS];
+  }
+
+  /** True when the user is restricted to a single station (e.g. receptionist). */
+  get isSingleStationUser(): boolean {
+    return this.allowedDestinations.length === 1;
+  }
+
+  /** All destinations for UI controls that should always list every stop. */
+  readonly destinations = QUEUE_DESTINATIONS;
+
   ngOnInit(): void {
     const user = this.getStoredUser();
     this.facilityId = user?.facility || '';
     this.currentUser = this.userDisplayName(user) || 'Reception';
+    this.userRole = (user?.role ?? '').toLowerCase();
+
+    // Lock the working station to the user's primary allowed destination
+    const allowed = this.allowedDestinations;
+    if (allowed.length > 0 && !allowed.includes(this.currentStation)) {
+      this.currentStation = allowed[0];
+    }
+
     this.queueSubscription = this.queueService.tickets$.subscribe((tickets) => {
       this.tickets = tickets;
     });

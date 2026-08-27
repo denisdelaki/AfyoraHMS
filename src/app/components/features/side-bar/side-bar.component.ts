@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, computed } from '@angular/core';
+import { Component, OnInit, inject, computed } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../services';
 import { PermissionsService } from '../../../core/permissions.service';
@@ -48,7 +48,7 @@ type StoredUser = {
   templateUrl: './side-bar.component.html',
   styleUrl: './side-bar.component.css',
 })
-export class SideBarComponent {
+export class SideBarComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly permissionsService = inject(PermissionsService);
   private readonly userStorageKey = 'afyora.user';
@@ -90,7 +90,13 @@ export class SideBarComponent {
     });
   });
 
-  constructor(private router: Router) {
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    // Ensure the reactive signals are in sync with what is currently in localStorage.
+    // This covers the case where the SideBarComponent mounts after login has already
+    // written the user & permissions to storage.
+    this.permissionsService.refresh();
     this.loadUserFromStorage();
   }
 

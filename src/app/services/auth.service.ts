@@ -160,6 +160,9 @@ export class AuthService {
     if (session.user) {
       const userObj = session.user as Record<string, unknown>;
       localStorage.setItem(this.storageKeys.user, JSON.stringify(userObj));
+      // Push the role into the reactive signal immediately
+      const role = (userObj['role'] as string) ?? null;
+      this.permissionsService.setRole(role);
       // Persist permissions so PermissionsService can read them reactively
       if (userObj?.['permissions']) {
         this.permissionsService.setPermissions(userObj['permissions'] as any);

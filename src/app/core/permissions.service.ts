@@ -32,13 +32,16 @@ export class PermissionsService {
   // Reactive permissions signal — components can use this directly
   private readonly _permissions = signal<PermissionsMap>(this._loadPermissions());
 
+  // Reactive role signal — updated alongside permissions so computed()s stay in sync
+  private readonly _role = signal<string | null>(this._readRoleFromStorage());
+
   /** Read-only view of the current permissions map */
   readonly permissions = this._permissions.asReadonly();
 
   /** True if the current user is a facility_admin (unrestricted access) */
   readonly isFacilityAdmin = computed(() => {
-    return this._getUserRole() === 'facility_admin' ||
-           this._getUserRole() === 'admin';
+    const role = this._role();
+    return role === 'facility_admin' || role === 'admin';
   });
 
   // ============================================================================
@@ -74,6 +77,13 @@ export class PermissionsService {
   }
 
   /**
+   * Update the reactive role signal (call this after login so isFacilityAdmin re-evaluates immediately).
+   */
+  setRole(role: string | null): void {
+    this._role.set(role);
+  }
+
+  /**
    * Clear permissions on logout.
    */
   clearPermissions(): void {
@@ -81,13 +91,15 @@ export class PermissionsService {
       localStorage.removeItem(PERMISSIONS_STORAGE_KEY);
     }
     this._permissions.set(this._emptyPermissions());
+    this._role.set(null);
   }
 
   /**
-   * Refresh permissions from localStorage (useful after session restore).
+   * Refresh permissions AND role from localStorage (useful after session restore).
    */
   refresh(): void {
     this._permissions.set(this._loadPermissions());
+    this._role.set(this._readRoleFromStorage());
   }
 
   // ============================================================================
@@ -129,7 +141,7 @@ export class PermissionsService {
     return Object.fromEntries(ALL_MODULES.map(m => [m, false])) as PermissionsMap;
   }
 
-  private _getUserRole(): string | null {
+  private _readRoleFromStorage(): string | null {
     if (typeof localStorage === 'undefined') return null;
     try {
       const userStr = localStorage.getItem(USER_STORAGE_KEY);
@@ -139,5 +151,10 @@ export class PermissionsService {
     } catch {
       return null;
     }
+  }
+
+  /** @deprecated Use _readRoleFromStorage — kept for any leftover callers. */
+  private _getUserRole(): string | null {
+    return this._readRoleFromStorage();
   }
 }

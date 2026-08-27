@@ -84,6 +84,9 @@ const ROLE_PROFILES: Record<string, ProfileOptions> = {
     showPharmacy: true,
     showRadiology: true,
     showTeam: true,
+    showBilling: true,
+    showEmployees: true,
+    showPatientSummary: true,
   },
   facility_admin: {
     summary: 'You have a complete view of facility operations.',
@@ -93,6 +96,9 @@ const ROLE_PROFILES: Record<string, ProfileOptions> = {
     showPharmacy: true,
     showRadiology: true,
     showTeam: true,
+    showBilling: true,
+    showEmployees: true,
+    showPatientSummary: true,
   },
   manager: {
     summary: 'Monitor activity, staff coverage, and department workloads.',
@@ -102,8 +108,21 @@ const ROLE_PROFILES: Record<string, ProfileOptions> = {
     showPharmacy: true,
     showRadiology: true,
     showTeam: true,
+    showBilling: true,
+    showEmployees: true,
+    showPatientSummary: true,
   },
   doctor: {
+    summary: 'Review your schedule and clinical work linked to your patients.',
+    showFacilityOverview: false,
+    showAppointments: true,
+    showLabs: true,
+    showPharmacy: false,
+    showRadiology: false,
+    showTeam: false,
+    showPatientSummary: true,
+  },
+  physician: {
     summary: 'Review your schedule and clinical work linked to your patients.',
     showFacilityOverview: false,
     showAppointments: true,
@@ -150,7 +169,27 @@ const ROLE_PROFILES: Record<string, ProfileOptions> = {
     showPharmacy: false,
     showRadiology: false,
     showTeam: false,
-    showPatientSummary: true,
+    showPatientSummary: false,
+  },
+  laboratory_technician: {
+    summary: 'Work through the laboratory queue and your department shift.',
+    showFacilityOverview: false,
+    showAppointments: false,
+    showLabs: true,
+    showPharmacy: false,
+    showRadiology: false,
+    showTeam: false,
+    showPatientSummary: false,
+  },
+  lab_tech: {
+    summary: 'Work through the laboratory queue and your department shift.',
+    showFacilityOverview: false,
+    showAppointments: false,
+    showLabs: true,
+    showPharmacy: false,
+    showRadiology: false,
+    showTeam: false,
+    showPatientSummary: false,
   },
   radiologist: {
     summary: 'Review imaging requests, report-ready studies, and your shift.',
@@ -160,9 +199,39 @@ const ROLE_PROFILES: Record<string, ProfileOptions> = {
     showPharmacy: false,
     showRadiology: true,
     showTeam: false,
-    showPatientSummary: true,
+    showPatientSummary: false,
+  },
+  radiology_technician: {
+    summary: 'Review imaging requests, report-ready studies, and your shift.',
+    showFacilityOverview: false,
+    showAppointments: false,
+    showLabs: false,
+    showPharmacy: false,
+    showRadiology: true,
+    showTeam: false,
+    showPatientSummary: false,
   },
   accountant: {
+    summary: 'Manage invoices, payments, and outstanding balances.',
+    showFacilityOverview: false,
+    showAppointments: false,
+    showLabs: false,
+    showPharmacy: false,
+    showRadiology: false,
+    showTeam: false,
+    showBilling: true,
+  },
+  cashier: {
+    summary: 'Manage invoices, payments, and outstanding balances.',
+    showFacilityOverview: false,
+    showAppointments: false,
+    showLabs: false,
+    showPharmacy: false,
+    showRadiology: false,
+    showTeam: false,
+    showBilling: true,
+  },
+  billing_officer: {
     summary: 'Manage invoices, payments, and outstanding balances.',
     showFacilityOverview: false,
     showAppointments: false,
@@ -180,7 +249,7 @@ const ROLE_PROFILES: Record<string, ProfileOptions> = {
     showLabs: false,
     showPharmacy: false,
     showRadiology: false,
-    showTeam: false,
+    showTeam: true,
     showEmployees: true,
   },
   staff: {
@@ -303,22 +372,25 @@ export class HomeComponent implements OnInit {
     });
 
     // Build profile from live permissions (dynamic RBAC)
-    // facility_admin always gets full profile
+    // facility_admin / admin always gets full profile; other roles merge ROLE_PROFILES defaults with granted permissions
     const p = this.permissionsService;
+    const isFacilityAdmin = p.isFacilityAdmin();
+    const roleDefaults = ROLE_PROFILES[this.role] ?? ROLE_PROFILES['staff'];
+
     this.profile = {
       label: this.roleLabel(this.role),
-      summary: p.isFacilityAdmin()
+      summary: isFacilityAdmin
         ? 'You have a complete view of facility operations.'
-        : `Here is the work and activities assigned to your role.`,
-      showFacilityOverview: p.hasPermission('dashboard_overview'),
-      showAppointments:     p.hasPermission('appointments'),
-      showLabs:             p.hasPermission('laboratory'),
-      showPharmacy:         p.hasPermission('pharmacy'),
-      showRadiology:        p.hasPermission('radiology'),
-      showTeam:             p.isFacilityAdmin() || p.hasPermission('employees'),
-      showBilling:          p.hasPermission('billing'),
-      showEmployees:        p.hasPermission('employees'),
-      showPatientSummary:   p.hasPermission('patients'),
+        : (roleDefaults.summary || 'Here is the work and activities assigned to your role.'),
+      showFacilityOverview: isFacilityAdmin || (!!roleDefaults.showFacilityOverview && p.hasPermission('dashboard_overview')),
+      showAppointments:     isFacilityAdmin || (!!roleDefaults.showAppointments && p.hasPermission('appointments')),
+      showLabs:             isFacilityAdmin || (!!roleDefaults.showLabs && p.hasPermission('laboratory')),
+      showPharmacy:         isFacilityAdmin || (!!roleDefaults.showPharmacy && p.hasPermission('pharmacy')),
+      showRadiology:        isFacilityAdmin || (!!roleDefaults.showRadiology && p.hasPermission('radiology')),
+      showTeam:             isFacilityAdmin || (!!roleDefaults.showTeam && p.hasPermission('employees')),
+      showBilling:          isFacilityAdmin || (!!roleDefaults.showBilling && p.hasPermission('billing')),
+      showEmployees:        isFacilityAdmin || (!!roleDefaults.showEmployees && p.hasPermission('employees')),
+      showPatientSummary:   isFacilityAdmin || (!!roleDefaults.showPatientSummary && p.hasPermission('patients')),
     };
 
     this.actions = this.getActions(this.role);
@@ -374,7 +446,10 @@ export class HomeComponent implements OnInit {
 
   private loadEmployeeDependentData(user: StoredUser): void {
     this.loadShiftAndTeam(user);
-    if (this.profile.showAppointments) this.loadAppointments(user);
+    // Check appointments for any role that can have scheduled appointments
+    if (this.profile.showAppointments || ['doctor', 'physician', 'nurse', 'lab_technician', 'laboratory_technician', 'radiologist', 'radiology_technician', 'staff'].includes(this.role)) {
+      this.loadAppointments(user);
+    }
     if (this.profile.showLabs) this.loadLabQueue(user);
     if (this.profile.showEmployees) this.loadEmployeeQueue();
   }
@@ -584,15 +659,18 @@ export class HomeComponent implements OnInit {
           employee.name?.toLowerCase() === this.userName.toLowerCase(),
       );
       const currentUserId = String(currentUser?.id ?? this.userId);
-      const relevant =
-        this.role.includes('doctor') || this.role.includes('lab_technician')
-          ? requests.filter(
+      const isDoctor = this.role.includes('doctor') || this.role === 'physician';
+
+      // Doctors see tests they ordered; Lab technicians & others see the laboratory queue tests
+      const relevant = isDoctor
+        ? requests.filter(
             (request) =>
-              !!currentUserId && String(request.orderedBy) === currentUserId,
+              (!!currentUserId && String(request.orderedBy) === currentUserId) ||
+              (!!request.orderedBy && request.orderedBy.toLowerCase().includes(this.userName.toLowerCase()))
           )
-          : requests;
-      this.workQueueTitle =
-        this.role === 'doctor' ? 'My lab orders' : 'Laboratory work queue';
+        : requests;
+
+      this.workQueueTitle = isDoctor ? 'My lab orders' : 'Laboratory work queue';
       this.workQueueLink = '/laboratory';
       this.workItems = relevant
         .filter(
@@ -878,6 +956,52 @@ export class HomeComponent implements OnInit {
           icon: ClipboardList,
         },
       ],
+      cashier: [
+        {
+          title: 'Manage billing',
+          description:
+            'Create invoices, record payments, and follow up on balances.',
+          link: '/billing',
+          icon: DollarSign,
+        },
+      ],
+      billing_officer: [
+        {
+          title: 'Manage billing',
+          description:
+            'Create invoices, record payments, and follow up on balances.',
+          link: '/billing',
+          icon: DollarSign,
+        },
+      ],
+      doctor: [
+        {
+          title: 'Visit Queue',
+          description: 'See consultations waiting for you.',
+          link: '/visit-queue',
+          icon: Users,
+        },
+        {
+          title: 'Patient Records (EHR)',
+          description: 'Access patient medical histories and records.',
+          link: '/ehr',
+          icon: ClipboardList,
+        },
+      ],
+      physician: [
+        {
+          title: 'Visit Queue',
+          description: 'See consultations waiting for you.',
+          link: '/visit-queue',
+          icon: Users,
+        },
+        {
+          title: 'Patient Records (EHR)',
+          description: 'Access patient medical histories and records.',
+          link: '/ehr',
+          icon: ClipboardList,
+        },
+      ],
       hr: [
         {
           title: 'Manage employees',
@@ -904,6 +1028,50 @@ export class HomeComponent implements OnInit {
           description: 'Check the laboratory test catalogue and prices.',
           link: '/laboratory',
           icon: DollarSign,
+        },
+      ],
+      laboratory_technician: [
+        {
+          title: 'Laboratory queue',
+          description: 'Process requests and enter laboratory results.',
+          link: '/laboratory',
+          icon: FlaskConical,
+        },
+        {
+          title: 'View test prices',
+          description: 'Check the laboratory test catalogue and prices.',
+          link: '/laboratory',
+          icon: DollarSign,
+        },
+      ],
+      lab_tech: [
+        {
+          title: 'Laboratory queue',
+          description: 'Process requests and enter laboratory results.',
+          link: '/laboratory',
+          icon: FlaskConical,
+        },
+        {
+          title: 'View test prices',
+          description: 'Check the laboratory test catalogue and prices.',
+          link: '/laboratory',
+          icon: DollarSign,
+        },
+      ],
+      radiologist: [
+        {
+          title: 'Imaging work queue',
+          description: 'Review imaging requests and write reports.',
+          link: '/radiology',
+          icon: Scan,
+        },
+      ],
+      radiology_technician: [
+        {
+          title: 'Imaging work queue',
+          description: 'Review imaging requests and write reports.',
+          link: '/radiology',
+          icon: Scan,
         },
       ],
       pharmacist: [

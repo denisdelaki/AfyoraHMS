@@ -3,69 +3,133 @@
     <div>
       <p class="mb-1 text-sm font-medium text-blue-600">Outpatient flow</p>
       <h1 class="mb-1 text-2xl font-semibold text-slate-900">Visit tickets & queue</h1>
-      <p class="m-0 text-slate-600">Receive patients, call the next person, and hand off each visit without losing its trail.</p>
+      <p class="m-0 text-slate-600">Receive patients, call the next person, and hand off each visit without losing its
+        trail.</p>
     </div>
     <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
       <span class="font-semibold">Working at</span>
+      @if (isSingleStationUser) {
+      <span class="ml-2 font-semibold">{{ currentStation }}</span>
+      } @else {
       <select [(ngModel)]="currentStation" class="ml-2 bg-transparent font-semibold outline-none">
-        @for (destination of destinations; track destination) {
-          <option [value]="destination">{{ destination }}</option>
+        @for (destination of allowedDestinations; track destination) {
+        <option [value]="destination">{{ destination }}</option>
         }
       </select>
+      }
     </div>
   </div>
 
   <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    <mat-card class="!rounded-xl !p-4 !shadow-sm"><p class="m-0 text-sm text-slate-500">Waiting at {{ currentStation }}</p><p class="mt-2 text-3xl font-semibold text-slate-900">{{ queuedCount }}</p></mat-card>
-    <mat-card class="!rounded-xl !p-4 !shadow-sm"><p class="m-0 text-sm text-slate-500">All patients waiting</p><p class="mt-2 text-3xl font-semibold text-slate-900">{{ waitingCount }}</p></mat-card>
-    <mat-card class="!rounded-xl !p-4 !shadow-sm sm:col-span-2"><p class="m-0 text-sm text-slate-500">Queue at a glance</p><div class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">@for (destination of destinations; track destination) { <span><span class="font-semibold text-slate-900">{{ countFor(destination) }}</span> {{ destination }}</span> }</div></mat-card>
+    <mat-card class="!rounded-xl !p-4 !shadow-sm">
+      <p class="m-0 text-sm text-slate-500">Waiting at {{ currentStation }}</p>
+      <p class="mt-2 text-3xl font-semibold text-slate-900">{{ queuedCount }}</p>
+    </mat-card>
+    <mat-card class="!rounded-xl !p-4 !shadow-sm">
+      <p class="m-0 text-sm text-slate-500">All patients waiting</p>
+      <p class="mt-2 text-3xl font-semibold text-slate-900">{{ waitingCount }}</p>
+    </mat-card>
+    <mat-card class="!rounded-xl !p-4 !shadow-sm sm:col-span-2">
+      <p class="m-0 text-sm text-slate-500">Queue at a glance</p>
+      <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">@for (destination of destinations; track destination) {
+        <span><span class="font-semibold text-slate-900">{{ countFor(destination) }}</span> {{ destination }}</span> }
+      </div>
+    </mat-card>
   </div>
 
   <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
     <mat-card class="!rounded-xl !p-5 !shadow-sm">
       <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div><h2 class="m-0 text-lg font-semibold">{{ currentStation }} queue</h2><p class="mt-1 mb-0 text-sm text-slate-500">Urgent tickets are called first, then by arrival time.</p></div>
-        <button mat-flat-button color="primary" type="button" (click)="callNext()"><mat-icon>campaign</mat-icon> Call next</button>
+        <div>
+          <h2 class="m-0 text-lg font-semibold">{{ currentStation }} queue</h2>
+          <p class="mt-1 mb-0 text-sm text-slate-500">Urgent tickets are called first, then by arrival time.</p>
+        </div>
+        <button mat-flat-button color="primary" type="button" (click)="callNext()"><mat-icon>campaign</mat-icon> Call
+          next</button>
       </div>
-      <div class="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"><div class="flex items-center gap-2"><mat-icon class="text-slate-400">search</mat-icon><input [(ngModel)]="searchTerm" class="w-full bg-transparent text-sm outline-none" placeholder="Search ticket or patient" /></div></div>
+      <div class="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div class="flex items-center gap-2"><mat-icon class="text-slate-400">search</mat-icon><input
+            [(ngModel)]="searchTerm" class="w-full bg-transparent text-sm outline-none"
+            placeholder="Search ticket or patient" /></div>
+      </div>
 
       @if (stationTickets.length) {
-        <div class="space-y-3">
-          @for (ticket of stationTickets; track ticket.id) {
-            <div class="rounded-xl border border-slate-200 p-4 transition-shadow hover:shadow-sm">
-              <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2"><span class="font-mono text-sm font-semibold text-blue-700">{{ ticket.ticketNumber }}</span><span class="rounded-full px-2.5 py-1 text-xs font-semibold" [class]="statusClass(ticket)">{{ ticket.status }}</span><span class="rounded-full border px-2.5 py-1 text-xs font-semibold" [class]="priorityClass(ticket.priority)">{{ ticket.priority }}</span></div>
-                  <p class="mb-1 mt-3 font-semibold text-slate-900">{{ ticket.patientName }}</p>
-                  <p class="m-0 text-sm text-slate-500">{{ ticket.patientId }} @if (ticket.patientAge) { · {{ ticket.patientAge }} years } @if (ticket.patientGender) { · {{ ticket.patientGender }} } · Arrived {{ ticket.updatedAt | date:'shortTime' }}</p>
-                  <p class="mb-0 mt-2 text-xs text-slate-500"><span class="font-medium text-slate-600">Route:</span> Reception @for (movement of ticket.movements; track movement.at) { <span> → {{ movement.to }}</span> }</p>
-                </div>
-                <div class="flex flex-wrap items-center gap-2">
-                  @if (currentStation === 'Consultation') {
-                    @if (ticket.status !== 'Queued') { <button mat-flat-button color="primary" type="button" (click)="recordConsultation(ticket)"><mat-icon>clinical_notes</mat-icon> Record consultation</button> }
-                  } @else {
-                    @if (ticket.status === 'In service' || ticket.status === 'Called') { <button mat-stroked-button type="button" (click)="completeTicket(ticket)">Complete</button> }
-                    <select [(ngModel)]="forwardDestinations[ticket.id]" class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm outline-none focus:border-blue-500"><option value="">Forward to…</option>@for (destination of destinations; track destination) { @if (destination !== ticket.destination) { <option [value]="destination">{{ destination }}</option> } }</select>
-                    <button mat-flat-button color="primary" type="button" (click)="forwardTicket(ticket)"><mat-icon>east</mat-icon> Forward</button>
-                  }
-                </div>
-              </div>
+      <div class="space-y-3">
+        @for (ticket of stationTickets; track ticket.id) {
+        <div class="rounded-xl border border-slate-200 p-4 transition-shadow hover:shadow-sm">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2"><span
+                  class="font-mono text-sm font-semibold text-blue-700">{{ ticket.ticketNumber }}</span><span
+                  class="rounded-full px-2.5 py-1 text-xs font-semibold" [class]="statusClass(ticket)">{{ ticket.status
+                  }}</span><span class="rounded-full border px-2.5 py-1 text-xs font-semibold"
+                  [class]="priorityClass(ticket.priority)">{{ ticket.priority }}</span></div>
+              <p class="mb-1 mt-3 font-semibold text-slate-900">{{ ticket.patientName }}</p>
+              <p class="m-0 text-sm text-slate-500">{{ ticket.patientId }} @if (ticket.patientAge) { · {{
+                ticket.patientAge }} years } @if (ticket.patientGender) { · {{ ticket.patientGender }} } · Arrived {{
+                ticket.updatedAt | date:'shortTime' }}</p>
+              <p class="mb-0 mt-2 text-xs text-slate-500"><span class="font-medium text-slate-600">Route:</span>
+                Reception @for (movement of ticket.movements; track movement.at) { <span> → {{ movement.to }}</span> }
+              </p>
             </div>
-          }
+            <div class="flex flex-wrap items-center gap-2">
+              @if (currentStation === 'Consultation') {
+              @if (ticket.status !== 'Queued') { <button mat-flat-button color="primary" type="button"
+                (click)="recordConsultation(ticket)"><mat-icon>clinical_notes</mat-icon> Record consultation</button> }
+              } @else {
+              @if (ticket.status === 'In service' || ticket.status === 'Called') { <button mat-stroked-button
+                type="button" (click)="completeTicket(ticket)">Complete</button> }
+              <select [(ngModel)]="forwardDestinations[ticket.id]"
+                class="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm outline-none focus:border-blue-500">
+                <option value="">Forward to…</option>@for (destination of destinations; track destination) { @if
+                (destination !== ticket.destination) { <option [value]="destination">{{ destination }}</option> } }
+              </select>
+              <button mat-flat-button color="primary" type="button"
+                (click)="forwardTicket(ticket)"><mat-icon>east</mat-icon> Forward</button>
+              }
+            </div>
+          </div>
         </div>
+        }
+      </div>
       } @else {
-        <div class="rounded-xl border border-dashed border-slate-300 py-12 text-center"><mat-icon class="!h-10 !w-10 !text-[40px] text-slate-300">group</mat-icon><p class="mb-1 mt-3 font-medium text-slate-700">No patients are waiting here</p><p class="m-0 text-sm text-slate-500">Newly forwarded tickets will appear in this queue.</p></div>
+      <div class="rounded-xl border border-dashed border-slate-300 py-12 text-center"><mat-icon
+          class="!h-10 !w-10 !text-[40px] text-slate-300">group</mat-icon>
+        <p class="mb-1 mt-3 font-medium text-slate-700">No patients are waiting here</p>
+        <p class="m-0 text-sm text-slate-500">Newly forwarded tickets will appear in this queue.</p>
+      </div>
       }
     </mat-card>
 
+    @if (currentStation === 'Reception') {
     <mat-card class="!h-fit !rounded-xl !p-5 !shadow-sm">
-      <div class="mb-5"><h2 class="m-0 text-lg font-semibold">Receive a patient</h2><p class="mt-1 mb-0 text-sm text-slate-500">Create a ticket at reception and send it to the next stop.</p></div>
-      <div class="space-y-4">
-        <label class="block text-sm font-medium text-slate-700">Patient<select [(ngModel)]="selectedPatientId" class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500"><option value="">Select a registered patient</option>@for (patient of patients; track patient.id) { <option [value]="patient.id">{{ patient.firstName }} {{ patient.lastName }} · {{ patient.id }}</option> }</select></label>
-        <label class="block text-sm font-medium text-slate-700">Send first to<select [(ngModel)]="selectedDestination" class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500">@for (destination of destinations; track destination) { @if (destination !== 'Reception') { <option [value]="destination">{{ destination }}</option> } }</select></label>
-        <label class="block text-sm font-medium text-slate-700">Priority<div class="mt-1.5 grid grid-cols-2 gap-2"><button type="button" (click)="selectedPriority = 'Normal'" class="rounded-lg border px-3 py-2 text-sm font-medium" [class.border-blue-600]="selectedPriority === 'Normal'" [class.bg-blue-50]="selectedPriority === 'Normal'" [class.text-blue-700]="selectedPriority === 'Normal'" [class.border-slate-300]="selectedPriority !== 'Normal'">Normal</button><button type="button" (click)="selectedPriority = 'Urgent'" class="rounded-lg border px-3 py-2 text-sm font-medium" [class.border-rose-500]="selectedPriority === 'Urgent'" [class.bg-rose-50]="selectedPriority === 'Urgent'" [class.text-rose-700]="selectedPriority === 'Urgent'" [class.border-slate-300]="selectedPriority !== 'Urgent'">Urgent</button></div></label>
-        <button mat-flat-button color="primary" class="!w-full" type="button" (click)="createTicket()"><mat-icon>confirmation_number</mat-icon> Create visit ticket</button>
+      <div class="mb-5">
+        <h2 class="m-0 text-lg font-semibold">Receive a patient</h2>
+        <p class="mt-1 mb-0 text-sm text-slate-500">Create a ticket at reception and send it to the next stop.</p>
       </div>
-    </mat-card>
+      <div class="space-y-4">
+        <label class="block text-sm font-medium text-slate-700">Patient<select [(ngModel)]="selectedPatientId"
+            class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500">
+            <option value="">Select a registered patient</option>@for (patient of patients; track patient.id) { <option
+              [value]="patient.id">{{ patient.firstName }} {{ patient.lastName }} · {{ patient.id }}</option> }
+          </select></label>
+        <label class="block text-sm font-medium text-slate-700">Send first to<select [(ngModel)]="selectedDestination"
+            class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500">@for
+            (destination of destinations; track destination) { @if (destination !== 'Reception') { <option
+              [value]="destination">{{ destination }}</option> } }</select></label>
+        <label class="block text-sm font-medium text-slate-700">Priority<div class="mt-1.5 grid grid-cols-2 gap-2">
+            <button type="button" (click)="selectedPriority = 'Normal'"
+              class="rounded-lg border px-3 py-2 text-sm font-medium"
+              [class.border-blue-600]="selectedPriority === 'Normal'" [class.bg-blue-50]="selectedPriority === 'Normal'"
+              [class.text-blue-700]="selectedPriority === 'Normal'"
+              [class.border-slate-300]="selectedPriority !== 'Normal'">Normal</button><button type="button"
+              (click)="selectedPriority = 'Urgent'" class="rounded-lg border px-3 py-2 text-sm font-medium"
+              [class.border-rose-500]="selectedPriority === 'Urgent'" [class.bg-rose-50]="selectedPriority === 'Urgent'"
+              [class.text-rose-700]="selectedPriority === 'Urgent'"
+              [class.border-slate-300]="selectedPriority !== 'Urgent'">Urgent</button></div></label>
+        <button mat-flat-button color="primary" class="!w-full" type="button"
+          (click)="createTicket()"><mat-icon>confirmation_number</mat-icon> Create visit ticket</button>
+      </div>
+    </mat-card>}
   </div>
 </div>

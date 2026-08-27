@@ -16,6 +16,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTimepickerModule } from '@angular/material/timepicker';
 import { DepartmentService } from '../../../services/department.service';
 import { Department } from '../../../models/employee.model';
+import { RolesService } from '../../../services/roles.service';
 
 @Component({
   selector: 'app-add-employee-dialog',
@@ -50,20 +51,20 @@ export class AddEmployeeDialogComponent implements OnInit {
     shift: ['Morning (6 AM - 2 PM)', Validators.required],
   });
 
-  roles = [
-    { value: 'admin', label: 'Administrator' },
-    { value: 'facility_admin', label: 'Facility Admin' },
-    { value: 'doctor', label: 'Doctor' },
-    { value: 'nurse', label: 'Nurse' },
-    { value: 'receptionist', label: 'Receptionist' },
-    { value: 'pharmacist', label: 'Pharmacist' },
-    { value: 'lab_technician', label: 'Lab Technician' },
-    { value: 'radiologist', label: 'Radiologist' },
-    { value: 'accountant', label: 'Accountant' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'hr', label: 'Human Resources' },
-    { value: 'staff', label: 'General Staff' },
-  ];
+  roles: any[] = []
+  //   { value: 'admin', label: 'Administrator' },
+  //   { value: 'facility_admin', label: 'Facility Admin' },
+  //   { value: 'doctor', label: 'Doctor' },
+  //   { value: 'nurse', label: 'Nurse' },
+  //   { value: 'receptionist', label: 'Receptionist' },
+  //   { value: 'pharmacist', label: 'Pharmacist' },
+  //   { value: 'lab_technician', label: 'Lab Technician' },
+  //   { value: 'radiologist', label: 'Radiologist' },
+  //   { value: 'accountant', label: 'Accountant' },
+  //   { value: 'manager', label: 'Manager' },
+  //   { value: 'hr', label: 'Human Resources' },
+  //   { value: 'staff', label: 'General Staff' },
+  // ];
   departments: Department[] = [];
   shifts = [
     'Morning (6 AM - 2 PM)',
@@ -71,7 +72,7 @@ export class AddEmployeeDialogComponent implements OnInit {
     'Night (10 PM - 6 AM)',
   ];
 
-  constructor(private departmentService: DepartmentService) {}
+  constructor(private departmentService: DepartmentService, private roleService: RolesService) { }
 
   ngOnInit(): void {
     this.departmentService.fetchDepartments().subscribe({
@@ -86,6 +87,21 @@ export class AddEmployeeDialogComponent implements OnInit {
       error: (error) => {
         console.error(
           'Failed to load departments from API. Using local fallback data.',
+          error,
+        );
+      },
+    });
+
+    this.roleService.getRoles().subscribe({
+      next: (roles) => {
+        this.roles = roles.map((role) => ({
+          value: role.id,
+          label: role.name,
+        }));
+      },
+      error: (error) => {
+        console.error(
+          'Failed to load roles from API. Using local fallback data.',
           error,
         );
       },
