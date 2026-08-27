@@ -1,0 +1,587 @@
+<div class="facility-container">
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="loading-overlay">
+    <lucide-icon [img]="RefreshCw" class="spin-icon text-blue-600 w-8 h-8"></lucide-icon>
+    <span class="ml-3 text-slate-600 font-medium">Loading Facility Profile...</span>
+  </div>
+
+  <!-- Success & Error Banners -->
+  <div *ngIf="successMessage()" class="alert alert-success">
+    <lucide-icon [img]="CheckCircle2" class="w-5 h-5 mr-2 text-emerald-600 flex-shrink-0"></lucide-icon>
+    <span>{{ successMessage() }}</span>
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert alert-danger">
+    <lucide-icon [img]="AlertCircle" class="w-5 h-5 mr-2 text-rose-600 flex-shrink-0"></lucide-icon>
+    <span>{{ errorMessage() }}</span>
+  </div>
+
+  <ng-container *ngIf="!loading() && facility() as fac">
+    <!-- Header Banner -->
+    <div class="facility-header-card">
+      <div class="header-left">
+        <div class="logo-wrapper">
+          <img *ngIf="fac.logo" [src]="fac.logo" [alt]="fac.name" class="facility-logo" />
+          <div *ngIf="!fac.logo" class="logo-fallback">
+            <lucide-icon [img]="Hospital" class="w-10 h-10 text-blue-600"></lucide-icon>
+          </div>
+        </div>
+        <div class="header-info">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="facility-name">{{ fac.name }}</h1>
+            <span class="badge badge-type">{{ fac.facility_type | uppercase }}</span>
+            <span [class]="fac.subscription_active ? 'badge badge-active' : 'badge badge-expired'">
+              {{ fac.subscription_active ? 'ACTIVE SUBSCRIPTION' : 'EXPIRED' }}
+            </span>
+          </div>
+          <p class="facility-meta">
+            <span><strong>Reg No:</strong> {{ fac.registration_number }}</span>
+            <span class="meta-separator">•</span>
+            <span><strong>Package:</strong> {{ fac.subscription_package | uppercase }} PLAN</span>
+            <span class="meta-separator">•</span>
+            <span><strong>Location:</strong> {{ fac.city || 'N/A' }}, {{ fac.country || 'Kenya' }}</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="header-stats">
+        <div class="stat-pill">
+          <span class="stat-label">Staff Users</span>
+          <span class="stat-value">{{ fac.users_count ?? fac.total_staff ?? 0 }}</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">Departments</span>
+          <span class="stat-value">{{ fac.departments_count ?? 0 }}</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">Total Patients</span>
+          <span class="stat-value">{{ fac.total_patients ?? 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-navigation">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'profile'"
+        (click)="activeTab.set('profile')"
+      >
+        <lucide-icon [img]="Building2" class="w-4 h-4 mr-2"></lucide-icon>
+        Facility Details
+      </button>
+
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'subscription'"
+        (click)="activeTab.set('subscription')"
+      >
+        <lucide-icon [img]="Crown" class="w-4 h-4 mr-2"></lucide-icon>
+        Subscription & Packages
+        <span class="tab-badge" *ngIf="fac.subscription_package">{{ fac.subscription_package }}</span>
+      </button>
+
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'history'"
+        (click)="activeTab.set('history')"
+      >
+        <lucide-icon [img]="FileText" class="w-4 h-4 mr-2"></lucide-icon>
+        Payment History
+        <span class="history-count" *ngIf="paymentHistory().length">{{ paymentHistory().length }}</span>
+      </button>
+    </div>
+
+    <!-- ================= TAB 1: FACILITY PROFILE ================= -->
+    <div *ngIf="activeTab() === 'profile'" class="tab-content">
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">General Facility Information</h2>
+            <p class="section-subtitle">Manage official contact details, organization logo, and location settings.</p>
+          </div>
+          <button class="btn btn-primary" (click)="saveProfile()" [disabled]="saving()">
+            <lucide-icon *ngIf="!saving()" [img]="Save" class="w-4 h-4 mr-2"></lucide-icon>
+            <lucide-icon *ngIf="saving()" [img]="RefreshCw" class="spin-icon w-4 h-4 mr-2"></lucide-icon>
+            {{ saving() ? 'Saving Changes...' : 'Save Profile Details' }}
+          </button>
+        </div>
+
+        <form class="form-grid" (ngSubmit)="saveProfile()">
+          <!-- Facility Name -->
+          <div class="form-group col-span-2">
+            <label class="form-label">Facility / Organization Name <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <lucide-icon [img]="Hospital" class="input-icon"></lucide-icon>
+              <input
+                type="text"
+                class="form-input"
+                [(ngModel)]="profileForm.name"
+                name="facilityName"
+                placeholder="e.g. Nairobi Central Hospital"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Facility Type -->
+          <div class="form-group">
+            <label class="form-label">Facility Category <span class="required">*</span></label>
+            <select class="form-select" [(ngModel)]="profileForm.facility_type" name="facilityType" required>
+              <option value="hospital">Hospital (Multi-Department)</option>
+              <option value="clinic">Clinic (Outpatient / Specialty)</option>
+            </select>
+          </div>
+
+          <!-- Registration Number (Read-only) -->
+          <div class="form-group">
+            <label class="form-label">Registration / License Number</label>
+            <div class="input-with-icon readonly-input">
+              <lucide-icon [img]="ShieldCheck" class="input-icon"></lucide-icon>
+              <input
+                type="text"
+                class="form-input"
+                [value]="fac.registration_number"
+                disabled
+                readonly
+              />
+            </div>
+            <span class="form-help">Registration number is set during onboarding and verified.</span>
+          </div>
+
+          <!-- Email -->
+          <div class="form-group">
+            <label class="form-label">Official Email Address <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <lucide-icon [img]="Mail" class="input-icon"></lucide-icon>
+              <input
+                type="email"
+                class="form-input"
+                [(ngModel)]="profileForm.email"
+                name="email"
+                placeholder="info@facility.com"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Phone Number -->
+          <div class="form-group">
+            <label class="form-label">Primary Phone Number <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <lucide-icon [img]="Phone" class="input-icon"></lucide-icon>
+              <input
+                type="tel"
+                class="form-input"
+                [(ngModel)]="profileForm.phone"
+                name="phone"
+                placeholder="+254 712 345 678"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Website -->
+          <div class="form-group">
+            <label class="form-label">Website URL</label>
+            <div class="input-with-icon">
+              <lucide-icon [img]="Globe" class="input-icon"></lucide-icon>
+              <input
+                type="url"
+                class="form-input"
+                [(ngModel)]="profileForm.website"
+                name="website"
+                placeholder="https://www.facility.com"
+              />
+            </div>
+          </div>
+
+          <!-- Logo URL -->
+          <div class="form-group">
+            <label class="form-label">Facility Logo URL</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="profileForm.logo"
+              name="logo"
+              placeholder="https://example.com/logo.png"
+            />
+          </div>
+
+          <!-- Address -->
+          <div class="form-group col-span-2">
+            <label class="form-label">Physical Address</label>
+            <div class="input-with-icon">
+              <lucide-icon [img]="MapPin" class="input-icon"></lucide-icon>
+              <input
+                type="text"
+                class="form-input"
+                [(ngModel)]="profileForm.address"
+                name="address"
+                placeholder="Hospital Road, Suite 400"
+              />
+            </div>
+          </div>
+
+          <!-- City -->
+          <div class="form-group">
+            <label class="form-label">City / Town</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="profileForm.city"
+              name="city"
+              placeholder="Nairobi"
+            />
+          </div>
+
+          <!-- Country -->
+          <div class="form-group">
+            <label class="form-label">Country</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="profileForm.country"
+              name="country"
+              placeholder="Kenya"
+            />
+          </div>
+
+          <!-- Description -->
+          <div class="form-group col-span-2">
+            <label class="form-label">Facility Description / Overview</label>
+            <textarea
+              class="form-textarea"
+              rows="3"
+              [(ngModel)]="profileForm.description"
+              name="description"
+              placeholder="Brief overview of healthcare services provided, specialty areas, and working hours..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= TAB 2: SUBSCRIPTION & PACKAGES ================= -->
+    <div *ngIf="activeTab() === 'subscription'" class="tab-content">
+      <!-- Active Subscription Card -->
+      <div class="active-subscription-banner" [class.expired]="!fac.subscription_active">
+        <div class="active-sub-left">
+          <div class="crown-icon-box">
+            <lucide-icon [img]="Crown" class="w-8 h-8 text-amber-500"></lucide-icon>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="active-sub-title">CURRENT ACTIVE PLAN:</span>
+              <span class="plan-name-tag">{{ (fac.subscription_package || 'standard') | uppercase }}</span>
+              <span class="cycle-tag">{{ (fac.subscription_billing_cycle || 'monthly') | uppercase }}</span>
+            </div>
+            <p class="active-sub-dates">
+              <span><strong>Start Date:</strong> {{ fac.subscription_start_date || 'N/A' }}</span>
+              <span class="meta-separator">•</span>
+              <span><strong>Valid Until:</strong> {{ fac.subscription_end_date || 'N/A' }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="active-sub-right">
+          <div class="days-pill" *ngIf="fac.subscription_end_date">
+            <lucide-icon [img]="Clock" class="w-4 h-4 mr-1"></lucide-icon>
+            <span>{{ getDaysRemaining(fac.subscription_end_date) }} Days Remaining</span>
+          </div>
+          <span class="status-indicator" [class.active]="fac.subscription_active">
+            {{ fac.subscription_active ? 'Status: Active' : 'Status: Needs Renewal' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Billing Cycle Switcher -->
+      <div class="cycle-switcher-wrapper">
+        <span class="switcher-label">Select Billing Cycle:</span>
+        <div class="switcher-toggle">
+          <button
+            class="toggle-btn"
+            [class.selected]="billingCycle() === 'monthly'"
+            (click)="billingCycle.set('monthly')"
+          >
+            Monthly Billing
+          </button>
+          <button
+            class="toggle-btn"
+            [class.selected]="billingCycle() === 'yearly'"
+            (click)="billingCycle.set('yearly')"
+          >
+            Annual Billing
+            <span class="discount-badge">Save 20%</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Pricing Cards Grid -->
+      <div class="packages-grid">
+        <div
+          *ngFor="let pkg of packages"
+          class="package-card"
+          [class.current-card]="fac.subscription_package === pkg.id"
+          [class.popular-card]="pkg.popular"
+        >
+          <div *ngIf="pkg.popular" class="popular-ribbon">{{ pkg.badge }}</div>
+          <div *ngIf="fac.subscription_package === pkg.id" class="current-ribbon">Current Plan</div>
+
+          <div class="card-header">
+            <h3 class="pkg-title">{{ pkg.name }}</h3>
+            <span class="pkg-staff-limit">{{ pkg.staffLimit }}</span>
+          </div>
+
+          <div class="card-pricing">
+            <div class="price-main">
+              <span class="currency">KES</span>
+              <span class="amount">
+                {{ (billingCycle() === 'yearly' ? pkg.yearlyPriceKES : pkg.monthlyPriceKES) | number }}
+              </span>
+              <span class="period">/{{ billingCycle() === 'yearly' ? 'yr' : 'mo' }}</span>
+            </div>
+            <div class="price-secondary">
+              approx ${{ (billingCycle() === 'yearly' ? pkg.yearlyPriceUSD : pkg.monthlyPriceUSD) | number }} USD
+            </div>
+          </div>
+
+          <ul class="features-list">
+            <li *ngFor="let feat of pkg.features">
+              <lucide-icon [img]="Check" class="feature-icon"></lucide-icon>
+              <span>{{ feat }}</span>
+            </li>
+          </ul>
+
+          <div class="card-footer">
+            <button
+              *ngIf="fac.subscription_package !== pkg.id"
+              class="btn btn-upgrade"
+              [class.btn-popular]="pkg.popular"
+              (click)="openCheckoutModal(pkg)"
+            >
+              <lucide-icon [img]="Sparkles" class="w-4 h-4 mr-2"></lucide-icon>
+              Upgrade to {{ pkg.name }}
+            </button>
+
+            <button
+              *ngIf="fac.subscription_package === pkg.id"
+              class="btn btn-renew"
+              (click)="openCheckoutModal(pkg)"
+            >
+              <lucide-icon [img]="RefreshCw" class="w-4 h-4 mr-2"></lucide-icon>
+              Renew Current Plan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TAB 3: PAYMENT HISTORY ================= -->
+    <div *ngIf="activeTab() === 'history'" class="tab-content">
+      <div class="section-card">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Subscription Payment Receipts & History</h2>
+            <p class="section-subtitle">Detailed record of all past subscription upgrades, renewals, and transaction references.</p>
+          </div>
+        </div>
+
+        <div *ngIf="paymentHistory().length === 0" class="empty-state">
+          <lucide-icon [img]="FileText" class="w-12 h-12 text-slate-300 mb-2"></lucide-icon>
+          <p class="text-slate-600 font-medium">No subscription payments recorded yet.</p>
+          <p class="text-slate-400 text-sm">Upgrade or renew your subscription package to generate payment receipts.</p>
+        </div>
+
+        <div *ngIf="paymentHistory().length > 0" class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Transaction Ref</th>
+                <th>Date & Time</th>
+                <th>Package Plan</th>
+                <th>Billing Cycle</th>
+                <th>Amount (KES)</th>
+                <th>Payment Method</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of paymentHistory()">
+                <td class="font-mono text-xs font-semibold text-blue-700">
+                  {{ item.transaction_reference }}
+                </td>
+                <td class="text-sm text-slate-600">
+                  {{ item.created_at | date: 'mediumDate' }} {{ item.created_at | date: 'shortTime' }}
+                </td>
+                <td class="font-medium text-slate-800">
+                  {{ item.package | uppercase }} PLAN
+                </td>
+                <td class="text-xs font-medium text-slate-600">
+                  {{ item.billing_cycle | uppercase }}
+                </td>
+                <td class="font-semibold text-slate-900">
+                  {{ formatCurrency(item.amount) }}
+                </td>
+                <td>
+                  <span class="method-badge" [class.mpesa]="item.payment_method === 'mpesa'">
+                    <lucide-icon *ngIf="item.payment_method === 'mpesa'" [img]="Smartphone" class="w-3 h-3 mr-1"></lucide-icon>
+                    <lucide-icon *ngIf="item.payment_method === 'card'" [img]="CreditCard" class="w-3 h-3 mr-1"></lucide-icon>
+                    <lucide-icon *ngIf="item.payment_method === 'bank_transfer'" [img]="Landmark" class="w-3 h-3 mr-1"></lucide-icon>
+                    {{ item.payment_method | uppercase }}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" [class.completed]="item.status === 'completed'">
+                    <lucide-icon [img]="Check" class="w-3 h-3 mr-1"></lucide-icon>
+                    {{ item.status | uppercase }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ================= CHECKOUT & PAYMENT MODAL ================= -->
+  <div *ngIf="showCheckoutModal() && selectedPackageForCheckout() as pkg" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="flex items-center gap-2">
+          <lucide-icon [img]="CreditCard" class="w-6 h-6 text-blue-600"></lucide-icon>
+          <h3 class="modal-title">Subscription Payment Checkout</h3>
+        </div>
+        <button class="modal-close-btn" (click)="closeCheckoutModal()">
+          <lucide-icon [img]="X" class="w-5 h-5"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Order Summary Box -->
+        <div class="summary-box">
+          <div class="summary-row">
+            <span class="summary-label">Target Package:</span>
+            <span class="summary-value text-blue-700 font-bold">{{ pkg.name }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Billing Cycle:</span>
+            <span class="summary-value capitalize">{{ billingCycle() }} Billing</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Facility:</span>
+            <span class="summary-value">{{ facility()?.name }}</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row total-row">
+            <span class="total-label">Total Amount Payable:</span>
+            <span class="total-value">
+              {{ formatCurrency(billingCycle() === 'yearly' ? pkg.yearlyPriceKES : pkg.monthlyPriceKES) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Payment Method Selection -->
+        <div class="method-section">
+          <label class="form-label">Select Payment Method</label>
+          <div class="method-options">
+            <button
+              class="method-btn"
+              [class.active]="paymentMethod() === 'mpesa'"
+              (click)="paymentMethod.set('mpesa')"
+            >
+              <lucide-icon [img]="Smartphone" class="w-5 h-5 text-emerald-600 mb-1"></lucide-icon>
+              <span>M-Pesa (STK Push)</span>
+            </button>
+
+            <button
+              class="method-btn"
+              [class.active]="paymentMethod() === 'card'"
+              (click)="paymentMethod.set('card')"
+            >
+              <lucide-icon [img]="CreditCard" class="w-5 h-5 text-blue-600 mb-1"></lucide-icon>
+              <span>Credit / Debit Card</span>
+            </button>
+
+            <button
+              class="method-btn"
+              [class.active]="paymentMethod() === 'bank_transfer'"
+              (click)="paymentMethod.set('bank_transfer')"
+            >
+              <lucide-icon [img]="Landmark" class="w-5 h-5 text-amber-600 mb-1"></lucide-icon>
+              <span>Bank Transfer</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- M-Pesa STK Push Form -->
+        <div *ngIf="paymentMethod() === 'mpesa'" class="method-form">
+          <label class="form-label">M-Pesa Phone Number <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <lucide-icon [img]="Smartphone" class="input-icon text-emerald-600"></lucide-icon>
+            <input
+              type="tel"
+              class="form-input"
+              [(ngModel)]="stkPhoneNumber"
+              placeholder="e.g. 254712345678"
+            />
+          </div>
+          <span class="form-help">An STK push prompt will be sent directly to your phone to authorize payment.</span>
+
+          <div *ngIf="stkPushSent()" class="stk-prompt-banner">
+            <lucide-icon [img]="RefreshCw" class="spin-icon w-5 h-5 text-emerald-600 mr-2"></lucide-icon>
+            <span>STK Push prompt sent! Please enter your PIN on your phone to complete transaction...</span>
+          </div>
+        </div>
+
+        <!-- Card Form -->
+        <div *ngIf="paymentMethod() === 'card'" class="method-form">
+          <div class="form-group">
+            <label class="form-label">Card Number</label>
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="cardNumber"
+              placeholder="4000 1234 5678 9010"
+            />
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Expiry (MM/YY)</label>
+              <input type="text" class="form-input" [(ngModel)]="cardExpiry" placeholder="12/28" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">CVV Security Code</label>
+              <input type="password" class="form-input" [(ngModel)]="cardCvv" placeholder="123" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank Transfer Information -->
+        <div *ngIf="paymentMethod() === 'bank_transfer'" class="method-form bank-box">
+          <p class="text-sm font-semibold text-slate-800 mb-1">Bank Payment Instructions:</p>
+          <p class="text-xs text-slate-600"><strong>Bank Name:</strong> Equity Bank Kenya</p>
+          <p class="text-xs text-slate-600"><strong>Account Name:</strong> Afyora Healthcare Ltd</p>
+          <p class="text-xs text-slate-600"><strong>Account Number:</strong> 0123456789101</p>
+          <p class="text-xs text-slate-600"><strong>Reference:</strong> {{ facility()?.name }} Sub</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeCheckoutModal()" [disabled]="paymentProcessing()">
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary btn-pay"
+          (click)="processSubscriptionPayment()"
+          [disabled]="paymentProcessing() || (paymentMethod() === 'mpesa' && !stkPhoneNumber())"
+        >
+          <lucide-icon *ngIf="!paymentProcessing()" [img]="CheckCircle2" class="w-4 h-4 mr-2"></lucide-icon>
+          <lucide-icon *ngIf="paymentProcessing()" [img]="RefreshCw" class="spin-icon w-4 h-4 mr-2"></lucide-icon>
+          {{ paymentProcessing() ? 'Authorizing & Processing...' : 'Pay & Activate Plan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

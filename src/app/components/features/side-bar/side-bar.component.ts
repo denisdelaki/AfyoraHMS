@@ -78,6 +78,7 @@ export class SideBarComponent implements OnInit {
     { name: 'Employees', href: '/employees', icon: UserCog, permission: 'employees' },
     { name: 'Departments', href: '/departments', icon: Building2, permission: 'departments' },
     { name: 'Roles', href: '/roles', icon: Shield, permission: 'roles', adminOnly: true },
+    { name: 'Facility Profile', href: '/facility-profile', icon: Hospital, adminOnly: true },
   ];
 
   readonly navigation = computed(() => {

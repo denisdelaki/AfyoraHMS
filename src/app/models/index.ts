@@ -11,3 +11,5 @@ export * from './laboratory.models';
 export * from './radiology.models';
 export * from './reports.models';
 export * from './visit-ticket.models';
+export * from './facility.model';
+
