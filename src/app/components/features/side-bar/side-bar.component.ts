@@ -16,6 +16,7 @@ import {
   Package,
   Pill,
   Scan,
+  Ticket,
   LogOut,
   UserCog,
   Users,
@@ -59,6 +60,7 @@ export class SideBarComponent {
   navigation: NavigationItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Patients', href: '/patients', icon: Users },
+    { name: 'Visit Queue', href: '/visit-queue', icon: Ticket },
     { name: 'EHR', href: '/ehr', icon: FileText },
     { name: 'Pharmacy', href: '/pharmacy', icon: Pill },
     { name: 'Billing', href: '/billing', icon: CreditCard },

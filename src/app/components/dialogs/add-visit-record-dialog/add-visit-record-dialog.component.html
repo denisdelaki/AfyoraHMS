@@ -173,6 +173,18 @@
         placeholder="Document consultation notes, treatment, and outcomes"
       ></textarea>
     </mat-form-field>
+
+    @if (data.nextDestinations?.length) {
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Send patient to</mat-label>
+        <mat-select formControlName="nextDestination">
+          @for (destination of data.nextDestinations; track destination) {
+            <mat-option [value]="destination">{{ destination }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint>The visit ticket will be forwarded after this record is saved.</mat-hint>
+      </mat-form-field>
+    }
   </form>
 </mat-dialog-content>
 

@@ -252,7 +252,7 @@ export class HomeComponent implements OnInit {
   actions: DashboardAction[] = [];
   pharmacyPrescriptions: Prescription[] = [];
   pharmacyDrugs: Drug[] = [];
-  teamOnDuty: Array<{ name: string; role: string; status: string }> = [];
+  teamOnDuty: Array<{ id: string; name: string; role: string; status: string }> = [];
   upcomingAppointments: Array<{
     time: string;
     patient: string;
@@ -370,6 +370,7 @@ export class HomeComponent implements OnInit {
         )
         .slice(0, 5)
         .map((employee) => ({
+          id: employee.id,
           name: employee.name,
           role: employee.role,
           status: employee.status || 'On duty',
@@ -498,13 +499,13 @@ export class HomeComponent implements OnInit {
           'radiologist',
         ].includes(this.role)
           ? appointments.filter(
-              (appointment) =>
-                (!!currentUserId &&
-                  String(appointment.doctor) === currentUserId) ||
-                appointment.doctor
-                  ?.toLowerCase()
-                  .includes(currentUserName.toLowerCase()),
-            )
+            (appointment) =>
+              (!!currentUserId &&
+                String(appointment.doctor) === currentUserId) ||
+              appointment.doctor
+                ?.toLowerCase()
+                .includes(currentUserName.toLowerCase()),
+          )
           : appointments;
 
         this.upcomingAppointments = relevant
@@ -559,9 +560,9 @@ export class HomeComponent implements OnInit {
       const relevant =
         this.role.includes('doctor') || this.role.includes('lab_technician')
           ? requests.filter(
-              (request) =>
-                !!currentUserId && String(request.orderedBy) === currentUserId,
-            )
+            (request) =>
+              !!currentUserId && String(request.orderedBy) === currentUserId,
+          )
           : requests;
       this.workQueueTitle =
         this.role === 'doctor' ? 'My lab orders' : 'Laboratory work queue';

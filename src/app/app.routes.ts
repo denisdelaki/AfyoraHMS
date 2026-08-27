@@ -133,6 +133,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'visit-queue',
+        loadComponent: () =>
+          import('./components/features/visit-queue/visit-queue.component').then(
+            (m) => m.VisitQueueComponent,
+          ),
+      },
+      {
         path: 'ehr',
         loadComponent: () =>
           import('./components/features/ehr/ehr.component').then(

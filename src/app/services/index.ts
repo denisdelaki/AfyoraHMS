@@ -10,3 +10,4 @@ export * from './sms.service';
 export * from './laboratory.service';
 export * from './radiology.service';
 export * from './session-timeout.service';
+export * from './visit-queue.service';

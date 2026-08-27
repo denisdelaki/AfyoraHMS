@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
-import { Drug } from '../../../models';
+import { Drug, QueueDestination } from '../../../models';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -42,6 +42,7 @@ export type VisitRecordFormValue = {
   prescriptions: PrescriptionEntry[];
   amountBilled: string;
   whatHappened: string;
+  nextDestination?: QueueDestination;
 };
 
 export type DoctorOption = {
@@ -52,7 +53,8 @@ export type DoctorOption = {
 type AddVisitRecordDialogData = {
   mode: 'create' | 'edit';
   doctors: DoctorOption[];
-  initialValue?: VisitRecordFormValue;
+  initialValue?: Partial<VisitRecordFormValue>;
+  nextDestinations?: QueueDestination[];
 };
 
 @Component({
@@ -124,6 +126,10 @@ export class AddVisitRecordDialogComponent implements OnInit {
     whatHappened: [
       this.data.initialValue?.whatHappened ?? '',
       [Validators.required],
+    ],
+    nextDestination: [
+      this.data.initialValue?.nextDestination ?? '',
+      this.data.nextDestinations?.length ? [Validators.required] : [],
     ],
   });
 
@@ -256,6 +262,7 @@ export class AddVisitRecordDialogComponent implements OnInit {
       })),
       amountBilled: String(value.amountBilled ?? '0.00').trim(),
       whatHappened: (value.whatHappened ?? '').trim(),
+      nextDestination: (value.nextDestination as QueueDestination) || undefined,
     });
   }
 

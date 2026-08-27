@@ -10,4 +10,4 @@ export * from './inventory.models';
 export * from './laboratory.models';
 export * from './radiology.models';
 export * from './reports.models';
-
+export * from './visit-ticket.models';
