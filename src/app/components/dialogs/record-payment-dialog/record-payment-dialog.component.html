@@ -1,12 +1,12 @@
 <h2 mat-dialog-title>Record Payment - {{ data.invoiceId }}</h2>
 <mat-dialog-content>
   <form [formGroup]="paymentForm" class="space-y-4 py-2">
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Amount</mat-label>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Amount (KES)</mat-label>
       <input matInput type="number" min="0" formControlName="amount" />
     </mat-form-field>
 
-    <mat-form-field appearance="fill" class="w-full">
+    <mat-form-field appearance="outline" class="w-full">
       <mat-label>Payment Method</mat-label>
       <mat-select formControlName="method">
         @for (method of paymentMethods; track method) {
@@ -14,11 +14,47 @@
         }
       </mat-select>
     </mat-form-field>
+
+    <!-- M-Pesa Mobile Payment Direct Prompt Section -->
+    <div *ngIf="paymentForm.get('method')?.value === 'Mobile Payment'" class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-3">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">M-Pesa STK Push Prompt</span>
+        <span class="px-2 py-0.5 bg-emerald-200 text-emerald-900 text-[10px] font-extrabold rounded-md">Live Gateway</span>
+      </div>
+
+      <mat-form-field appearance="outline" class="w-full bg-white rounded-lg">
+        <mat-label>Patient M-Pesa Phone Number</mat-label>
+        <input matInput type="tel" formControlName="phoneNumber" placeholder="e.g. 0712345678 or 254712345678" />
+        <mat-hint>Patient will receive a prompt on their phone to enter M-Pesa PIN.</mat-hint>
+      </mat-form-field>
+
+      <div *ngIf="stkMessage()" class="flex items-center p-3 bg-emerald-100/70 border border-emerald-300 rounded-lg text-emerald-800 text-xs font-medium space-x-2">
+        <mat-spinner *ngIf="stkSending() || stkPolling()" diameter="18" color="accent"></mat-spinner>
+        <span>{{ stkMessage() }}</span>
+      </div>
+
+      <div *ngIf="stkError()" class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs font-medium">
+        {{ stkError() }}
+      </div>
+
+      <button
+        type="button"
+        mat-raised-button
+        color="accent"
+        class="w-full !py-2 !font-bold"
+        (click)="triggerStkPush()"
+        [disabled]="stkSending() || stkPolling()"
+      >
+        {{ stkSending() || stkPolling() ? 'Waiting for Patient PIN...' : 'Send STK Push to Patient Phone' }}
+      </button>
+    </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-flat-button color="primary" (click)="onConfirmPayment()">
-    Confirm Payment
+
+<mat-dialog-actions align="end" class="gap-2">
+  <button mat-button (click)="onCancel()" [disabled]="stkSending() || stkPolling()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onConfirmPayment()" [disabled]="stkSending() || stkPolling()">
+    Record Payment
   </button>
 </mat-dialog-actions>
+

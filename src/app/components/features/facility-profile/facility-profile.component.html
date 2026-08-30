@@ -105,10 +105,26 @@
         Payment History
         <span class="ml-2 px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-full" *ngIf="paymentHistory().length">{{ paymentHistory().length }}</span>
       </button>
+
+      <button
+        class="flex items-center px-5 py-3 font-semibold text-sm transition-all duration-200 border-b-2 whitespace-nowrap cursor-pointer"
+        [class.border-blue-600]="activeTab() === 'mpesa'"
+        [class.text-blue-600]="activeTab() === 'mpesa'"
+        [class.bg-blue-50]="activeTab() === 'mpesa'"
+        [class.border-transparent]="activeTab() !== 'mpesa'"
+        [class.text-slate-500]="activeTab() !== 'mpesa'"
+        [class.hover:text-blue-600]="activeTab() !== 'mpesa'"
+        (click)="activeTab.set('mpesa')"
+      >
+        <lucide-icon [img]="Smartphone" class="w-4 h-4 mr-2 text-emerald-600"></lucide-icon>
+        M-Pesa Billing Setup
+        <span class="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full uppercase" *ngIf="mpesaConfig().shortcode">Configured</span>
+      </button>
     </div>
 
     <!-- ================= TAB 1: FACILITY PROFILE ================= -->
     <div *ngIf="activeTab() === 'profile'" class="space-y-6">
+
       <div class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100">
           <div>
@@ -471,10 +487,138 @@
         </div>
       </div>
     </div>
+
+    <!-- ================= TAB 4: M-PESA BILLING CONFIGURATION ================= -->
+    <div *ngIf="activeTab() === 'mpesa'" class="space-y-6">
+      <div class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-lg uppercase tracking-wide">M-Pesa STK Push Gateway</span>
+              <span class="px-2.5 py-1 bg-blue-100 text-blue-800 font-bold text-xs rounded-lg uppercase" [class.bg-purple-100]="mpesaConfig().environment === 'production'" [class.text-purple-800]="mpesaConfig().environment === 'production'">
+                {{ mpesaConfig().environment }} Mode
+              </span>
+            </div>
+            <h2 class="text-xl font-bold text-slate-800">M-Pesa Patient Billing Registration</h2>
+            <p class="text-sm text-slate-500 mt-1">Configure your facility Paybill/Till number and Safaricom Daraja API credentials to prompt patients on their mobile phones when settling bills.</p>
+          </div>
+          <button
+            class="inline-flex items-center justify-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer disabled:opacity-50"
+            (click)="saveMpesaSettings()"
+            [disabled]="savingMpesa()"
+          >
+            <lucide-icon *ngIf="!savingMpesa()" [img]="Save" class="w-4 h-4 mr-2"></lucide-icon>
+            <lucide-icon *ngIf="savingMpesa()" [img]="RefreshCw" class="spin-icon w-4 h-4 mr-2"></lucide-icon>
+            {{ savingMpesa() ? 'Saving Credentials...' : 'Save M-Pesa Settings' }}
+          </button>
+        </div>
+
+        <form class="space-y-6" (ngSubmit)="saveMpesaSettings()">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Business Shortcode / Till Number -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">
+                Business Shortcode / Paybill / Till Number <span class="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                [(ngModel)]="mpesaConfig().shortcode"
+                name="shortcode"
+                placeholder="e.g. 174379 (Sandbox) or 600000"
+                required
+              />
+              <p class="text-xs text-slate-500 mt-1">The Paybill number or Buy Goods Till number registered with Safaricom.</p>
+            </div>
+
+            <!-- Transaction Type -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Transaction Type</label>
+              <select
+                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                [(ngModel)]="mpesaConfig().transaction_type"
+                name="transaction_type"
+              >
+                <option value="CustomerPayBillOnline">Customer PayBill Online</option>
+                <option value="CustomerBuyGoodsOnline">Buy Goods Till Number</option>
+              </select>
+
+              <p class="text-xs text-slate-500 mt-1">Select PayBill or Buy Goods depending on your Safaricom account setup.</p>
+            </div>
+
+            <!-- Passkey -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-slate-700 mb-2">
+                Lipa Na M-Pesa Online Passkey <span class="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-xs"
+                [(ngModel)]="mpesaConfig().passkey"
+                name="passkey"
+                placeholder="Lipa Na M-Pesa Online Passkey provided by Safaricom"
+                required
+              />
+              <p class="text-xs text-slate-500 mt-1">The security passkey generated from the Safaricom Developer Portal or Daraja Portal.</p>
+            </div>
+
+            <!-- Consumer Key -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Daraja App Consumer Key</label>
+              <input
+                type="text"
+                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-xs"
+                [(ngModel)]="mpesaConfig().consumer_key"
+                name="consumer_key"
+                placeholder="Consumer Key from Daraja Developer Portal"
+              />
+            </div>
+
+            <!-- Consumer Secret -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Daraja App Consumer Secret</label>
+              <input
+                type="password"
+                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-xs"
+                [(ngModel)]="mpesaConfig().consumer_secret"
+                name="consumer_secret"
+                placeholder="Consumer Secret from Daraja Developer Portal"
+              />
+            </div>
+
+            <!-- Environment Mode -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Gateway Environment</label>
+              <select
+                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                [(ngModel)]="mpesaConfig().environment"
+                name="environment"
+              >
+                <option value="sandbox">Sandbox (Testing / Development)</option>
+                <option value="production">Production (Live Payments)</option>
+              </select>
+            </div>
+
+            <!-- Account Reference Prefix -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Account Reference Prefix</label>
+              <input
+                type="text"
+                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                [(ngModel)]="mpesaConfig().account_reference_prefix"
+                name="account_reference_prefix"
+                placeholder="e.g. AfyoraHMS"
+              />
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
   </ng-container>
 
   <!-- ================= CHECKOUT & PAYMENT MODAL ================= -->
   <div *ngIf="showCheckoutModal() && selectedPackageForCheckout() as pkg" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+
     <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
         <div class="flex items-center gap-2">

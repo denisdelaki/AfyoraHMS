@@ -27,12 +27,14 @@ import {
   X,
 } from 'lucide-angular';
 import { FacilityService } from '../../../services/facility.service';
+import { BillingService } from '../../../services/billing.service';
 import {
   FacilityProfile,
   FacilityUpdateRequest,
   SubscribePayload,
   SubscriptionPaymentRecord,
 } from '../../../models/facility.model';
+import { MpesaConfig } from '../../../models/billing.models';
 
 export interface PackageTier {
   id: 'basic' | 'professional' | 'enterprise';
@@ -56,6 +58,7 @@ export interface PackageTier {
 })
 export class FacilityProfileComponent implements OnInit {
   private readonly facilityService = inject(FacilityService);
+  private readonly billingService = inject(BillingService);
 
   // Lucide Icons
   readonly Building2 = Building2;
@@ -82,7 +85,7 @@ export class FacilityProfileComponent implements OnInit {
   readonly X = X;
 
   // Active Tab
-  activeTab = signal<'profile' | 'subscription' | 'history'>('profile');
+  activeTab = signal<'profile' | 'subscription' | 'history' | 'mpesa'>('profile');
 
   // State Signals
   loading = signal<boolean>(true);
@@ -90,6 +93,19 @@ export class FacilityProfileComponent implements OnInit {
   subscribing = signal<boolean>(false);
   successMessage = signal<string | null>(null);
   errorMessage = signal<string | null>(null);
+
+  // M-Pesa Config Signals
+  savingMpesa = signal<boolean>(false);
+  mpesaConfig = signal<MpesaConfig>({
+    shortcode: '',
+    passkey: '',
+    consumer_key: '',
+    consumer_secret: '',
+    environment: 'sandbox',
+    transaction_type: 'CustomerPayBillOnline',
+    account_reference_prefix: 'AfyoraHMS',
+    is_active: true,
+  });
 
   // Facility & Payment Data
   facility = signal<FacilityProfile | null>(null);
@@ -193,6 +209,7 @@ export class FacilityProfileComponent implements OnInit {
         }
         if (data.id) {
           this.loadSubscriptionHistory(data.id);
+          this.loadMpesaConfig(data.id);
         }
         this.loading.set(false);
       },
@@ -205,6 +222,45 @@ export class FacilityProfileComponent implements OnInit {
       },
     });
   }
+
+  loadMpesaConfig(facilityId: number | string): void {
+    this.billingService.getMpesaConfig(facilityId).subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.mpesaConfig.set(res.data);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load M-Pesa config:', err);
+      },
+    });
+  }
+
+  saveMpesaSettings(): void {
+    const fac = this.facility();
+    if (!fac?.id) return;
+
+    this.savingMpesa.set(true);
+    this.successMessage.set(null);
+    this.errorMessage.set(null);
+
+    this.billingService.saveMpesaConfig(fac.id, this.mpesaConfig()).subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.mpesaConfig.set(res.data);
+        }
+        this.savingMpesa.set(false);
+        this.successMessage.set('M-Pesa payment configuration updated successfully!');
+        setTimeout(() => this.successMessage.set(null), 4000);
+      },
+      error: (err) => {
+        console.error('Failed to save M-Pesa config:', err);
+        this.savingMpesa.set(false);
+        this.errorMessage.set(err?.error?.error || 'Failed to save M-Pesa configuration.');
+      },
+    });
+  }
+
 
   populateProfileForm(data: FacilityProfile): void {
     this.profileForm = {
@@ -258,9 +314,9 @@ export class FacilityProfileComponent implements OnInit {
         this.saving.set(false);
         this.errorMessage.set(
           err?.error?.detail ||
-            err?.error?.email?.[0] ||
-            err?.error?.name?.[0] ||
-            'Failed to update facility profile.',
+          err?.error?.email?.[0] ||
+          err?.error?.name?.[0] ||
+          'Failed to update facility profile.',
         );
       },
     });
@@ -274,10 +330,66 @@ export class FacilityProfileComponent implements OnInit {
   }
 
   closeCheckoutModal(): void {
+    this.clearSubscriptionPolling();
     this.showCheckoutModal.set(false);
     this.selectedPackageForCheckout.set(null);
     this.stkPushSent.set(false);
     this.paymentProcessing.set(false);
+  }
+
+  private subscriptionPollTimer: any = null;
+
+  startSubscriptionStatusPolling(checkoutReqId: string, packageName: string): void {
+    this.clearSubscriptionPolling();
+    let elapsed = 0;
+    const maxAttempts = 20; // 60 seconds
+
+    this.subscriptionPollTimer = setInterval(() => {
+      elapsed++;
+      if (elapsed > maxAttempts) {
+        this.clearSubscriptionPolling();
+        this.paymentProcessing.set(false);
+        this.stkPushSent.set(false);
+        this.errorMessage.set('M-Pesa transaction validation timed out. Please retry or check your PIN entry.');
+        return;
+      }
+
+      this.billingService.queryStkStatus(checkoutReqId).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            const status = res.data.status;
+            if (status === 'Completed') {
+              this.clearSubscriptionPolling();
+              this.paymentProcessing.set(false);
+              this.closeCheckoutModal();
+
+              this.successMessage.set(
+                `Payment verified! Your facility has been successfully upgraded to ${packageName}.`
+              );
+              this.loadFacilityData();
+              setTimeout(() => this.successMessage.set(null), 5000);
+            } else if (status === 'Failed' || status === 'Cancelled') {
+              this.clearSubscriptionPolling();
+              this.paymentProcessing.set(false);
+              this.stkPushSent.set(false);
+              this.errorMessage.set(
+                res.data.result_desc || `M-Pesa transaction was ${status.toLowerCase()}.`
+              );
+            }
+          }
+        },
+        error: (err) => {
+          console.error('Polling subscription error:', err);
+        }
+      });
+    }, 3000);
+  }
+
+  clearSubscriptionPolling(): void {
+    if (this.subscriptionPollTimer) {
+      clearInterval(this.subscriptionPollTimer);
+      this.subscriptionPollTimer = null;
+    }
   }
 
   processSubscriptionPayment(): void {
@@ -287,10 +399,6 @@ export class FacilityProfileComponent implements OnInit {
 
     this.paymentProcessing.set(true);
     this.errorMessage.set(null);
-
-    if (this.paymentMethod() === 'mpesa') {
-      this.stkPushSent.set(true);
-    }
 
     const payload: SubscribePayload = {
       package: pkg.id,
@@ -302,10 +410,12 @@ export class FacilityProfileComponent implements OnInit {
       card_cvv: this.cardCvv(),
     };
 
-    // Simulate short network delay for payment gateway authorization
-    setTimeout(() => {
-      this.facilityService.subscribePackage(fac.id, payload).subscribe({
-        next: (res) => {
+    this.facilityService.subscribePackage(fac.id, payload).subscribe({
+      next: (res: any) => {
+        if (this.paymentMethod() === 'mpesa' && res.checkoutRequestId) {
+          this.stkPushSent.set(true);
+          this.startSubscriptionStatusPolling(res.checkoutRequestId, pkg.name);
+        } else {
           this.facility.set(res.facility);
           this.paymentHistory.update((prev) => [res.payment, ...prev]);
           this.paymentProcessing.set(false);
@@ -315,20 +425,22 @@ export class FacilityProfileComponent implements OnInit {
             `Payment successful! Your facility has been upgraded to ${pkg.name}.`,
           );
           setTimeout(() => this.successMessage.set(null), 5000);
-        },
-        error: (err) => {
-          console.error('Subscription failed:', err);
-          this.paymentProcessing.set(false);
-          this.stkPushSent.set(false);
-          this.errorMessage.set(
-            err?.error?.detail ||
-              err?.error?.message ||
-              'Payment processing failed. Please check your details and try again.',
-          );
-        },
-      });
-    }, 1500);
+        }
+      },
+      error: (err) => {
+        console.error('Subscription failed:', err);
+        this.paymentProcessing.set(false);
+        this.stkPushSent.set(false);
+        this.errorMessage.set(
+          err?.error?.detail ||
+          err?.error?.error ||
+          err?.error?.message ||
+          'Payment processing failed. Please check your details and try again.',
+        );
+      },
+    });
   }
+
 
   getDaysRemaining(endDateStr?: string | null): number {
     if (!endDateStr) return 0;

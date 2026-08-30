@@ -12,6 +12,10 @@ import {
   PatientRadiologyChargesData,
   Payment,
   RecordPaymentPayload,
+  MpesaConfig,
+  MpesaSTKPushPayload,
+  MpesaSTKPushResponse,
+  MpesaTransaction,
 } from '../models';
 import {
   SendInvoiceReminderRequest,
@@ -72,7 +76,6 @@ export class BillingService {
     );
   }
 
-
   recordPayment(
     invoiceId: string,
     payload: RecordPaymentPayload,
@@ -93,5 +96,32 @@ export class BillingService {
       payload,
     );
   }
+
+  getMpesaConfig(facilityId: string | number): Observable<ApiResponse<MpesaConfig>> {
+    return this.http.get<ApiResponse<MpesaConfig>>(
+      `${this.baseUrl}/mpesa-config/?facilityId=${facilityId}/`
+    );
+  }
+
+  saveMpesaConfig(facilityId: string | number, payload: Partial<MpesaConfig>): Observable<ApiResponse<MpesaConfig>> {
+    return this.http.post<ApiResponse<MpesaConfig>>(
+      `${this.baseUrl}/mpesa-config/?facilityId=${facilityId}/`,
+      payload
+    );
+  }
+
+  initiateStkPush(facilityId: string | number, payload: MpesaSTKPushPayload): Observable<ApiResponse<MpesaSTKPushResponse>> {
+    return this.http.post<ApiResponse<MpesaSTKPushResponse>>(
+      `${this.baseUrl}/mpesa/stk-push/?facilityId=${facilityId}/`,
+      payload
+    );
+  }
+
+  queryStkStatus(checkoutRequestId: string): Observable<ApiResponse<MpesaTransaction>> {
+    return this.http.get<ApiResponse<MpesaTransaction>>(
+      `${this.baseUrl}/mpesa/query/?checkoutRequestId=${encodeURIComponent(checkoutRequestId)}`
+    );
+  }
 }
+
 

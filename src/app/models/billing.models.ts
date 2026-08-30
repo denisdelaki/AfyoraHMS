@@ -105,4 +105,46 @@ export type PatientRadiologyChargesData = {
   items: RadiologyChargeItem[];
 };
 
+export type MpesaConfig = {
+  id?: number;
+  facilityId?: number;
+  shortcode: string;
+  passkey: string;
+  consumer_key: string;
+  consumer_secret: string;
+  environment: 'sandbox' | 'production';
+  transaction_type: 'CustomerPayBillOnline' | 'CustomerBuyGoodsOnline';
+
+  account_reference_prefix: string;
+  is_active: boolean;
+};
+
+export type MpesaSTKPushPayload = {
+  invoiceId: string;
+  phoneNumber: string;
+  amount?: number;
+};
+
+export type MpesaTransaction = {
+  id?: number;
+  invoiceId: string;
+  phone_number: string;
+  amount: number;
+  checkout_request_id: string;
+  merchant_request_id: string;
+  status: 'Pending' | 'Completed' | 'Failed' | 'Cancelled';
+  result_code?: number | null;
+  result_desc?: string | null;
+  mpesa_receipt_number?: string | null;
+  transaction_date?: string | null;
+  created_at?: string;
+};
+
+export type MpesaSTKPushResponse = {
+  checkoutRequestId: string;
+  merchantRequestId: string;
+  transaction: MpesaTransaction;
+};
+
+
 

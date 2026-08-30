@@ -225,6 +225,12 @@ export class BillingComponent implements OnInit {
   }
 
   openRecordPaymentDialog(invoice: Invoice): void {
+    const patientObj = (this.patients || []).find(
+      (p) => String(p.id) === String(invoice.patientId) || (p as any).patient_id === invoice.patientId
+    );
+    const phoneNumber = patientObj?.phone || '';
+
+
     const dialogRef = this.dialog.open<
       RecordPaymentDialogComponent,
       RecordPaymentDialogData,
@@ -235,6 +241,8 @@ export class BillingComponent implements OnInit {
       data: {
         invoiceId: invoice.id,
         amount: invoice.total,
+        facilityId: this.facilityId,
+        phoneNumber: phoneNumber,
       },
     });
 
@@ -246,6 +254,7 @@ export class BillingComponent implements OnInit {
       this.applyRecordedPayment(invoice.id, result);
     });
   }
+
 
   setActiveTab(index: number): void {
     this.activeTab = index === 1 ? 'payments' : 'invoices';
