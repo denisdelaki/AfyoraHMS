@@ -90,8 +90,11 @@ export class AuthService {
   }
 
   logout(): Observable<ApiResponse<null>> {
+    const refreshToken = this.getStoredRefreshToken();
     return this.http
-      .post<ApiResponse<null>>(`${this.baseUrl}/logout/`, {})
+      .post<ApiResponse<null>>(`${this.baseUrl}/logout/`, {
+        refresh_token: refreshToken,
+      })
       .pipe(
         finalize(() => {
           this.clearAuthData();
