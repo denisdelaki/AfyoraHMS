@@ -6,6 +6,7 @@ import {
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { ToastService } from './toast.service';
 import {
   catchError,
   finalize,
@@ -25,21 +26,33 @@ let refreshInFlight$: Observable<string> | null = null;
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
+  const toastService = inject(ToastService);
   const router = inject(Router);
 
   if (isAuthBypassRequest(req.url)) {
-    return next(req);
+    return next(req).pipe(
+      catchError((error: unknown) => {
+        toastService.handleHttpError(error);
+        return throwError(() => error);
+      })
+    );
   }
 
   const accessToken = getStoredToken(ACCESS_TOKEN_KEY);
   const refreshToken = getStoredToken(REFRESH_TOKEN_KEY);
 
   if (!accessToken) {
-    return next(req);
+    return next(req).pipe(
+      catchError((error: unknown) => {
+        toastService.handleHttpError(error);
+        return throwError(() => error);
+      })
+    );
   }
 
   if (isTokenExpired(accessToken)) {
     if (!refreshToken || isTokenExpired(refreshToken)) {
+      toastService.showError('Session expired. Please log in again.');
       return forceLogout(
         authService,
         router,
@@ -49,13 +62,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
     return refreshAccessToken(authService).pipe(
       switchMap((newAccessToken) => next(withAuthHeader(req, newAccessToken))),
-      catchError(() =>
-        forceLogout(
+      catchError((err) => {
+        toastService.showError('Session expired. Please log in again.');
+        return forceLogout(
           authService,
           router,
           'Session expired. Please log in again.',
-        ),
-      ),
+        );
+      }),
     );
   }
 
@@ -71,6 +85,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         isTokenExpired(refreshToken)
       ) {
         if (httpError?.status === 401) {
+          toastService.showError('Authentication failed. Please log in again.');
           return forceLogout(
             authService,
             router,
@@ -78,6 +93,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           );
         }
 
+        toastService.handleHttpError(error);
         return throwError(() => error);
       }
 
@@ -89,13 +105,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
           return next(retriedReq);
         }),
-        catchError(() =>
-          forceLogout(
+        catchError(() => {
+          toastService.showError('Authentication failed. Please log in again.');
+          return forceLogout(
             authService,
             router,
             'Authentication failed. Please log in again.',
-          ),
-        ),
+          );
+        }),
       );
     }),
   );
