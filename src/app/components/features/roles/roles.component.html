@@ -8,7 +8,7 @@
       </div>
       <div>
         <h1>Roles &amp; Permissions</h1>
-        <p>Create custom roles and control exactly what each employee can access.</p>
+        <p>Create custom roles and control exact CRUD operations each employee can perform.</p>
       </div>
     </div>
     <button class="btn-primary" (click)="openCreateModal()">
@@ -76,11 +76,13 @@
 
       <!-- Enabled Modules Preview -->
       <div class="module-chips">
-        @for (m of enabledModules(role).slice(0, 6); track m) {
-        <span class="chip chip-on">{{ getModuleLabel(m) }}</span>
+        @for (m of enabledModules(role).slice(0, 5); track m) {
+        <span class="chip chip-on">
+          <strong>{{ getModuleLabel(m) }}:</strong> {{ getModuleActionSummary(role, $any(m)) }}
+        </span>
         }
-        @if (enabledModules(role).length > 6) {
-        <span class="chip chip-more">+{{ enabledModules(role).length - 6 }} more</span>
+        @if (enabledModules(role).length > 5) {
+        <span class="chip chip-more">+{{ enabledModules(role).length - 5 }} more</span>
         }
         @if (enabledModules(role).length === 0) {
         <span class="chip chip-none">No modules enabled</span>
@@ -95,10 +97,12 @@
           <span class="perm-group-label">{{ group.label }}</span>
           <div class="perm-items">
             @for (m of group.modules; track m) {
-            <span class="perm-item" [class.perm-on]="role.permissions[m]" [class.perm-off]="!role.permissions[m]">
-              <lucide-icon [img]="Check" [size]="10"></lucide-icon>
-              {{ getModuleLabel(m) }}
-            </span>
+            <div class="perm-item-detailed">
+              <span class="perm-module-name">{{ getModuleLabel(m) }}</span>
+              <span class="perm-action-badge" [class.badge-full]="getModuleActionSummary(role, m) === 'Full Access'" [class.badge-read]="getModuleActionSummary(role, m) === 'Fetch Only'" [class.badge-none]="getModuleActionSummary(role, m) === 'No Access'">
+                {{ getModuleActionSummary(role, m) }}
+              </span>
+            </div>
             }
           </div>
         </div>
@@ -136,7 +140,7 @@
      ========================================================= -->
 @if (showModal()) {
 <div class="modal-overlay" (click)="closeModal()">
-  <div class="modal" (click)="$event.stopPropagation()">
+  <div class="modal modal-lg" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title">
         <lucide-icon [img]="Shield" [size]="18"></lucide-icon>
@@ -155,37 +159,69 @@
 
       <div class="form-row">
         <label>Role Name <span class="required">*</span></label>
-        <input type="text" [(ngModel)]="formName" placeholder="e.g. Senior Pharmacist" maxlength="100" />
+        <input type="text" [(ngModel)]="formName" placeholder="e.g. Receptionist (Fetch Only)" maxlength="100" />
       </div>
 
       <div class="form-row">
         <label>Description</label>
-        <textarea [(ngModel)]="formDescription" placeholder="What does this role do?" rows="2"></textarea>
+        <textarea [(ngModel)]="formDescription" placeholder="Define exact responsibilities and operation boundaries for this role..." rows="2"></textarea>
       </div>
 
       <div class="perm-header">
-        <span class="perm-title">Module Permissions</span>
-        <span class="perm-count">{{ enabledCount() }} of {{ allModules.length }} enabled</span>
+        <span class="perm-title">Granular Module Permissions (CRUD)</span>
+        <span class="perm-count">{{ enabledCount() }} of {{ allModules.length }} modules active</span>
       </div>
 
-      <div class="perm-editor">
+      <div class="crud-perm-editor">
         @for (group of moduleGroups; track group.label) {
-        <div class="perm-section">
-          <div class="perm-section-header" (click)="toggleGroupPermissions(group)">
-            <span class="perm-section-label">{{ group.label }}</span>
-            <div class="group-toggle" [class.partial]="isGroupPartial(group)" [class.full]="isGroupAllOn(group)">
-              @if (isGroupAllOn(group)) {
-              <lucide-icon [img]="Check" [size]="11"></lucide-icon>
-              }
+        <div class="group-crud-section">
+          <div class="group-crud-header">
+            <span class="group-title">{{ group.label }}</span>
+            <div class="group-presets">
+              <button type="button" class="preset-btn" (click)="toggleGroupPreset(group, 'all')">Full Group</button>
+              <button type="button" class="preset-btn" (click)="toggleGroupPreset(group, 'read')">Fetch Only Group</button>
+              <button type="button" class="preset-btn danger" (click)="toggleGroupPreset(group, 'none')">Disable Group</button>
             </div>
           </div>
-          <div class="perm-toggles">
+
+          <div class="modules-crud-list">
             @for (m of group.modules; track m) {
-            <div class="perm-toggle" [class.active]="formPermissions[m]" (click)="togglePermission(m)">
-              <div class="toggle-switch" [class.on]="formPermissions[m]">
-                <div class="toggle-knob"></div>
+            <div class="module-crud-card" [class.card-active]="isModuleActive(m)">
+              <div class="module-crud-top">
+                <span class="module-crud-name">{{ moduleLabels[m] }}</span>
+                <div class="module-presets">
+                  <button type="button" class="preset-chip" [class.active]="isModuleReadOnly(m)" (click)="setModulePreset(m, 'read')">Fetch Only</button>
+                  <button type="button" class="preset-chip" [class.active]="isModuleAllOn(m)" (click)="setModulePreset(m, 'all')">Full Access</button>
+                  <button type="button" class="preset-chip text-red" (click)="setModulePreset(m, 'none')">None</button>
+                </div>
               </div>
-              <span>{{ moduleLabels[m] }}</span>
+
+              <!-- CRUD Action Checkboxes -->
+              <div class="crud-checkbox-grid">
+                <label class="crud-checkbox" [class.checked]="formPermissions[m].read">
+                  <input type="checkbox" [checked]="formPermissions[m].read" (change)="toggleAction(m, 'read')" />
+                  <lucide-icon [img]="Eye" [size]="13"></lucide-icon>
+                  <span>Fetch / Read</span>
+                </label>
+
+                <label class="crud-checkbox" [class.checked]="formPermissions[m].create">
+                  <input type="checkbox" [checked]="formPermissions[m].create" (change)="toggleAction(m, 'create')" />
+                  <lucide-icon [img]="PlusCircle" [size]="13"></lucide-icon>
+                  <span>Create / Add</span>
+                </label>
+
+                <label class="crud-checkbox" [class.checked]="formPermissions[m].update">
+                  <input type="checkbox" [checked]="formPermissions[m].update" (change)="toggleAction(m, 'update')" />
+                  <lucide-icon [img]="Edit3" [size]="13"></lucide-icon>
+                  <span>Update / Edit</span>
+                </label>
+
+                <label class="crud-checkbox danger-check" [class.checked]="formPermissions[m].delete">
+                  <input type="checkbox" [checked]="formPermissions[m].delete" (change)="toggleAction(m, 'delete')" />
+                  <lucide-icon [img]="Trash" [size]="13"></lucide-icon>
+                  <span>Delete / Remove</span>
+                </label>
+              </div>
             </div>
             }
           </div>

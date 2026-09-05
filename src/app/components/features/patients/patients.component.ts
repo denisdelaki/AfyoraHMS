@@ -20,6 +20,7 @@ import { RegisterPatientDialogComponent } from '../../dialogs/register-patient-d
 import { PatientProfileDialogComponent } from '../../dialogs/patient-profile-dialog/patient-profile-dialog.component';
 import { AppointmentBookingDialogComponent } from '../../dialogs/appointment-booking-dialog/appointment-booking-dialog.component';
 import { AppointmentsService, PatientsService } from '../../../services';
+import { PermissionsService } from '../../../core/permissions.service';
 import {
   Appointment as ServiceAppointment,
   CreateAppointmentRequest,
@@ -49,6 +50,7 @@ export class PatientsComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly patientsService = inject(PatientsService);
   private readonly appointmentsService = inject(AppointmentsService);
+  readonly permissionsService = inject(PermissionsService);
 
   displayedColumns: string[] = [
     'id',

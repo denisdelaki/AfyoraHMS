@@ -22,7 +22,16 @@ export const ALL_MODULES = [
 
 export type ModuleKey = typeof ALL_MODULES[number];
 
-export type PermissionsMap = Record<ModuleKey, boolean>;
+export interface ModuleActionPermissions {
+  create: boolean;
+  read: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
+export type PermissionValue = boolean | ModuleActionPermissions;
+
+export type PermissionsMap = Record<ModuleKey, PermissionValue>;
 
 const PERMISSIONS_STORAGE_KEY = 'afyora.permissions';
 const USER_STORAGE_KEY = 'afyora.user';
@@ -49,12 +58,45 @@ export class PermissionsService {
   // ============================================================================
 
   /**
-   * Check whether the current user has access to a specific module.
+   * Check whether the current user has access to a specific module and action.
    * facility_admin always returns true.
    */
-  hasPermission(module: ModuleKey): boolean {
+  hasPermission(module: ModuleKey, action?: 'create' | 'read' | 'update' | 'delete'): boolean {
     if (this.isFacilityAdmin()) return true;
-    return this._permissions()[module] ?? false;
+    const modulePerm = this._permissions()?.[module];
+    if (modulePerm === undefined || modulePerm === null) return false;
+    if (typeof modulePerm === 'boolean') {
+      return modulePerm;
+    }
+    if (typeof modulePerm === 'object') {
+      if (!action) {
+        return !!(modulePerm.read || modulePerm.create || modulePerm.update || modulePerm.delete);
+      }
+      return !!modulePerm[action];
+    }
+    return false;
+  }
+
+  /**
+   * Get exact action breakdown for a specific module.
+   */
+  getModulePermissions(module: ModuleKey): ModuleActionPermissions {
+    if (this.isFacilityAdmin()) {
+      return { create: true, read: true, update: true, delete: true };
+    }
+    const modulePerm = this._permissions()?.[module];
+    if (typeof modulePerm === 'boolean') {
+      return { create: modulePerm, read: modulePerm, update: modulePerm, delete: modulePerm };
+    }
+    if (typeof modulePerm === 'object' && modulePerm) {
+      return {
+        create: !!modulePerm.create,
+        read: !!modulePerm.read,
+        update: !!modulePerm.update,
+        delete: !!modulePerm.delete,
+      };
+    }
+    return { create: false, read: false, update: false, delete: false };
   }
 
   /**
@@ -62,7 +104,7 @@ export class PermissionsService {
    */
   allowedModules(): ModuleKey[] {
     if (this.isFacilityAdmin()) return [...ALL_MODULES];
-    return ALL_MODULES.filter(m => this._permissions()[m]);
+    return ALL_MODULES.filter(m => this.hasPermission(m));
   }
 
   /**
@@ -138,7 +180,9 @@ export class PermissionsService {
   }
 
   private _emptyPermissions(): PermissionsMap {
-    return Object.fromEntries(ALL_MODULES.map(m => [m, false])) as PermissionsMap;
+    return Object.fromEntries(
+      ALL_MODULES.map(m => [m, { create: false, read: false, update: false, delete: false }])
+    ) as PermissionsMap;
   }
 
   private _readRoleFromStorage(): string | null {
