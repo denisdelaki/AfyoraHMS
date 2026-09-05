@@ -10,12 +10,24 @@ import { ToastService } from './toast.service';
  *   canActivate: [permissionGuard],
  *   data: { permission: 'pharmacy' }
  */
-export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
+export const permissionGuard: CanActivateFn = (
+  route: ActivatedRouteSnapshot,
+) => {
   const permissionsService = inject(PermissionsService);
   const toastService = inject(ToastService);
   const router = inject(Router);
 
-  const requiredPermission = route.data?.['permission'] as ModuleKey | undefined;
+  const requiredPermission = route.data?.['permission'] as
+    | ModuleKey
+    | undefined;
+  const adminOnly = route.data?.['adminOnly'] === true;
+
+  if (adminOnly && !permissionsService.isFacilityAdmin()) {
+    toastService.showWarning(
+      'Access Denied: Only facility administrators can access this page.',
+    );
+    return router.createUrlTree(['/dashboard']);
+  }
 
   // No permission specified — allow (auth guard handles login check)
   if (!requiredPermission) return true;
@@ -26,7 +38,7 @@ export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) =>
 
   const moduleName = requiredPermission.replace('_', ' ').toUpperCase();
   toastService.showWarning(
-    `Access Denied: Your role does not have permission to access the ${moduleName} module.`
+    `Access Denied: Your role does not have permission to access the ${moduleName} module.`,
   );
 
   // Redirect to dashboard

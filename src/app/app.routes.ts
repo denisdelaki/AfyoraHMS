@@ -238,7 +238,11 @@ export const routes: Routes = [
       },
       {
         path: 'facility-profile',
-        data: { seo: { title: 'Facility Profile & Subscription' } },
+        canActivate: [permissionGuard],
+        data: {
+          adminOnly: true,
+          seo: { title: 'Facility Profile & Subscription' },
+        },
         loadComponent: () =>
           import('./components/features/facility-profile/facility-profile.component').then(
             (m) => m.FacilityProfileComponent,

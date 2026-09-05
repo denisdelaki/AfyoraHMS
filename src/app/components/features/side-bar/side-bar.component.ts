@@ -66,27 +66,83 @@ export class SideBarComponent implements OnInit {
 
   private readonly allNavigation: NavigationItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Patients', href: '/patients', icon: Users, permission: 'patients' },
-    { name: 'Visit Queue', href: '/visit-queue', icon: Ticket, permission: 'visit_queue' },
+    {
+      name: 'Patients',
+      href: '/patients',
+      icon: Users,
+      permission: 'patients',
+    },
+    {
+      name: 'Visit Queue',
+      href: '/visit-queue',
+      icon: Ticket,
+      permission: 'visit_queue',
+    },
     { name: 'EHR', href: '/ehr', icon: FileText, permission: 'ehr' },
     { name: 'Pharmacy', href: '/pharmacy', icon: Pill, permission: 'pharmacy' },
-    { name: 'Laboratory', href: '/laboratory', icon: FlaskConical, permission: 'laboratory' },
-    { name: 'Radiology', href: '/radiology', icon: Scan, permission: 'radiology' },
-    { name: 'Billing', href: '/billing', icon: CreditCard, permission: 'billing' },
-    { name: 'Inventory', href: '/inventory', icon: Package, permission: 'inventory' },
-    { name: 'Reports', href: '/reports', icon: BarChart3, permission: 'reports' },
-    { name: 'Employees', href: '/employees', icon: UserCog, permission: 'employees' },
-    { name: 'Departments', href: '/departments', icon: Building2, permission: 'departments' },
-    { name: 'Roles', href: '/roles', icon: Shield, permission: 'roles', adminOnly: true },
-    { name: 'Facility Profile', href: '/facility-profile', icon: Hospital, adminOnly: true },
+    {
+      name: 'Laboratory',
+      href: '/laboratory',
+      icon: FlaskConical,
+      permission: 'laboratory',
+    },
+    {
+      name: 'Radiology',
+      href: '/radiology',
+      icon: Scan,
+      permission: 'radiology',
+    },
+    {
+      name: 'Billing',
+      href: '/billing',
+      icon: CreditCard,
+      permission: 'billing',
+    },
+    {
+      name: 'Inventory',
+      href: '/inventory',
+      icon: Package,
+      permission: 'inventory',
+    },
+    {
+      name: 'Reports',
+      href: '/reports',
+      icon: BarChart3,
+      permission: 'reports',
+    },
+    {
+      name: 'Employees',
+      href: '/employees',
+      icon: UserCog,
+      permission: 'employees',
+    },
+    {
+      name: 'Departments',
+      href: '/departments',
+      icon: Building2,
+      permission: 'departments',
+    },
+    {
+      name: 'Roles',
+      href: '/roles',
+      icon: Shield,
+      permission: 'roles',
+      adminOnly: true,
+    },
+    {
+      name: 'Facility Profile',
+      href: '/facility-profile',
+      icon: Hospital,
+      adminOnly: true,
+    },
   ];
 
   readonly navigation = computed(() => {
     const isAdmin = this.permissionsService.isFacilityAdmin();
     return this.allNavigation.filter((item) => {
+      if (item.adminOnly) return isAdmin;
       if (!item.permission) return true;
       if (isAdmin) return true;
-      if (item.adminOnly) return false;
       return this.permissionsService.hasPermission(item.permission as any);
     });
   });
@@ -131,7 +187,11 @@ export class SideBarComponent implements OnInit {
     }
     try {
       const parsed = JSON.parse(draft) as {
-        formValue?: { adminFirstName?: string; adminLastName?: string; adminEmail?: string };
+        formValue?: {
+          adminFirstName?: string;
+          adminLastName?: string;
+          adminEmail?: string;
+        };
       };
       const firstName = parsed.formValue?.adminFirstName ?? '';
       const lastName = parsed.formValue?.adminLastName ?? '';
@@ -146,12 +206,17 @@ export class SideBarComponent implements OnInit {
   }
 
   private buildInitials(firstName: string, lastName: string): string {
-    const initials = `${firstName.trim().charAt(0)}${lastName.trim().charAt(0)}`.toUpperCase();
+    const initials =
+      `${firstName.trim().charAt(0)}${lastName.trim().charAt(0)}`.toUpperCase();
     return initials || 'US';
   }
 
-  closeSidebar(): void { this.sidebarOpen = false; }
-  openSidebar(): void { this.sidebarOpen = true; }
+  closeSidebar(): void {
+    this.sidebarOpen = false;
+  }
+  openSidebar(): void {
+    this.sidebarOpen = true;
+  }
 
   logout(): void {
     this.closeSidebar();
@@ -169,7 +234,10 @@ export class SideBarComponent implements OnInit {
 
   get formattedDate(): string {
     return new Date().toLocaleDateString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
   }
 }
