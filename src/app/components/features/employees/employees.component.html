@@ -186,49 +186,83 @@
       </div>
     </mat-tab>
 
-    <!-- Attendance Tab -->
-    <mat-tab label="Attendance">
+    <!-- My Attendance Tab -->
+    <mat-tab label="My Attendance">
+      <div class="pt-4 space-y-4">
+        <!-- Clock In/Out Widget -->
+        <mat-card class="!p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">Today's Shift</h3>
+              <p class="text-sm text-gray-600">Track your daily attendance</p>
+            </div>
+            <div class="flex gap-3">
+              <button mat-flat-button color="primary" class="!px-6" (click)="clockIn()">
+                Clock In
+              </button>
+              <button mat-stroked-button color="warn" class="!px-6" (click)="clockOut()">
+                Clock Out
+              </button>
+            </div>
+          </div>
+        </mat-card>
+
+        <mat-card class="!p-0 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b bg-gray-50/50">
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Date</th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Clock In</th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Clock Out</th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Hours</th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let record of myAttendance()" class="border-b last:border-0 hover:bg-gray-50 transition-colors">
+                  <td class="py-3 px-4">{{ record.date }}</td>
+                  <td class="py-3 px-4">{{ record.clock_in | date:'shortTime' }}</td>
+                  <td class="py-3 px-4">{{ record.clock_out ? (record.clock_out | date:'shortTime') : '-' }}</td>
+                  <td class="py-3 px-4">{{ record.hours_worked || '-' }}</td>
+                  <td class="py-3 px-4">
+                    <span [ngClass]="record.status === 'clocked_in' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Facility Attendance Tab -->
+    <mat-tab label="Facility Attendance">
       <div class="pt-4">
         <mat-card class="!p-0 overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="border-b bg-gray-50/50">
-                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
-                    Date
-                  </th>
-                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
-                    Employee
-                  </th>
-                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
-                    Check In
-                  </th>
-                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
-                    Check Out
-                  </th>
-                  <th class="py-3 px-4 text-sm font-medium text-gray-600">
-                    Status
-                  </th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Date</th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Employee</th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Clock In</th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Clock Out</th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Hours</th>
+                  <th class="py-3 px-4 text-sm font-medium text-gray-600">Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  *ngFor="let record of attendance()"
-                  class="border-b last:border-0 hover:bg-gray-50 transition-colors"
-                >
+                <tr *ngFor="let record of attendance()" class="border-b last:border-0 hover:bg-gray-50 transition-colors">
                   <td class="py-3 px-4">{{ record.date }}</td>
-                  <td class="py-3 px-4">{{ record.employee }}</td>
-                  <td class="py-3 px-4">{{ record.checkIn }}</td>
-                  <td class="py-3 px-4">{{ record.checkOut }}</td>
+                  <td class="py-3 px-4">{{ record.employee_name }}</td>
+                  <td class="py-3 px-4">{{ record.clock_in | date:'shortTime' }}</td>
+                  <td class="py-3 px-4">{{ record.clock_out ? (record.clock_out | date:'shortTime') : '-' }}</td>
+                  <td class="py-3 px-4">{{ record.hours_worked || '-' }}</td>
                   <td class="py-3 px-4">
-                    <span
-                      [ngClass]="
-                        record.status === 'Present'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                      "
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    >
+                    <span [ngClass]="record.status === 'clocked_in' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
                       {{ record.status }}
                     </span>
                   </td>

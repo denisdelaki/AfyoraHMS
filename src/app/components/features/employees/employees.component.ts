@@ -52,6 +52,7 @@ export class EmployeesComponent implements OnInit {
   employees: any[] = [];
   shifts = this.employeeService.shifts;
   attendance = this.employeeService.attendance;
+  myAttendance = this.employeeService.myAttendance;
 
   // React state equivalents
   searchTerm = signal('');
@@ -76,6 +77,7 @@ export class EmployeesComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchEmployees();
+    this.fetchAttendance();
   }
 
   fetchEmployees() {
@@ -120,7 +122,7 @@ export class EmployeesComponent implements OnInit {
     );
     this.monthlyPayroll.set(sum.toString() + 'K');
 
-    //set the shifts and attendance signals
+    //set the shifts signal
     this.employeeService.shifts.set(
       Array.from(new Set(employees.map((e) => e.shift))).map((shift) => ({
         shift,
@@ -130,16 +132,33 @@ export class EmployeesComponent implements OnInit {
           .map((e) => e.name),
       })),
     );
+  }
 
-    this.employeeService.attendance.set(
-      employees.map((e) => ({
-        date: new Date().toISOString().slice(0, 10),
-        employee: e.name,
-        checkIn: '',
-        checkOut: '',
-        status: 'Present',
-      })),
-    );
+  fetchAttendance() {
+    this.employeeService.getFacilityAttendance().subscribe({
+      error: (err) => console.error('Failed to load facility attendance', err)
+    });
+    this.employeeService.getMyAttendance().subscribe({
+      error: (err) => console.error('Failed to load personal attendance', err)
+    });
+  }
+
+  clockIn() {
+    this.employeeService.clockIn().subscribe({
+      next: () => {
+        this.fetchAttendance();
+      },
+      error: (err) => console.error('Clock in failed', err)
+    });
+  }
+
+  clockOut() {
+    this.employeeService.clockOut().subscribe({
+      next: () => {
+        this.fetchAttendance();
+      },
+      error: (err) => console.error('Clock out failed', err)
+    });
   }
 
   openAddEmployeeDialog() {

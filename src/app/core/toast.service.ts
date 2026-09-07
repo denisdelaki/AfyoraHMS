@@ -38,17 +38,23 @@ export class ToastService {
 
   handleHttpError(error: unknown): void {
     if (!(error instanceof HttpErrorResponse)) {
-      this.showError((error as Error)?.message || 'An unexpected error occurred.');
+      this.showError(
+        (error as Error)?.message || 'An unexpected error occurred.',
+      );
       return;
     }
 
     if (error.status === 0) {
-      this.showError('Unable to connect to server. Please check your internet connection.');
+      this.showError(
+        'Unable to connect to server. Please check your internet connection.',
+      );
       return;
     }
 
     if (error.status === 429) {
-      this.showError('Too many requests. Please slow down and try again in a minute.');
+      this.showError(
+        'Too many requests. Please slow down and try again in a minute.',
+      );
       return;
     }
 
@@ -77,7 +83,7 @@ export class ToastService {
   private extractErrorMessage(error: HttpErrorResponse): string {
     const errBody = error.error;
     if (typeof errBody === 'string') {
-      return errBody;
+      return this.formatStringError(errBody, error.status);
     }
     if (errBody?.detail && typeof errBody.detail === 'string') {
       return errBody.detail;
@@ -95,6 +101,30 @@ export class ToastService {
       return this.formatDictErrors(errBody as Record<string, unknown>);
     }
     return `Request failed with status code ${error.status}`;
+  }
+
+  private formatStringError(message: string, status: number): string {
+    const trimmedMessage = message.trim();
+
+    if (!this.looksLikeHtml(trimmedMessage)) {
+      return trimmedMessage || `Request failed with status code ${status}`;
+    }
+
+    const parser = new DOMParser();
+    const document = parser.parseFromString(trimmedMessage, 'text/html');
+    const heading = document.querySelector('h1')?.textContent?.trim();
+    const title = document.querySelector('title')?.textContent?.trim();
+    const summary = heading || title;
+
+    return summary
+      ? `${summary}. Request failed with status code ${status}`
+      : `Request failed with status code ${status}`;
+  }
+
+  private looksLikeHtml(message: string): boolean {
+    return /<\s*(?:!doctype\s+html|html|head|body|style|div|h1|p|table)\b/i.test(
+      message,
+    );
   }
 
   private formatDictErrors(dict: Record<string, unknown>): string {

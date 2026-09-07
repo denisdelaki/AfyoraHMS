@@ -30,10 +30,16 @@ export interface Department {
   head_name?: string;
 }
 
-export interface Attendance {
+export interface EmployeeAttendance {
+  id?: number;
+  employee: string | number;
+  employee_name?: string;
+  employee_id_number?: string;
+  department?: string;
   date: string;
-  employee: string;
-  checkIn: string;
-  checkOut: string;
+  clock_in: string;
+  clock_out: string | null;
   status: string;
+  hours_worked?: string | number;
+  notes?: string;
 }
