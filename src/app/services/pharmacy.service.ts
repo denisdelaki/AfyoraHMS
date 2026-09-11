@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map, tap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
-import { ApiResponse, CreateDrugRequest, Drug, Prescription } from '../models';
+import { ApiResponse, CreateDrugPurchaseOrderRequest, CreateDrugRequest, Drug, DrugCategory, DrugPurchaseOrder, Prescription } from '../models';
 import { DataSyncService } from './data-sync.service';
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +22,59 @@ export class PharmacyService {
           (response?.items ?? []).filter((drug): drug is Drug => Boolean(drug)),
         ),
       ));
+  }
+
+  getCategories(facilityId: string | number): Observable<DrugCategory[]> {
+    return this.dataSync.query(`pharmacy:categories:${facilityId}`, () => this.http
+      .get<{
+        items: DrugCategory[];
+        count: number;
+      }>(`${this.baseUrl}/categories/?facilityId=${encodeURIComponent(facilityId)}/`)
+      .pipe(map((response) => response.items ?? [])));
+  }
+
+  createCategory(
+    payload: { name: string; description?: string },
+    facilityId: string | number,
+  ): Observable<ApiResponse<DrugCategory>> {
+    return this.http.post<ApiResponse<DrugCategory>>(
+      `${this.baseUrl}/categories/?facilityId=${encodeURIComponent(facilityId)}/`,
+      payload,
+    ).pipe(tap(() => this.dataSync.invalidate(`pharmacy:categories:${facilityId}`)));
+  }
+
+  updateCategory(
+    categoryId: number,
+    payload: { name: string; description?: string },
+    facilityId: string | number,
+  ): Observable<DrugCategory> {
+    return this.http
+      .patch<
+        ApiResponse<DrugCategory> | DrugCategory
+      >(`${this.baseUrl}/categories/${encodeURIComponent(categoryId)}/?facilityId=${encodeURIComponent(facilityId)}/`, payload)
+      .pipe(
+        map((response) => {
+          if (
+            response &&
+            typeof response === 'object' &&
+            ('data' in response || 'results' in response)
+          ) {
+            const apiResponse = response as ApiResponse<DrugCategory>;
+            return apiResponse.results ?? apiResponse.data;
+          }
+
+          return response as DrugCategory;
+        }),
+      ).pipe(tap(() => this.dataSync.invalidate(`pharmacy:categories:${facilityId}`)));
+  }
+
+  deleteCategory(
+    categoryId: number,
+    facilityId: string | number,
+  ): Observable<ApiResponse<DrugCategory>> {
+    return this.http.delete<ApiResponse<DrugCategory>>(
+      `${this.baseUrl}/categories/${encodeURIComponent(categoryId)}/?facilityId=${encodeURIComponent(facilityId)}/`,
+    ).pipe(tap(() => this.dataSync.invalidate(`pharmacy:categories:${facilityId}`)));
   }
 
   createDrug(
@@ -117,5 +170,77 @@ export class PharmacyService {
     return this.http.delete<ApiResponse<Prescription>>(
       `${this.baseUrl}/prescriptions/${encodeURIComponent(prescriptionId)}/?facilityId=${encodeURIComponent(facilityId)}/`,
     ).pipe(tap(() => this.dataSync.invalidate(`pharmacy:prescriptions:${facilityId}`)));
+  }
+
+  getPurchaseOrders(facilityId: string | number): Observable<DrugPurchaseOrder[]> {
+    return this.dataSync.query(`pharmacy:purchase-orders:${facilityId}`, () =>
+      this.http
+        .get<{ items: DrugPurchaseOrder[]; count: number }>(
+          `${this.baseUrl}/purchase-orders/?facilityId=${encodeURIComponent(facilityId)}/`,
+        )
+        .pipe(map((res) => res.items ?? [])),
+    );
+  }
+
+  createPurchaseOrder(
+    payload: CreateDrugPurchaseOrderRequest,
+    facilityId: string | number,
+  ): Observable<DrugPurchaseOrder> {
+    return this.http
+      .post<DrugPurchaseOrder>(
+        `${this.baseUrl}/purchase-orders/?facilityId=${encodeURIComponent(facilityId)}/`,
+        payload,
+      )
+      .pipe(tap(() => this.dataSync.invalidate(`pharmacy:purchase-orders:${facilityId}`)));
+  }
+
+  updatePurchaseOrder(
+    poId: number,
+    payload: Partial<CreateDrugPurchaseOrderRequest>,
+    facilityId: string | number,
+  ): Observable<DrugPurchaseOrder> {
+    return this.http
+      .patch<DrugPurchaseOrder>(
+        `${this.baseUrl}/purchase-orders/${poId}/?facilityId=${encodeURIComponent(facilityId)}/`,
+        payload,
+      )
+      .pipe(tap(() => this.dataSync.invalidate(`pharmacy:purchase-orders:${facilityId}`)));
+  }
+
+  deletePurchaseOrder(poId: number, facilityId: string | number): Observable<void> {
+    return this.http
+      .delete<void>(
+        `${this.baseUrl}/purchase-orders/${poId}/?facilityId=${encodeURIComponent(facilityId)}/`,
+      )
+      .pipe(tap(() => this.dataSync.invalidate(`pharmacy:purchase-orders:${facilityId}`)));
+  }
+
+  downloadPurchaseOrderPDF(poId: number, facilityId: string | number): Observable<Blob> {
+    return this.http.get(
+      `${this.baseUrl}/purchase-orders/${poId}/pdf/?facilityId=${encodeURIComponent(facilityId)}/`,
+      { responseType: 'blob' },
+    );
+  }
+
+  sendPurchaseOrderEmail(
+    poId: number,
+    facilityId: string | number,
+    ccEmails: string[] = [],
+  ): Observable<{ message: string }> {
+    return this.http
+      .post<{ message: string }>(
+        `${this.baseUrl}/purchase-orders/${poId}/send_email/?facilityId=${encodeURIComponent(facilityId)}/`,
+        { cc_emails: ccEmails },
+      )
+      .pipe(tap(() => this.dataSync.invalidate(`pharmacy:purchase-orders:${facilityId}`)));
+  }
+
+  getPORecipients(
+    poId: number,
+    facilityId: string | number,
+  ): Observable<{ vendor_email: string; cc_emails: string[] }> {
+    return this.http.get<{ vendor_email: string; cc_emails: string[] }>(
+      `${this.baseUrl}/purchase-orders/${poId}/recipients/?facilityId=${encodeURIComponent(facilityId)}/`,
+    );
   }
 }

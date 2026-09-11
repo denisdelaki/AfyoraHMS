@@ -7,11 +7,12 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { drugCategories } from '../../../shared/data/drugCategories.json';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DrugCategory } from '../../../models';
 
 export type AddDrugPayload = {
   name: string;
-  category: string;
+  categoryId: number;
   stock: number;
   minStock: number;
   price: number;
@@ -38,13 +39,14 @@ export class AddDrugDialogComponent {
     MatDialogRef<AddDrugDialogComponent, AddDrugPayload | undefined>,
   );
   private readonly fb = inject(FormBuilder);
+  readonly data = inject(MAT_DIALOG_DATA);
 
   readonly today = new Date();
-  readonly drugCategories = drugCategories;
+  readonly drugCategories: DrugCategory[] = this.data?.categories || [];
 
   readonly drugForm = this.fb.group({
     name: ['', [Validators.required]],
-    category: ['', [Validators.required]],
+    categoryId: [null as number | null, [Validators.required]],
     stock: [null as number | null, [Validators.required, Validators.min(0)]],
     minStock: [null as number | null, [Validators.required, Validators.min(0)]],
     price: [null as number | null, [Validators.required, Validators.min(0)]],
@@ -65,7 +67,7 @@ export class AddDrugDialogComponent {
     const v = this.drugForm.getRawValue();
     this.dialogRef.close({
       name: v.name!.trim(),
-      category: v.category!.trim(),
+      categoryId: Number(v.categoryId),
       stock: Number(v.stock),
       minStock: Number(v.minStock),
       price: Number(v.price),

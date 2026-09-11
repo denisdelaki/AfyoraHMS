@@ -11,6 +11,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   LucideAngularModule,
   AlertTriangle,
@@ -23,12 +24,16 @@ import {
   AddDrugPayload,
 } from '../../dialogs/add-drug-dialog/add-drug-dialog.component';
 import { MatIcon } from '@angular/material/icon';
-import { Drug, Prescription } from '../../../models';
-import { PharmacyService } from '../../../services';
+import { Drug, DrugCategory, DrugPurchaseOrder, Prescription } from '../../../models';
+import { InventoryService, PharmacyService } from '../../../services';
 import { Patient } from '../patients/patient.models';
 import { Employee } from '../../../models/employee.model';
+import { Vendor } from '../../../models/vendor.models';
+import { ManageDrugCategoryDialogComponent } from '../../dialogs/manage-drug-category-dialog/manage-drug-category-dialog.component';
+import { CreateDrugPurchaseOrderDialogComponent } from '../../dialogs/create-drug-purchase-order-dialog/create-drug-purchase-order-dialog.component';
+import { POPreviewDialogComponent } from '../../dialogs/po-preview-dialog/po-preview-dialog.component';
 
-type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts';
+type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts' | 'categories' | 'purchase-orders';
 
 @Component({
   selector: 'app-pharmacy',
@@ -41,6 +46,7 @@ type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts';
     MatFormFieldModule,
     MatInputModule,
     MatTabsModule,
+    MatTooltipModule,
     LucideAngularModule,
     MatIcon,
   ],
@@ -50,6 +56,7 @@ type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts';
 export class PharmacyComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly pharmacyService = inject(PharmacyService);
+  private readonly inventoryService = inject(InventoryService);
   private readonly patientsService = inject(PatientsService);
   private readonly employeesService = inject(EmployeeService);
   private readonly snackBar = inject(MatSnackBar);
@@ -115,8 +122,11 @@ export class PharmacyComponent implements OnInit {
     // },
   ];
 
+  categories: DrugCategory[] = [];
   patients: Patient[] = [];
   employees: Employee[] = [];
+  vendors: Vendor[] = [];
+  purchaseOrders: DrugPurchaseOrder[] = [];
 
   prescriptions: Prescription[] = [
     // {
@@ -161,10 +171,29 @@ export class PharmacyComponent implements OnInit {
   ngOnInit(): void {
     this.facilityId =
       JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
+    this.loadCategories();
     this.loadDrugs();
     this.loadPrescriptions();
     this.loadPatients();
     this.loadEmployees();
+    this.loadVendors();
+    this.loadPurchaseOrders();
+  }
+
+  private loadCategories(): void {
+    this.pharmacyService.getCategories(this.facilityId).subscribe({
+      next: (data) => {
+        this.categories = data;
+      },
+      error: (error) => {
+        this.snackBar.open('Unable to load categories.', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
+        this.categories = [];
+      },
+    });
   }
 
   private loadPatients(): void {
@@ -173,7 +202,11 @@ export class PharmacyComponent implements OnInit {
         this.patients = data;
       },
       error: (error) => {
-        console.error('Failed to load patients:', error);
+        this.snackBar.open('Unable to load patients.', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
         this.patients = [];
       },
     });
@@ -185,7 +218,11 @@ export class PharmacyComponent implements OnInit {
         this.employees = data;
       },
       error: (error) => {
-        console.error('Failed to load employees:', error);
+        this.snackBar.open('Unable to load employees.', 'Close', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        });
         this.employees = [];
       },
     });
@@ -212,7 +249,7 @@ export class PharmacyComponent implements OnInit {
     return this.availableDrugs.filter(
       (drug) =>
         (drug.name || '').toLowerCase().includes(term) ||
-        (drug.category || '').toLowerCase().includes(term),
+        (drug.categoryName || '').toLowerCase().includes(term),
     );
   }
 
@@ -228,8 +265,30 @@ export class PharmacyComponent implements OnInit {
 
     return this.availableDrugs.filter((drug) => {
       const expiryDate = new Date(drug.expiryDate);
-      return !Number.isNaN(expiryDate.getTime()) && expiryDate <= threeMonthsFromNow;
+      return (
+        !Number.isNaN(expiryDate.getTime()) && expiryDate <= threeMonthsFromNow
+      );
     });
+  }
+
+  isExpired(expiryDate: string): boolean {
+    const parsedExpiry = new Date(expiryDate);
+    if (Number.isNaN(parsedExpiry.getTime())) {
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    parsedExpiry.setHours(0, 0, 0, 0);
+    return parsedExpiry < today;
+  }
+
+  getExpiryStatus(expiryDate: string): 'Expired' | 'Expiring' {
+    return this.isExpired(expiryDate) ? 'Expired' : 'Expiring';
+  }
+
+  getExpiryStatusClass(expiryDate: string): string {
+    return this.isExpired(expiryDate) ? 'chip-expired' : 'chip-low';
   }
 
   /** Ignore empty records returned by the API before the template uses them. */
@@ -246,6 +305,9 @@ export class PharmacyComponent implements OnInit {
       width: '90vw',
       maxWidth: '760px',
       maxHeight: '90vh',
+      data: {
+        categories: this.categories,
+      },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
@@ -332,5 +394,182 @@ export class PharmacyComponent implements OnInit {
       },
       error: () => {},
     });
+  }
+
+  openManageCategoryDialog(category?: DrugCategory): void {
+    const dialogRef = this.dialog.open(ManageDrugCategoryDialogComponent, {
+      width: '90vw',
+      maxWidth: '500px',
+      data: { category },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) return;
+      if (category) {
+        this.pharmacyService
+          .updateCategory(category.id, result, this.facilityId)
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Category updated successfully', 'Close', {
+                duration: 3000,
+              });
+              this.loadCategories();
+            },
+            error: () =>
+              this.snackBar.open('Failed to update category', 'Close', {
+                duration: 3000,
+              }),
+          });
+      } else {
+        this.pharmacyService.createCategory(result, this.facilityId).subscribe({
+          next: () => {
+            this.snackBar.open('Category created successfully', 'Close', {
+              duration: 3000,
+            });
+            this.loadCategories();
+          },
+          error: () =>
+            this.snackBar.open('Failed to create category', 'Close', {
+              duration: 3000,
+            }),
+        });
+      }
+    });
+  }
+
+  deleteCategory(categoryId: number): void {
+    if (confirm('Are you sure you want to delete this category?')) {
+      this.pharmacyService
+        .deleteCategory(categoryId, this.facilityId)
+        .subscribe({
+          next: () => {
+            this.snackBar.open('Category deleted successfully', 'Close', {
+              duration: 3000,
+            });
+            this.loadCategories();
+          },
+          error: () =>
+            this.snackBar.open('Failed to delete category', 'Close', {
+              duration: 3000,
+            }),
+        });
+    }
+  }
+
+  loadVendors(): void {
+    this.inventoryService.getVendors(this.facilityId).subscribe({
+      next: (vendors) => (this.vendors = vendors || []),
+      error: () => (this.vendors = []),
+    });
+  }
+
+  loadPurchaseOrders(): void {
+    this.pharmacyService.getPurchaseOrders(this.facilityId).subscribe({
+      next: (pos) => (this.purchaseOrders = pos || []),
+      error: () => (this.purchaseOrders = []),
+    });
+  }
+
+  openCreatePurchaseOrderDialog(defaultDrug?: Drug): void {
+    const dialogRef = this.dialog.open(CreateDrugPurchaseOrderDialogComponent, {
+      width: '90vw',
+      maxWidth: '800px',
+      data: {
+        facilityId: this.facilityId,
+        vendors: this.vendors,
+        drugs: this.drugs,
+        defaultDrug,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (!result) return;
+      this.pharmacyService.createPurchaseOrder(result, this.facilityId).subscribe({
+        next: (createdPO) => {
+          this.snackBar.open('Purchase Order created successfully', 'Close', {
+            duration: 3000,
+          });
+          this.loadPurchaseOrders();
+          this.setActiveTab('purchase-orders');
+          if (createdPO) {
+            this.openPOPreviewDialog(createdPO);
+          }
+        },
+        error: () =>
+          this.snackBar.open('Failed to create purchase order', 'Close', {
+            duration: 3000,
+          }),
+      });
+    });
+  }
+
+  openPOPreviewDialog(po: DrugPurchaseOrder): void {
+    const dialogRef = this.dialog.open(POPreviewDialogComponent, {
+      width: '90vw',
+      maxWidth: '850px',
+      data: {
+        po,
+        facilityId: this.facilityId,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(() => {
+      this.loadPurchaseOrders();
+    });
+  }
+
+  downloadPOPDF(po: DrugPurchaseOrder): void {
+    this.pharmacyService.downloadPurchaseOrderPDF(po.id, this.facilityId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `PO_${po.poNumber}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () =>
+        this.snackBar.open('Failed to download PDF', 'Close', { duration: 3000 }),
+    });
+  }
+
+  sendPOEmail(po: DrugPurchaseOrder): void {
+    const cc = prompt('Enter additional CC email addresses (comma separated) or leave blank:');
+    if (cc === null) return;
+    const ccEmails = cc
+      ? cc.split(',').map((e) => e.trim()).filter((e) => e.length > 0)
+      : [];
+
+    this.pharmacyService
+      .sendPurchaseOrderEmail(po.id, this.facilityId, ccEmails)
+      .subscribe({
+        next: (res) => {
+          this.snackBar.open(res.message || 'Email sent successfully!', 'Close', {
+            duration: 4000,
+          });
+          this.loadPurchaseOrders();
+        },
+        error: () =>
+          this.snackBar.open('Failed to send purchase order email', 'Close', {
+            duration: 3000,
+          }),
+      });
+  }
+
+  deletePO(po: DrugPurchaseOrder): void {
+    if (confirm(`Are you sure you want to delete purchase order ${po.poNumber}?`)) {
+      this.pharmacyService.deletePurchaseOrder(po.id, this.facilityId).subscribe({
+        next: () => {
+          this.snackBar.open('Purchase Order deleted successfully', 'Close', {
+            duration: 3000,
+          });
+          this.loadPurchaseOrders();
+        },
+        error: () =>
+          this.snackBar.open('Failed to delete purchase order', 'Close', {
+            duration: 3000,
+          }),
+      });
+    }
   }
 }

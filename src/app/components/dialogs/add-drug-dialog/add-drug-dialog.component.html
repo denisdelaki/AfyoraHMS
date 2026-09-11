@@ -10,9 +10,9 @@
 
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Category</mat-label>
-        <mat-select formControlName="category">
-          @for (category of drugCategories; track $index) {
-          <mat-option [value]="category.category">{{ category.category }} — {{ category.description }}</mat-option>
+        <mat-select formControlName="categoryId">
+          @for (category of drugCategories; track category.id) {
+          <mat-option [value]="category.id">{{ category.name }}</mat-option>
           }
         </mat-select>
         <mat-error>Category is required</mat-error>

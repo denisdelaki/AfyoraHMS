@@ -1,0 +1,23 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Edit' : 'Add' }} Drug Category</h2>
+<mat-dialog-content class="!pt-4">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Category Name</mat-label>
+      <input matInput formControlName="name" placeholder="e.g. Antibiotics" required />
+      @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+      <mat-error>Name is required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" rows="3" placeholder="Optional description"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="!px-6 !pb-6">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="onSubmit()">
+    {{ isEditMode ? 'Save Changes' : 'Add Category' }}
+  </button>
+</mat-dialog-actions>

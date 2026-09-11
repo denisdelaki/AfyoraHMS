@@ -1,0 +1,158 @@
+<div class="p-6 max-w-3xl">
+  <div class="flex justify-between items-center mb-6 pb-3 border-b">
+    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+      <mat-icon color="primary">shopping_cart</mat-icon>
+      Create Drug Purchase Order
+    </h2>
+    <button mat-icon-button (click)="close()" class="text-gray-500 hover:text-gray-700">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Vendor Selection -->
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Select Vendor</mat-label>
+        <mat-select formControlName="vendorId">
+          @for (vendor of vendors; track vendor.id) {
+            <mat-option [value]="vendor.id">
+              {{ vendor.name }} ({{ vendor.contact || 'Vendor' }})
+            </mat-option>
+          }
+        </mat-select>
+        @if (form.get('vendorId')?.hasError('required')) {
+          <mat-error>Vendor is required</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Status -->
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="Draft">Draft</mat-option>
+          <mat-option value="Pending">Pending</mat-option>
+          <mat-option value="Approved">Approved</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Expected Delivery Date -->
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Expected Delivery Date</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="expectedDate" />
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+    </div>
+
+    <!-- Items Section -->
+    <div class="border rounded-lg p-4 bg-gray-50 space-y-3">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="font-semibold text-gray-700">Order Items</h3>
+        <button
+          type="button"
+          mat-stroked-button
+          color="primary"
+          class="!flex !items-center !gap-1"
+          (click)="addItem()"
+        >
+          <mat-icon>add</mat-icon>
+          Add Item
+        </button>
+      </div>
+
+      <div formArrayName="items" class="space-y-3">
+        @for (itemGroup of items.controls; track $index) {
+          <div
+            [formGroupName]="$index"
+            class="grid grid-cols-12 gap-2 items-center bg-white p-3 rounded-md border shadow-sm"
+          >
+            <!-- Drug selection / Name -->
+            <div class="col-span-5">
+              <mat-form-field appearance="fill" class="w-full !mb-0">
+                <mat-label>Drug Name</mat-label>
+                <input
+                  matInput
+                  formControlName="drugName"
+                  placeholder="e.g. Paracetamol 500mg"
+                />
+              </mat-form-field>
+              @if (drugs.length > 0) {
+                <div class="text-xs text-gray-400 mt-1 flex gap-1 flex-wrap">
+                  <span>Quick pick:</span>
+                  @for (drug of drugs.slice(0, 4); track drug.id) {
+                    <button
+                      type="button"
+                      class="text-primary hover:underline"
+                      (click)="onDrugSelect($index, drug.name)"
+                    >
+                      {{ drug.name }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Quantity -->
+            <div class="col-span-2">
+              <mat-form-field appearance="fill" class="w-full !mb-0">
+                <mat-label>Qty</mat-label>
+                <input matInput type="number" min="1" formControlName="quantity" />
+              </mat-form-field>
+            </div>
+
+            <!-- Unit Price -->
+            <div class="col-span-3">
+              <mat-form-field appearance="fill" class="w-full !mb-0">
+                <mat-label>Unit Price (KES)</mat-label>
+                <input matInput type="number" min="0" step="0.01" formControlName="unitPrice" />
+              </mat-form-field>
+            </div>
+
+            <!-- Total & Remove -->
+            <div class="col-span-2 flex items-center justify-between pl-2">
+              <span class="font-medium text-sm text-gray-700">
+                KES {{ getItemTotal($index) | number:'1.2-2' }}
+              </span>
+              <button
+                type="button"
+                mat-icon-button
+                color="warn"
+                [disabled]="items.length === 1"
+                (click)="removeItem($index)"
+                matTooltip="Remove item"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Grand Total -->
+      <div class="flex justify-end items-center gap-4 pt-3 border-t font-semibold text-lg text-gray-800">
+        <span>Total Amount:</span>
+        <span class="text-primary">KES {{ grandTotal | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Notes / Instructions</mat-label>
+      <textarea
+        matInput
+        rows="2"
+        formControlName="notes"
+        placeholder="Special delivery instructions or terms..."
+      ></textarea>
+    </mat-form-field>
+
+    <!-- Dialog Actions -->
+    <div class="flex justify-end gap-3 pt-4 border-t">
+      <button type="button" mat-button (click)="close()">Cancel</button>
+      <button type="submit" mat-flat-button color="primary" [disabled]="form.invalid">
+        Generate Purchase Order
+      </button>
+    </div>
+  </form>
+</div>

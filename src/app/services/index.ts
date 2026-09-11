@@ -12,4 +12,5 @@ export * from './radiology.service';
 export * from './session-timeout.service';
 export * from './visit-queue.service';
 export * from './facility.service';
+export * from './inventory.service';
 

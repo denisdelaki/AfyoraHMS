@@ -1,9 +1,19 @@
 .tab-btn {
-	padding: 0.5rem 1rem;
+	padding: 0.5rem 0.75rem;
 	font-weight: 500;
 	color: #4b5563;
 	transition: color 0.2s ease;
 	border-bottom: 2px solid transparent;
+	white-space: nowrap;
+	flex-shrink: 0;
+	font-size: 0.875rem;
+}
+
+@media (min-width: 640px) {
+	.tab-btn {
+		padding: 0.5rem 1rem;
+		font-size: 1rem;
+	}
 }
 
 .tab-btn:hover {
@@ -17,14 +27,29 @@
 
 .pharmacy-table th {
 	text-align: left;
-	padding: 0.75rem 1rem;
-	font-size: 0.875rem;
-	font-weight: 500;
+	padding: 0.625rem 0.5rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
 	color: #4b5563;
+	white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+	.pharmacy-table th {
+		padding: 0.75rem 1rem;
+		font-size: 0.875rem;
+	}
 }
 
 .pharmacy-table td {
-	padding: 0.75rem 1rem;
+	padding: 0.625rem 0.5rem;
+	font-size: 0.875rem;
+}
+
+@media (min-width: 640px) {
+	.pharmacy-table td {
+		padding: 0.75rem 1rem;
+	}
 }
 
 .chip-in-stock {
@@ -37,6 +62,11 @@
 	color: #991b1b !important;
 }
 
+.chip-expired {
+	background-color: #7f1d1d !important;
+	color: white !important;
+}
+
 .chip-pending {
 	background-color: #f3f4f6 !important;
 	color: #374151 !important;
@@ -45,3 +75,14 @@
 .pharmacy-search-field .mat-mdc-form-field-subscript-wrapper {
 	display: none;
 }
+
+/* Scrollbar utility */
+.scrollbar-none::-webkit-scrollbar {
+	display: none;
+}
+
+.scrollbar-none {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
