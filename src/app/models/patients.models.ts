@@ -4,6 +4,7 @@ export type PatientStatus = 'Active' | 'Admitted' | 'Discharged';
 
 export type Patient = {
   id: string;
+  nationalId?: string;
   firstName: string;
   lastName: string;
   age: number;
@@ -21,6 +22,7 @@ export type Patient = {
 
 export type RegisterPatientRequest = {
   facilityId: string | number;
+  nationalId?: string;
   firstName: string;
   lastName: string;
   age: number;

@@ -87,7 +87,9 @@ export class PatientsComponent implements OnInit {
       (patient) =>
         `${patient.firstName} ${patient.lastName}`
           .toLowerCase()
-          .includes(term) || patient.id.toLowerCase().includes(term),
+          .includes(term) ||
+        patient.id.toLowerCase().includes(term) ||
+        (patient.nationalId && patient.nationalId.toLowerCase().includes(term)),
     );
   }
 
@@ -154,6 +156,7 @@ export class PatientsComponent implements OnInit {
     }
 
     const requestPayload: RegisterPatientRequest = {
+      nationalId: formValue.nationalId,
       firstName: formValue.firstName,
       lastName: formValue.lastName,
       age: formValue.age,
@@ -191,6 +194,7 @@ export class PatientsComponent implements OnInit {
     this.patients = [
       {
         id: nextId,
+        nationalId: formValue.nationalId ?? '',
         firstName: formValue.firstName,
         lastName: formValue.lastName,
         age: formValue.age ?? 0,
@@ -277,6 +281,7 @@ export class PatientsComponent implements OnInit {
     formValue: RegisterPatientPayload,
   ): void {
     const updatePayload: UpdatePatientRequest = {
+      nationalId: formValue.nationalId,
       firstName: formValue.firstName,
       lastName: formValue.lastName,
       age: formValue.age,
@@ -316,6 +321,7 @@ export class PatientsComponent implements OnInit {
 
       return {
         ...patient,
+        nationalId: formValue.nationalId ?? '',
         firstName: formValue.firstName ?? '',
         lastName: formValue.lastName ?? '',
         age: formValue.age ?? 0,

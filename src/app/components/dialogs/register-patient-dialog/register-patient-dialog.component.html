@@ -3,6 +3,11 @@
 </h2>
 <mat-dialog-content>
   <form [formGroup]="registerForm" class="space-y-4 py-2">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>National ID / Birth Certificate (Optional)</mat-label>
+      <input matInput formControlName="nationalId" placeholder="e.g. 12345678 or BC-123456" />
+    </mat-form-field>
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>First Name</mat-label>
@@ -40,7 +45,7 @@
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Email</mat-label>
+        <mat-label>Email (Optional)</mat-label>
         <input matInput type="email" formControlName="email" placeholder="patient@email.com" />
       </mat-form-field>
     </div>
@@ -68,8 +73,8 @@
     </mat-form-field>
 
     <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Emergency Contact</mat-label>
-      <input matInput maxlength="12" formControlName="emergencyContact" placeholder="Phone Number" />
+      <mat-label>Next of kin phone number</mat-label>
+      <input matInput type="tel" maxlength="12" formControlName="emergencyContact" placeholder="Phone Number" />
     </mat-form-field>
 
     <mat-form-field appearance="fill" class="w-full">

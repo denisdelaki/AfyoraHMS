@@ -10,16 +10,20 @@
           <p class="font-medium">{{ data.patient.id }}</p>
         </div>
         <div>
+          <p class="text-sm text-gray-600">National ID / Birth Cert</p>
+          <p class="font-medium">{{ data.patient.nationalId || '-' }}</p>
+        </div>
+        <div>
           <p class="text-sm text-gray-600">Blood Group</p>
-          <p class="font-medium">{{ data.patient.bloodGroup }}</p>
+          <p class="font-medium">{{ data.patient.bloodGroup || '-' }}</p>
         </div>
         <div>
           <p class="text-sm text-gray-600">Phone</p>
-          <p class="font-medium">{{ data.patient.phone }}</p>
+          <p class="font-medium">{{ data.patient.phone || '-' }}</p>
         </div>
         <div>
           <p class="text-sm text-gray-600">Email</p>
-          <p class="font-medium">{{ data.patient.email }}</p>
+          <p class="font-medium">{{ data.patient.email || '-' }}</p>
         </div>
         <div>
           <p class="text-sm text-gray-600">Age</p>

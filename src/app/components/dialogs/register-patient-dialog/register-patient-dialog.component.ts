@@ -66,12 +66,13 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
   readonly patientToEdit = this.data?.patient;
 
   registerForm = this.formBuilder.group({
+    nationalId: [''],
     firstName: ['', [Validators.required]],
     lastName: ['', [Validators.required]],
     age: [null as number | null, [Validators.required, Validators.min(0)]],
     gender: ['', [Validators.required]],
     phone: ['', [Validators.required]],
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', [Validators.email]],
     bloodGroup: ['', [Validators.required]],
     dob: [''],
     address: [''],
@@ -85,6 +86,7 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
     }
 
     this.registerForm.patchValue({
+      nationalId: this.patientToEdit.nationalId ?? '',
       firstName: this.patientToEdit.firstName ?? '',
       lastName: this.patientToEdit.lastName ?? '',
       age: this.patientToEdit.age,
@@ -142,6 +144,7 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
     const value = this.registerForm.getRawValue();
 
     this.dialogRef.close({
+      nationalId: value.nationalId ?? '',
       firstName: value.firstName ?? '',
       lastName: value.lastName ?? '',
       age: value.age ?? 0,
