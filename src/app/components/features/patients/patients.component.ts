@@ -114,7 +114,6 @@ export class PatientsComponent implements OnInit {
       }
 
       this.addPatient(result);
-      this.loadPatients();
     });
   }
 
@@ -172,13 +171,15 @@ export class PatientsComponent implements OnInit {
     };
 
     this.patientsService.registerPatient(requestPayload).subscribe({
-      next: ({ data }) => {
-        this.patients = [
-          data,
-          ...this.patients.filter((entry) => entry.id !== data.id),
-        ];
-
-        if (this.patients.length === 0) {
+      next: (response) => {
+        const createdPatient: Patient =
+          response?.data || (response as any)?.results || response;
+        if (createdPatient && createdPatient.id) {
+          this.patients = [
+            createdPatient,
+            ...this.patients.filter((entry) => entry.id !== createdPatient.id),
+          ];
+        } else {
           this.loadPatients();
         }
       },
@@ -299,9 +300,11 @@ export class PatientsComponent implements OnInit {
     this.patientsService
       .updatePatient(patientId, updatePayload, this.facilityId)
       .subscribe({
-        next: (data) => {
+        next: (response) => {
+          const updatedData: Patient =
+            response?.data || (response as any)?.results || response;
           this.patients = this.patients.map((patient) =>
-            patient.id === patientId ? { ...patient, ...data } : patient,
+            patient.id === patientId ? { ...patient, ...updatedData } : patient,
           );
         },
         error: () => {

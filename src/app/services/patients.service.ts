@@ -36,7 +36,7 @@ export class PatientsService {
       .get<
         ApiResponse<Patient[]>
       >(`${this.baseUrl}/?facilityId=${encodeURIComponent(facilityId)}`)
-      .pipe(map((response) => response.results || [])));
+      .pipe(map((response: any) => response.results || response.data || (Array.isArray(response) ? response : []))));
   }
 
   getPatientById(patientId: string): Observable<ApiResponse<Patient>> {

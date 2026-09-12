@@ -321,11 +321,17 @@ export class PharmacyComponent implements OnInit {
 
   addDrugToCatalog(newDrug: AddDrugPayload): void {
     this.pharmacyService.createDrug(newDrug, this.facilityId).subscribe({
-      next: ({ data }) => {
-        this.drugs = [
-          data,
-          ...this.drugs.filter((item) => item.id !== data.id),
-        ];
+      next: (response) => {
+        const createdDrug: Drug =
+          response?.data || (response as any)?.results || response;
+        if (createdDrug && createdDrug.id) {
+          this.drugs = [
+            createdDrug,
+            ...this.drugs.filter((item) => item.id !== createdDrug.id),
+          ];
+        } else {
+          this.loadDrugs();
+        }
       },
       error: () => {
         this.addDrugToCatalogLocally(newDrug);
@@ -350,11 +356,13 @@ export class PharmacyComponent implements OnInit {
       .dispensePrescription(prescriptionId, this.facilityId)
       .subscribe({
         next: (dispensed) => {
+          const dispensedData: Prescription =
+            (dispensed as any)?.data || (dispensed as any)?.results || dispensed;
           this.prescriptions = this.prescriptions.map((prescription) =>
             prescription.id === prescriptionId
               ? {
                   ...prescription,
-                  ...dispensed,
+                  ...dispensedData,
                   status: 'Dispensed',
                 }
               : prescription,
@@ -364,8 +372,6 @@ export class PharmacyComponent implements OnInit {
             horizontalPosition: 'end',
             verticalPosition: 'top',
           });
-          this.loadDrugs();
-          this.loadPrescriptions();
         },
         error: () => {
           this.snackBar.open('Unable to dispense prescription.', 'Close', {
@@ -373,7 +379,6 @@ export class PharmacyComponent implements OnInit {
             horizontalPosition: 'end',
             verticalPosition: 'top',
           });
-          this.loadPrescriptions();
         },
       });
   }
@@ -409,11 +414,19 @@ export class PharmacyComponent implements OnInit {
         this.pharmacyService
           .updateCategory(category.id, result, this.facilityId)
           .subscribe({
-            next: () => {
+            next: (response) => {
+              const updatedCat: DrugCategory =
+                (response as any)?.data || (response as any)?.results || response;
+              if (updatedCat && updatedCat.id) {
+                this.categories = this.categories.map((c) =>
+                  c.id === updatedCat.id ? { ...c, ...updatedCat } : c,
+                );
+              } else {
+                this.loadCategories();
+              }
               this.snackBar.open('Category updated successfully', 'Close', {
                 duration: 3000,
               });
-              this.loadCategories();
             },
             error: () =>
               this.snackBar.open('Failed to update category', 'Close', {
@@ -422,11 +435,20 @@ export class PharmacyComponent implements OnInit {
           });
       } else {
         this.pharmacyService.createCategory(result, this.facilityId).subscribe({
-          next: () => {
+          next: (response) => {
+            const createdCat: DrugCategory =
+              (response as any)?.data || (response as any)?.results || response;
+            if (createdCat && createdCat.id) {
+              this.categories = [
+                createdCat,
+                ...this.categories.filter((c) => c.id !== createdCat.id),
+              ];
+            } else {
+              this.loadCategories();
+            }
             this.snackBar.open('Category created successfully', 'Close', {
               duration: 3000,
             });
-            this.loadCategories();
           },
           error: () =>
             this.snackBar.open('Failed to create category', 'Close', {
@@ -443,10 +465,10 @@ export class PharmacyComponent implements OnInit {
         .deleteCategory(categoryId, this.facilityId)
         .subscribe({
           next: () => {
+            this.categories = this.categories.filter((c) => c.id !== categoryId);
             this.snackBar.open('Category deleted successfully', 'Close', {
               duration: 3000,
             });
-            this.loadCategories();
           },
           error: () =>
             this.snackBar.open('Failed to delete category', 'Close', {
@@ -486,13 +508,22 @@ export class PharmacyComponent implements OnInit {
       if (!result) return;
       this.pharmacyService.createPurchaseOrder(result, this.facilityId).subscribe({
         next: (createdPO) => {
+          const po: DrugPurchaseOrder =
+            (createdPO as any)?.data || (createdPO as any)?.results || createdPO;
+          if (po && po.id) {
+            this.purchaseOrders = [
+              po,
+              ...this.purchaseOrders.filter((item) => item.id !== po.id),
+            ];
+          } else {
+            this.loadPurchaseOrders();
+          }
           this.snackBar.open('Purchase Order created successfully', 'Close', {
             duration: 3000,
           });
-          this.loadPurchaseOrders();
           this.setActiveTab('purchase-orders');
-          if (createdPO) {
-            this.openPOPreviewDialog(createdPO);
+          if (po && po.id) {
+            this.openPOPreviewDialog(po);
           }
         },
         error: () =>
@@ -560,10 +591,10 @@ export class PharmacyComponent implements OnInit {
     if (confirm(`Are you sure you want to delete purchase order ${po.poNumber}?`)) {
       this.pharmacyService.deletePurchaseOrder(po.id, this.facilityId).subscribe({
         next: () => {
+          this.purchaseOrders = this.purchaseOrders.filter((item) => item.id !== po.id);
           this.snackBar.open('Purchase Order deleted successfully', 'Close', {
             duration: 3000,
           });
-          this.loadPurchaseOrders();
         },
         error: () =>
           this.snackBar.open('Failed to delete purchase order', 'Close', {
