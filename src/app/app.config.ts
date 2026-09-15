@@ -1,4 +1,8 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import {
+  ApplicationConfig,
+  DEFAULT_CURRENCY_CODE,
+  provideZoneChangeDetection,
+} from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './core/auth.interceptor';
 import { provideNativeDateAdapter } from '@angular/material/core';
@@ -17,5 +21,6 @@ export const appConfig: ApplicationConfig = {
     provideNativeDateAdapter(),
     provideRouter(routes),
     provideCharts(withDefaultRegisterables()),
+    { provide: DEFAULT_CURRENCY_CODE, useValue: 'KES' },
   ],
 };

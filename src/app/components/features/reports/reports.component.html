@@ -37,7 +37,8 @@
         <h2 class="text-lg font-semibold">Report Parameters</h2>
       </div>
       <span class="text-xs text-gray-500">
-        Showing {{ reportTypes.length }} report categories accessible to {{ userRole }}
+        Showing {{ reportTypes.length }} report categories accessible to
+        {{ userRole }}
       </span>
     </div>
 
@@ -100,7 +101,7 @@
             class="h-4 w-4"
             [ngClass]="{ 'animate-spin': isLoading }"
           ></lucide-icon>
-          {{ isLoading ? 'Fetching Data...' : 'Generate Report' }}
+          {{ isLoading ? "Fetching Data..." : "Generate Report" }}
         </button>
       </div>
     </div>
@@ -137,10 +138,16 @@
   </div>
 
   <!-- Saved Custom Reports Section -->
-  <div *ngIf="savedReports.length > 0" class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+  <div
+    *ngIf="savedReports.length > 0"
+    class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+  >
     <div class="mb-4 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <lucide-icon [img]="FilePlus2" class="h-5 w-5 text-indigo-600"></lucide-icon>
+        <lucide-icon
+          [img]="FilePlus2"
+          class="h-5 w-5 text-indigo-600"
+        ></lucide-icon>
         <h2 class="text-lg font-semibold">Saved Report Configurations</h2>
       </div>
       <span class="text-xs text-gray-500">
@@ -156,12 +163,14 @@
         <div>
           <div class="flex items-start justify-between gap-2">
             <h3 class="font-semibold text-gray-900">{{ report.title }}</h3>
-            <span class="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+            <span
+              class="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700"
+            >
               {{ report.reportType | titlecase }}
             </span>
           </div>
           <p class="mt-1 line-clamp-2 text-xs text-gray-600">
-            {{ report.description || 'No description provided.' }}
+            {{ report.description || "No description provided." }}
           </p>
           <div class="mt-3 flex flex-wrap gap-1">
             <span
@@ -173,7 +182,9 @@
           </div>
         </div>
 
-        <div class="mt-4 flex items-center justify-between border-t border-gray-200 pt-3 text-xs">
+        <div
+          class="mt-4 flex items-center justify-between border-t border-gray-200 pt-3 text-xs"
+        >
           <span class="text-gray-500">Range: {{ report.timeRange }}</span>
           <div class="flex items-center gap-2">
             <button
@@ -215,7 +226,6 @@
         type="button"
         (click)="exportReport()"
         class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
-
       >
         <lucide-icon [img]="Download" class="h-4 w-4"></lucide-icon>
         Export Report
@@ -425,7 +435,7 @@
                 <td class="px-4 py-3">
                   {{
                     med.revenue / med.dispensed
-                      | currency: "USD" : "symbol" : "1.2-2"
+                      | currency: "KES" : "symbol" : "1.2-2"
                   }}
                 </td>
               </tr>

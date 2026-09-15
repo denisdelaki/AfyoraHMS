@@ -17,7 +17,15 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { LucideAngularModule, Pill, RefreshCw, Plus, Trash2, Activity, FileText } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  Pill,
+  RefreshCw,
+  Plus,
+  Trash2,
+  Activity,
+  FileText,
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-new-invoice-dialog',
@@ -179,11 +187,12 @@ export class NewInvoiceDialogComponent implements OnInit {
 
             this.pharmacyTotal = res.data.totalAmount;
             this.pharmacyItemCount = res.data.items.length;
-            this.pharmacyMessage = `Fetched ${res.data.items.length} pharmacy charge(s) ($${res.data.totalAmount.toFixed(2)}).`;
+            this.pharmacyMessage = `Fetched ${res.data.items.length} pharmacy charge(s) (KES ${res.data.totalAmount.toFixed(2)}).`;
           } else {
             this.pharmacyTotal = 0;
             this.pharmacyItemCount = 0;
-            this.pharmacyMessage = 'No pharmacy charges found for this customer.';
+            this.pharmacyMessage =
+              'No pharmacy charges found for this customer.';
           }
         },
         error: (err) => {
@@ -230,7 +239,7 @@ export class NewInvoiceDialogComponent implements OnInit {
 
             this.labTotal = res.data.totalAmount;
             this.labItemCount = res.data.items.length;
-            this.labMessage = `Fetched ${res.data.items.length} lab charge(s) ($${res.data.totalAmount.toFixed(2)}).`;
+            this.labMessage = `Fetched ${res.data.items.length} lab charge(s) (KES ${res.data.totalAmount.toFixed(2)}).`;
           } else {
             this.labTotal = 0;
             this.labItemCount = 0;
@@ -285,7 +294,8 @@ export class NewInvoiceDialogComponent implements OnInit {
           } else {
             this.radiologyTotal = 0;
             this.radiologyItemCount = 0;
-            this.radiologyMessage = 'No radiology charges found for this customer.';
+            this.radiologyMessage =
+              'No radiology charges found for this customer.';
           }
         },
         error: (err) => {
@@ -333,7 +343,7 @@ export class NewInvoiceDialogComponent implements OnInit {
     );
     const patientName = selectedPatient
       ? `${selectedPatient.firstName} ${selectedPatient.lastName}`.trim()
-      : value.patientId ?? '';
+      : (value.patientId ?? '');
 
     this.dialogRef.close({
       patient: patientName,
@@ -346,12 +356,10 @@ export class NewInvoiceDialogComponent implements OnInit {
         })),
       insurance: company
         ? {
-          company,
-          coverage: value.coverage !== null ? Number(value.coverage) : null,
-        }
+            company,
+            coverage: value.coverage !== null ? Number(value.coverage) : null,
+          }
         : null,
     });
   }
 }
-
-

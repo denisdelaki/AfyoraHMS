@@ -1,61 +1,131 @@
 <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
   <!-- Loading State -->
-  <div *ngIf="loading()" class="flex items-center justify-center p-12 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100">
-    <lucide-icon [img]="RefreshCw" class="spin-icon text-blue-600 w-8 h-8 mr-3"></lucide-icon>
+  <div
+    *ngIf="loading()"
+    class="flex items-center justify-center p-12 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100"
+  >
+    <lucide-icon
+      [img]="RefreshCw"
+      class="spin-icon text-blue-600 w-8 h-8 mr-3"
+    ></lucide-icon>
     <span class="text-slate-600 font-medium">Loading Facility Profile...</span>
   </div>
 
   <!-- Success & Error Banners -->
-  <div *ngIf="successMessage()" class="flex items-center p-4 rounded-xl text-emerald-800 bg-emerald-50 border border-emerald-200 shadow-sm">
-    <lucide-icon [img]="CheckCircle2" class="w-5 h-5 mr-3 text-emerald-600 shrink-0"></lucide-icon>
+  <div
+    *ngIf="successMessage()"
+    class="flex items-center p-4 rounded-xl text-emerald-800 bg-emerald-50 border border-emerald-200 shadow-sm"
+  >
+    <lucide-icon
+      [img]="CheckCircle2"
+      class="w-5 h-5 mr-3 text-emerald-600 shrink-0"
+    ></lucide-icon>
     <span class="font-medium text-sm">{{ successMessage() }}</span>
   </div>
 
-  <div *ngIf="errorMessage()" class="flex items-center p-4 rounded-xl text-rose-800 bg-rose-50 border border-rose-200 shadow-sm">
-    <lucide-icon [img]="AlertCircle" class="w-5 h-5 mr-3 text-rose-600 shrink-0"></lucide-icon>
+  <div
+    *ngIf="errorMessage()"
+    class="flex items-center p-4 rounded-xl text-rose-800 bg-rose-50 border border-rose-200 shadow-sm"
+  >
+    <lucide-icon
+      [img]="AlertCircle"
+      class="w-5 h-5 mr-3 text-rose-600 shrink-0"
+    ></lucide-icon>
     <span class="font-medium text-sm">{{ errorMessage() }}</span>
   </div>
 
   <ng-container *ngIf="!loading() && facility() as fac">
     <!-- Header Banner Card -->
-    <div class="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div
+      class="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+    >
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-        <div class="w-18 h-18 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-          <img *ngIf="fac.logo" [src]="fac.logo" [alt]="fac.name" class="w-full h-full object-cover" />
-          <div *ngIf="!fac.logo" class="flex items-center justify-center text-blue-600">
+        <div
+          class="w-18 h-18 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden shadow-sm"
+        >
+          <img
+            *ngIf="fac.logo"
+            [src]="fac.logo"
+            [alt]="fac.name"
+            class="w-full h-full object-cover"
+          />
+          <div
+            *ngIf="!fac.logo"
+            class="flex items-center justify-center text-blue-600"
+          >
             <lucide-icon [img]="Hospital" class="w-10 h-10"></lucide-icon>
           </div>
         </div>
         <div>
           <div class="flex items-center gap-3 flex-wrap">
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ fac.name }}</h1>
-            <span class="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-bold uppercase tracking-wider">{{ fac.facility_type | uppercase }}</span>
-            <span [class]="fac.subscription_active ? 'px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold' : 'px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-xs font-bold'">
-              {{ fac.subscription_active ? 'ACTIVE SUBSCRIPTION' : 'EXPIRED' }}
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">
+              {{ fac.name }}
+            </h1>
+            <span
+              class="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-bold uppercase tracking-wider"
+              >{{ fac.facility_type | uppercase }}</span
+            >
+            <span
+              [class]="
+                fac.subscription_active
+                  ? 'px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold'
+                  : 'px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-xs font-bold'
+              "
+            >
+              {{ fac.subscription_active ? "ACTIVE SUBSCRIPTION" : "EXPIRED" }}
             </span>
           </div>
-          <p class="mt-2 text-sm text-slate-500 flex items-center gap-2 flex-wrap">
+          <p
+            class="mt-2 text-sm text-slate-500 flex items-center gap-2 flex-wrap"
+          >
             <span><strong>Reg No:</strong> {{ fac.registration_number }}</span>
             <span class="text-slate-300">•</span>
-            <span><strong>Package:</strong> {{ fac.subscription_package | uppercase }} PLAN</span>
+            <span
+              ><strong>Package:</strong>
+              {{ fac.subscription_package | uppercase }} PLAN</span
+            >
             <span class="text-slate-300">•</span>
-            <span><strong>Location:</strong> {{ fac.city || 'N/A' }}, {{ fac.country || 'Kenya' }}</span>
+            <span
+              ><strong>Location:</strong> {{ fac.city || "N/A" }},
+              {{ fac.country || "Kenya" }}</span
+            >
           </p>
         </div>
       </div>
 
       <div class="grid grid-cols-3 gap-3 w-full lg:w-auto">
-        <div class="bg-white border border-slate-200 px-4 py-3 rounded-xl text-center shadow-xs flex flex-col items-center">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Staff Users</span>
-          <span class="text-xl font-extrabold text-blue-600 mt-1">{{ fac.users_count ?? fac.total_staff ?? 0 }}</span>
+        <div
+          class="bg-white border border-slate-200 px-4 py-3 rounded-xl text-center shadow-xs flex flex-col items-center"
+        >
+          <span
+            class="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+            >Staff Users</span
+          >
+          <span class="text-xl font-extrabold text-blue-600 mt-1">{{
+            fac.users_count ?? fac.total_staff ?? 0
+          }}</span>
         </div>
-        <div class="bg-white border border-slate-200 px-4 py-3 rounded-xl text-center shadow-xs flex flex-col items-center">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Departments</span>
-          <span class="text-xl font-extrabold text-blue-600 mt-1">{{ fac.departments_count ?? 0 }}</span>
+        <div
+          class="bg-white border border-slate-200 px-4 py-3 rounded-xl text-center shadow-xs flex flex-col items-center"
+        >
+          <span
+            class="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+            >Departments</span
+          >
+          <span class="text-xl font-extrabold text-blue-600 mt-1">{{
+            fac.departments_count ?? 0
+          }}</span>
         </div>
-        <div class="bg-white border border-slate-200 px-4 py-3 rounded-xl text-center shadow-xs flex flex-col items-center">
-          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Patients</span>
-          <span class="text-xl font-extrabold text-blue-600 mt-1">{{ fac.total_patients ?? 0 }}</span>
+        <div
+          class="bg-white border border-slate-200 px-4 py-3 rounded-xl text-center shadow-xs flex flex-col items-center"
+        >
+          <span
+            class="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+            >Total Patients</span
+          >
+          <span class="text-xl font-extrabold text-blue-600 mt-1">{{
+            fac.total_patients ?? 0
+          }}</span>
         </div>
       </div>
     </div>
@@ -88,7 +158,11 @@
       >
         <lucide-icon [img]="Crown" class="w-4 h-4 mr-2"></lucide-icon>
         Subscription & Packages
-        <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase" *ngIf="fac.subscription_package">{{ fac.subscription_package }}</span>
+        <span
+          class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase"
+          *ngIf="fac.subscription_package"
+          >{{ fac.subscription_package }}</span
+        >
       </button>
 
       <button
@@ -103,7 +177,11 @@
       >
         <lucide-icon [img]="FileText" class="w-4 h-4 mr-2"></lucide-icon>
         Payment History
-        <span class="ml-2 px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-full" *ngIf="paymentHistory().length">{{ paymentHistory().length }}</span>
+        <span
+          class="ml-2 px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-bold rounded-full"
+          *ngIf="paymentHistory().length"
+          >{{ paymentHistory().length }}</span
+        >
       </button>
 
       <button
@@ -116,9 +194,16 @@
         [class.hover:text-blue-600]="activeTab() !== 'mpesa'"
         (click)="activeTab.set('mpesa')"
       >
-        <lucide-icon [img]="Smartphone" class="w-4 h-4 mr-2 text-emerald-600"></lucide-icon>
+        <lucide-icon
+          [img]="Smartphone"
+          class="w-4 h-4 mr-2 text-emerald-600"
+        ></lucide-icon>
         M-Pesa Billing Setup
-        <span class="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full uppercase" *ngIf="mpesaConfig().shortcode">Configured</span>
+        <span
+          class="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full uppercase"
+          *ngIf="mpesaConfig().shortcode"
+          >Configured</span
+        >
       </button>
 
       <button
@@ -133,36 +218,64 @@
       >
         <lucide-icon [img]="FileBadge2" class="w-4 h-4 mr-2"></lucide-icon>
         Terminology & Compliance Logs
-        <span class="ml-2 px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-full uppercase">DHA</span>
+        <span
+          class="ml-2 px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-bold rounded-full uppercase"
+          >DHA</span
+        >
       </button>
     </div>
 
     <!-- ================= TAB 1: FACILITY PROFILE ================= -->
     <div *ngIf="activeTab() === 'profile'" class="space-y-6">
-
-      <div class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100">
+      <div
+        class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm"
+      >
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100"
+        >
           <div>
-            <h2 class="text-xl font-bold text-slate-800">General Facility Information</h2>
-            <p class="text-sm text-slate-500 mt-1">Manage official contact details, organization logo, and location settings.</p>
+            <h2 class="text-xl font-bold text-slate-800">
+              General Facility Information
+            </h2>
+            <p class="text-sm text-slate-500 mt-1">
+              Manage official contact details, organization logo, and location
+              settings.
+            </p>
           </div>
           <button
             class="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer disabled:opacity-50"
             (click)="saveProfile()"
             [disabled]="saving()"
           >
-            <lucide-icon *ngIf="!saving()" [img]="Save" class="w-4 h-4 mr-2"></lucide-icon>
-            <lucide-icon *ngIf="saving()" [img]="RefreshCw" class="spin-icon w-4 h-4 mr-2"></lucide-icon>
-            {{ saving() ? 'Saving Changes...' : 'Save Profile Details' }}
+            <lucide-icon
+              *ngIf="!saving()"
+              [img]="Save"
+              class="w-4 h-4 mr-2"
+            ></lucide-icon>
+            <lucide-icon
+              *ngIf="saving()"
+              [img]="RefreshCw"
+              class="spin-icon w-4 h-4 mr-2"
+            ></lucide-icon>
+            {{ saving() ? "Saving Changes..." : "Save Profile Details" }}
           </button>
         </div>
 
-        <form class="grid grid-cols-1 md:grid-cols-2 gap-6" (ngSubmit)="saveProfile()">
+        <form
+          class="grid grid-cols-1 md:grid-cols-2 gap-6"
+          (ngSubmit)="saveProfile()"
+        >
           <!-- Facility Name -->
           <div class="md:col-span-2">
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Facility / Organization Name <span class="text-rose-500">*</span></label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Facility / Organization Name
+              <span class="text-rose-500">*</span></label
+            >
             <div class="relative flex items-center">
-              <lucide-icon [img]="Hospital" class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"></lucide-icon>
+              <lucide-icon
+                [img]="Hospital"
+                class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"
+              ></lucide-icon>
               <input
                 type="text"
                 class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
@@ -176,7 +289,9 @@
 
           <!-- Facility Type -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Facility Category <span class="text-rose-500">*</span></label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Facility Category <span class="text-rose-500">*</span></label
+            >
             <select
               class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
               [(ngModel)]="profileForm.facility_type"
@@ -190,9 +305,14 @@
 
           <!-- Registration Number (Read-only) -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Registration / License Number</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Registration / License Number</label
+            >
             <div class="relative flex items-center">
-              <lucide-icon [img]="ShieldCheck" class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"></lucide-icon>
+              <lucide-icon
+                [img]="ShieldCheck"
+                class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"
+              ></lucide-icon>
               <input
                 type="text"
                 class="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 text-sm cursor-not-allowed"
@@ -201,14 +321,22 @@
                 readonly
               />
             </div>
-            <p class="text-xs text-slate-400 mt-1.5">Registration number is set during onboarding and verified.</p>
+            <p class="text-xs text-slate-400 mt-1.5">
+              Registration number is set during onboarding and verified.
+            </p>
           </div>
 
           <!-- Email -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Official Email Address <span class="text-rose-500">*</span></label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Official Email Address
+              <span class="text-rose-500">*</span></label
+            >
             <div class="relative flex items-center">
-              <lucide-icon [img]="Mail" class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"></lucide-icon>
+              <lucide-icon
+                [img]="Mail"
+                class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"
+              ></lucide-icon>
               <input
                 type="email"
                 class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
@@ -222,9 +350,14 @@
 
           <!-- Phone Number -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Primary Phone Number <span class="text-rose-500">*</span></label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Primary Phone Number <span class="text-rose-500">*</span></label
+            >
             <div class="relative flex items-center">
-              <lucide-icon [img]="Phone" class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"></lucide-icon>
+              <lucide-icon
+                [img]="Phone"
+                class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"
+              ></lucide-icon>
               <input
                 type="tel"
                 class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
@@ -238,9 +371,14 @@
 
           <!-- Website -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Website URL</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Website URL</label
+            >
             <div class="relative flex items-center">
-              <lucide-icon [img]="Globe" class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"></lucide-icon>
+              <lucide-icon
+                [img]="Globe"
+                class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"
+              ></lucide-icon>
               <input
                 type="url"
                 class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
@@ -253,7 +391,9 @@
 
           <!-- Logo URL -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Facility Logo URL</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Facility Logo URL</label
+            >
             <input
               type="text"
               class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
@@ -265,9 +405,14 @@
 
           <!-- Address -->
           <div class="md:col-span-2">
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Physical Address</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Physical Address</label
+            >
             <div class="relative flex items-center">
-              <lucide-icon [img]="MapPin" class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"></lucide-icon>
+              <lucide-icon
+                [img]="MapPin"
+                class="absolute left-3.5 w-5 h-5 text-slate-400 pointer-events-none"
+              ></lucide-icon>
               <input
                 type="text"
                 class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
@@ -280,7 +425,9 @@
 
           <!-- City -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">City / Town</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >City / Town</label
+            >
             <input
               type="text"
               class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
@@ -292,7 +439,9 @@
 
           <!-- Country -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Country</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Country</label
+            >
             <input
               type="text"
               class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
@@ -304,7 +453,9 @@
 
           <!-- Description -->
           <div class="md:col-span-2">
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Facility Description / Overview</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-2"
+              >Facility Description / Overview</label
+            >
             <textarea
               rows="3"
               class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
@@ -322,41 +473,89 @@
       <!-- Active Subscription Banner -->
       <div
         class="p-6 rounded-2xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all"
-        [ngClass]="fac.subscription_active ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200' : 'bg-rose-50 border-rose-200'"
+        [ngClass]="
+          fac.subscription_active
+            ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+            : 'bg-rose-50 border-rose-200'
+        "
       >
         <div class="flex items-center gap-4">
-          <div class="w-13 h-13 rounded-2xl bg-white flex items-center justify-center shadow-xs border border-slate-100">
-            <lucide-icon [img]="Crown" class="w-7 h-7 text-amber-500"></lucide-icon>
+          <div
+            class="w-13 h-13 rounded-2xl bg-white flex items-center justify-center shadow-xs border border-slate-100"
+          >
+            <lucide-icon
+              [img]="Crown"
+              class="w-7 h-7 text-amber-500"
+            ></lucide-icon>
           </div>
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">CURRENT ACTIVE PLAN:</span>
-              <span class="text-lg font-extrabold text-blue-600 uppercase">{{ (fac.subscription_package || 'standard') | uppercase }}</span>
-              <span class="px-2.5 py-0.5 bg-white text-blue-700 text-xs font-bold border border-slate-200 rounded-md uppercase">{{ (fac.subscription_billing_cycle || 'monthly') | uppercase }}</span>
+              <span
+                class="text-xs font-bold text-slate-500 uppercase tracking-wider"
+                >CURRENT ACTIVE PLAN:</span
+              >
+              <span class="text-lg font-extrabold text-blue-600 uppercase">{{
+                fac.subscription_package || "standard" | uppercase
+              }}</span>
+              <span
+                class="px-2.5 py-0.5 bg-white text-blue-700 text-xs font-bold border border-slate-200 rounded-md uppercase"
+                >{{
+                  fac.subscription_billing_cycle || "monthly" | uppercase
+                }}</span
+              >
             </div>
             <p class="text-sm text-slate-600 mt-1">
-              <span><strong>Start Date:</strong> {{ fac.subscription_start_date || 'N/A' }}</span>
+              <span
+                ><strong>Start Date:</strong>
+                {{ fac.subscription_start_date || "N/A" }}</span
+              >
               <span class="mx-2 text-slate-300">•</span>
-              <span><strong>Valid Until:</strong> {{ fac.subscription_end_date || 'N/A' }}</span>
+              <span
+                ><strong>Valid Until:</strong>
+                {{ fac.subscription_end_date || "N/A" }}</span
+              >
             </p>
           </div>
         </div>
 
         <div class="flex flex-col items-start sm:items-end gap-1.5">
-          <div class="inline-flex items-center px-3 py-1.5 bg-white rounded-full text-xs font-bold text-slate-700 shadow-xs border border-slate-200" *ngIf="fac.subscription_end_date">
-            <lucide-icon [img]="Clock" class="w-4 h-4 mr-1 text-slate-400"></lucide-icon>
-            <span>{{ getDaysRemaining(fac.subscription_end_date) }} Days Remaining</span>
+          <div
+            class="inline-flex items-center px-3 py-1.5 bg-white rounded-full text-xs font-bold text-slate-700 shadow-xs border border-slate-200"
+            *ngIf="fac.subscription_end_date"
+          >
+            <lucide-icon
+              [img]="Clock"
+              class="w-4 h-4 mr-1 text-slate-400"
+            ></lucide-icon>
+            <span
+              >{{ getDaysRemaining(fac.subscription_end_date) }} Days
+              Remaining</span
+            >
           </div>
-          <span [class]="fac.subscription_active ? 'text-xs font-bold text-emerald-600' : 'text-xs font-bold text-rose-600'">
-            {{ fac.subscription_active ? 'Status: Active' : 'Status: Needs Renewal' }}
+          <span
+            [class]="
+              fac.subscription_active
+                ? 'text-xs font-bold text-emerald-600'
+                : 'text-xs font-bold text-rose-600'
+            "
+          >
+            {{
+              fac.subscription_active
+                ? "Status: Active"
+                : "Status: Needs Renewal"
+            }}
           </span>
         </div>
       </div>
 
       <!-- Billing Cycle Switcher -->
       <div class="flex items-center justify-center gap-3 my-6">
-        <span class="text-sm font-semibold text-slate-600">Select Billing Cycle:</span>
-        <div class="inline-flex p-1 bg-slate-100 rounded-full border border-slate-200">
+        <span class="text-sm font-semibold text-slate-600"
+          >Select Billing Cycle:</span
+        >
+        <div
+          class="inline-flex p-1 bg-slate-100 rounded-full border border-slate-200"
+        >
           <button
             type="button"
             class="px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer"
@@ -378,7 +577,10 @@
             (click)="billingCycle.set('yearly')"
           >
             Annual Billing
-            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-extrabold rounded-full">Save 20%</span>
+            <span
+              class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-extrabold rounded-full"
+              >Save 20%</span
+            >
           </button>
         </div>
       </div>
@@ -388,36 +590,60 @@
         <div
           *ngFor="let pkg of packages"
           class="border-2 rounded-2xl p-6 hover:border-blue-500 transition-all duration-300 relative bg-white shadow-sm hover:shadow-md flex flex-col"
-          [class.border-blue-500]="fac.subscription_package === pkg.id || pkg.popular"
+          [class.border-blue-500]="
+            fac.subscription_package === pkg.id || pkg.popular
+          "
           [class.bg-blue-50]="fac.subscription_package === pkg.id"
           [class.border-emerald-500]="fac.subscription_package === pkg.id"
         >
-          <div *ngIf="pkg.popular && fac.subscription_package !== pkg.id" class="absolute -top-3 right-6 bg-blue-600 text-white text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+          <div
+            *ngIf="pkg.popular && fac.subscription_package !== pkg.id"
+            class="absolute -top-3 right-6 bg-blue-600 text-white text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm"
+          >
             {{ pkg.badge }}
           </div>
-          <div *ngIf="fac.subscription_package === pkg.id" class="absolute -top-3 left-6 bg-emerald-600 text-white text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+          <div
+            *ngIf="fac.subscription_package === pkg.id"
+            class="absolute -top-3 left-6 bg-emerald-600 text-white text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm"
+          >
             Current Plan
           </div>
 
           <div class="mb-4">
-            <h3 class="text-xl font-bold text-slate-800 mb-1">{{ pkg.name }}</h3>
-            <span class="text-xs font-semibold text-slate-500">{{ pkg.staffLimit }}</span>
+            <h3 class="text-xl font-bold text-slate-800 mb-1">
+              {{ pkg.name }}
+            </h3>
+            <span class="text-xs font-semibold text-slate-500">{{
+              pkg.staffLimit
+            }}</span>
           </div>
 
           <div class="py-4 my-2 border-y border-dashed border-slate-200">
-            <div class="text-3xl font-extrabold text-slate-900 flex items-baseline gap-1">
+            <div
+              class="text-3xl font-extrabold text-slate-900 flex items-baseline gap-1"
+            >
               <span class="text-xs font-bold text-slate-400">KES</span>
-              <span>{{ (billingCycle() === 'yearly' ? pkg.yearlyPriceKES : pkg.monthlyPriceKES) | number }}</span>
-              <span class="text-xs text-slate-500 font-medium">/{{ billingCycle() === 'yearly' ? 'yr' : 'mo' }}</span>
-            </div>
-            <div class="text-xs text-slate-400 mt-1">
-              approx ${{ (billingCycle() === 'yearly' ? pkg.yearlyPriceUSD : pkg.monthlyPriceUSD) | number }} USD
+              <span>{{
+                (billingCycle() === "yearly"
+                  ? pkg.yearlyPriceKES
+                  : pkg.monthlyPriceKES
+                ) | number
+              }}</span>
+              <span class="text-xs text-slate-500 font-medium"
+                >/{{ billingCycle() === "yearly" ? "yr" : "mo" }}</span
+              >
             </div>
           </div>
 
           <ul class="space-y-3 mb-8 flex-1 my-4">
-            <li *ngFor="let feat of pkg.features" class="flex items-start gap-3 text-sm text-slate-600 font-medium">
-              <lucide-icon [img]="Check" class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"></lucide-icon>
+            <li
+              *ngFor="let feat of pkg.features"
+              class="flex items-start gap-3 text-sm text-slate-600 font-medium"
+            >
+              <lucide-icon
+                [img]="Check"
+                class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"
+              ></lucide-icon>
               <span>{{ feat }}</span>
             </li>
           </ul>
@@ -427,7 +653,11 @@
               *ngIf="fac.subscription_package !== pkg.id"
               type="button"
               class="w-full py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center cursor-pointer shadow-sm"
-              [ngClass]="pkg.popular ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'"
+              [ngClass]="
+                pkg.popular
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              "
               (click)="openCheckoutModal(pkg)"
             >
               <lucide-icon [img]="Sparkles" class="w-4 h-4 mr-2"></lucide-icon>
@@ -450,22 +680,39 @@
 
     <!-- ================= TAB 3: PAYMENT HISTORY ================= -->
     <div *ngIf="activeTab() === 'history'" class="space-y-6">
-      <div class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm">
+      <div
+        class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm"
+      >
         <div class="pb-6 mb-6 border-b border-slate-100">
-          <h2 class="text-xl font-bold text-slate-800">Subscription Payment Receipts & History</h2>
-          <p class="text-sm text-slate-500 mt-1">Detailed record of all past subscription upgrades, renewals, and transaction references.</p>
+          <h2 class="text-xl font-bold text-slate-800">
+            Subscription Payment Receipts & History
+          </h2>
+          <p class="text-sm text-slate-500 mt-1">
+            Detailed record of all past subscription upgrades, renewals, and
+            transaction references.
+          </p>
         </div>
 
         <div *ngIf="paymentHistory().length === 0" class="text-center py-12">
-          <lucide-icon [img]="FileText" class="w-12 h-12 text-slate-300 mx-auto mb-3"></lucide-icon>
-          <p class="font-semibold text-slate-700">No subscription payments recorded yet.</p>
-          <p class="text-xs text-slate-400 mt-1">Upgrade or renew your subscription package to generate payment receipts.</p>
+          <lucide-icon
+            [img]="FileText"
+            class="w-12 h-12 text-slate-300 mx-auto mb-3"
+          ></lucide-icon>
+          <p class="font-semibold text-slate-700">
+            No subscription payments recorded yet.
+          </p>
+          <p class="text-xs text-slate-400 mt-1">
+            Upgrade or renew your subscription package to generate payment
+            receipts.
+          </p>
         </div>
 
         <div *ngIf="paymentHistory().length > 0" class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-500 tracking-wider">
+              <tr
+                class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-500 tracking-wider"
+              >
                 <th class="py-3 px-4">Transaction Ref</th>
                 <th class="py-3 px-4">Date & Time</th>
                 <th class="py-3 px-4">Package Plan</th>
@@ -476,23 +723,60 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-sm">
-              <tr *ngFor="let item of paymentHistory()" class="hover:bg-slate-50/50 transition-colors">
-                <td class="py-3.5 px-4 font-mono font-semibold text-blue-600 text-xs">{{ item.transaction_reference }}</td>
-                <td class="py-3.5 px-4 text-slate-500 text-xs">{{ item.created_at | date: 'mediumDate' }} {{ item.created_at | date: 'shortTime' }}</td>
-                <td class="py-3.5 px-4 font-semibold text-slate-800">{{ item.package | uppercase }} PLAN</td>
-                <td class="py-3.5 px-4 font-medium text-slate-500 text-xs">{{ item.billing_cycle | uppercase }}</td>
-                <td class="py-3.5 px-4 font-bold text-slate-900">{{ formatCurrency(item.amount) }}</td>
+              <tr
+                *ngFor="let item of paymentHistory()"
+                class="hover:bg-slate-50/50 transition-colors"
+              >
+                <td
+                  class="py-3.5 px-4 font-mono font-semibold text-blue-600 text-xs"
+                >
+                  {{ item.transaction_reference }}
+                </td>
+                <td class="py-3.5 px-4 text-slate-500 text-xs">
+                  {{ item.created_at | date: "mediumDate" }}
+                  {{ item.created_at | date: "shortTime" }}
+                </td>
+                <td class="py-3.5 px-4 font-semibold text-slate-800">
+                  {{ item.package | uppercase }} PLAN
+                </td>
+                <td class="py-3.5 px-4 font-medium text-slate-500 text-xs">
+                  {{ item.billing_cycle | uppercase }}
+                </td>
+                <td class="py-3.5 px-4 font-bold text-slate-900">
+                  {{ formatCurrency(item.amount) }}
+                </td>
                 <td class="py-3.5 px-4">
-                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-700" [class.bg-emerald-50]="item.payment_method === 'mpesa'" [class.text-emerald-700]="item.payment_method === 'mpesa'">
-                    <lucide-icon *ngIf="item.payment_method === 'mpesa'" [img]="Smartphone" class="w-3.5 h-3.5 mr-1"></lucide-icon>
-                    <lucide-icon *ngIf="item.payment_method === 'card'" [img]="CreditCard" class="w-3.5 h-3.5 mr-1"></lucide-icon>
-                    <lucide-icon *ngIf="item.payment_method === 'bank_transfer'" [img]="Landmark" class="w-3.5 h-3.5 mr-1"></lucide-icon>
+                  <span
+                    class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-700"
+                    [class.bg-emerald-50]="item.payment_method === 'mpesa'"
+                    [class.text-emerald-700]="item.payment_method === 'mpesa'"
+                  >
+                    <lucide-icon
+                      *ngIf="item.payment_method === 'mpesa'"
+                      [img]="Smartphone"
+                      class="w-3.5 h-3.5 mr-1"
+                    ></lucide-icon>
+                    <lucide-icon
+                      *ngIf="item.payment_method === 'card'"
+                      [img]="CreditCard"
+                      class="w-3.5 h-3.5 mr-1"
+                    ></lucide-icon>
+                    <lucide-icon
+                      *ngIf="item.payment_method === 'bank_transfer'"
+                      [img]="Landmark"
+                      class="w-3.5 h-3.5 mr-1"
+                    ></lucide-icon>
                     {{ item.payment_method | uppercase }}
                   </span>
                 </td>
                 <td class="py-3.5 px-4">
-                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <lucide-icon [img]="Check" class="w-3.5 h-3.5 mr-1"></lucide-icon>
+                  <span
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  >
+                    <lucide-icon
+                      [img]="Check"
+                      class="w-3.5 h-3.5 mr-1"
+                    ></lucide-icon>
                     {{ item.status | uppercase }}
                   </span>
                 </td>
@@ -505,26 +789,57 @@
 
     <!-- ================= TAB 4: M-PESA BILLING CONFIGURATION ================= -->
     <div *ngIf="activeTab() === 'mpesa'" class="space-y-6">
-      <div class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100">
+      <div
+        class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm"
+      >
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100"
+        >
           <div>
             <div class="flex items-center gap-2 mb-1">
-              <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-lg uppercase tracking-wide">M-Pesa STK Push Gateway</span>
-              <span class="px-2.5 py-1 bg-blue-100 text-blue-800 font-bold text-xs rounded-lg uppercase" [class.bg-purple-100]="mpesaConfig().environment === 'production'" [class.text-purple-800]="mpesaConfig().environment === 'production'">
+              <span
+                class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-lg uppercase tracking-wide"
+                >M-Pesa STK Push Gateway</span
+              >
+              <span
+                class="px-2.5 py-1 bg-blue-100 text-blue-800 font-bold text-xs rounded-lg uppercase"
+                [class.bg-purple-100]="
+                  mpesaConfig().environment === 'production'
+                "
+                [class.text-purple-800]="
+                  mpesaConfig().environment === 'production'
+                "
+              >
                 {{ mpesaConfig().environment }} Mode
               </span>
             </div>
-            <h2 class="text-xl font-bold text-slate-800">M-Pesa Patient Billing Registration</h2>
-            <p class="text-sm text-slate-500 mt-1">Configure your facility Paybill/Till number and Safaricom Daraja API credentials to prompt patients on their mobile phones when settling bills.</p>
+            <h2 class="text-xl font-bold text-slate-800">
+              M-Pesa Patient Billing Registration
+            </h2>
+            <p class="text-sm text-slate-500 mt-1">
+              Configure your facility Paybill/Till number and Safaricom Daraja
+              API credentials to prompt patients on their mobile phones when
+              settling bills.
+            </p>
           </div>
           <button
             class="inline-flex items-center justify-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer disabled:opacity-50"
             (click)="saveMpesaSettings()"
             [disabled]="savingMpesa()"
           >
-            <lucide-icon *ngIf="!savingMpesa()" [img]="Save" class="w-4 h-4 mr-2"></lucide-icon>
-            <lucide-icon *ngIf="savingMpesa()" [img]="RefreshCw" class="spin-icon w-4 h-4 mr-2"></lucide-icon>
-            {{ savingMpesa() ? 'Saving Credentials...' : 'Save M-Pesa Settings' }}
+            <lucide-icon
+              *ngIf="!savingMpesa()"
+              [img]="Save"
+              class="w-4 h-4 mr-2"
+            ></lucide-icon>
+            <lucide-icon
+              *ngIf="savingMpesa()"
+              [img]="RefreshCw"
+              class="spin-icon w-4 h-4 mr-2"
+            ></lucide-icon>
+            {{
+              savingMpesa() ? "Saving Credentials..." : "Save M-Pesa Settings"
+            }}
           </button>
         </div>
 
@@ -533,7 +848,8 @@
             <!-- Business Shortcode / Till Number -->
             <div>
               <label class="block text-sm font-semibold text-slate-700 mb-2">
-                Business Shortcode / Paybill / Till Number <span class="text-rose-500">*</span>
+                Business Shortcode / Paybill / Till Number
+                <span class="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -543,28 +859,41 @@
                 placeholder="e.g. 174379 (Sandbox) or 600000"
                 required
               />
-              <p class="text-xs text-slate-500 mt-1">The Paybill number or Buy Goods Till number registered with Safaricom.</p>
+              <p class="text-xs text-slate-500 mt-1">
+                The Paybill number or Buy Goods Till number registered with
+                Safaricom.
+              </p>
             </div>
 
             <!-- Transaction Type -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Transaction Type</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-2"
+                >Transaction Type</label
+              >
               <select
                 class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
                 [(ngModel)]="mpesaConfig().transaction_type"
                 name="transaction_type"
               >
-                <option value="CustomerPayBillOnline">Customer PayBill Online</option>
-                <option value="CustomerBuyGoodsOnline">Buy Goods Till Number</option>
+                <option value="CustomerPayBillOnline">
+                  Customer PayBill Online
+                </option>
+                <option value="CustomerBuyGoodsOnline">
+                  Buy Goods Till Number
+                </option>
               </select>
 
-              <p class="text-xs text-slate-500 mt-1">Select PayBill or Buy Goods depending on your Safaricom account setup.</p>
+              <p class="text-xs text-slate-500 mt-1">
+                Select PayBill or Buy Goods depending on your Safaricom account
+                setup.
+              </p>
             </div>
 
             <!-- Passkey -->
             <div class="md:col-span-2">
               <label class="block text-sm font-semibold text-slate-700 mb-2">
-                Lipa Na M-Pesa Online Passkey <span class="text-rose-500">*</span>
+                Lipa Na M-Pesa Online Passkey
+                <span class="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -574,12 +903,17 @@
                 placeholder="Lipa Na M-Pesa Online Passkey provided by Safaricom"
                 required
               />
-              <p class="text-xs text-slate-500 mt-1">The security passkey generated from the Safaricom Developer Portal or Daraja Portal.</p>
+              <p class="text-xs text-slate-500 mt-1">
+                The security passkey generated from the Safaricom Developer
+                Portal or Daraja Portal.
+              </p>
             </div>
 
             <!-- Consumer Key -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Daraja App Consumer Key</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-2"
+                >Daraja App Consumer Key</label
+              >
               <input
                 type="text"
                 class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-xs"
@@ -591,7 +925,9 @@
 
             <!-- Consumer Secret -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Daraja App Consumer Secret</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-2"
+                >Daraja App Consumer Secret</label
+              >
               <input
                 type="password"
                 class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-xs"
@@ -603,7 +939,9 @@
 
             <!-- Environment Mode -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Gateway Environment</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-2"
+                >Gateway Environment</label
+              >
               <select
                 class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
                 [(ngModel)]="mpesaConfig().environment"
@@ -616,7 +954,9 @@
 
             <!-- Account Reference Prefix -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">Account Reference Prefix</label>
+              <label class="block text-sm font-semibold text-slate-700 mb-2"
+                >Account Reference Prefix</label
+              >
               <input
                 type="text"
                 class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
@@ -633,55 +973,103 @@
     <!-- ================= TAB 5: COMPLIANCE & TERMINOLOGY LOGS ================= -->
     <div *ngIf="activeTab() === 'compliance'" class="space-y-6">
       <!-- DHA Compliance Mode Status -->
-      <div class="p-6 rounded-2xl border-2 bg-emerald-50 border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
+      <div
+        class="p-6 rounded-2xl border-2 bg-emerald-50 border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all"
+      >
         <div class="flex items-center gap-4">
-          <div class="w-13 h-13 rounded-2xl bg-white flex items-center justify-center shadow-xs border border-emerald-100">
-            <lucide-icon [img]="ShieldCheck" class="w-7 h-7 text-emerald-600"></lucide-icon>
+          <div
+            class="w-13 h-13 rounded-2xl bg-white flex items-center justify-center shadow-xs border border-emerald-100"
+          >
+            <lucide-icon
+              [img]="ShieldCheck"
+              class="w-7 h-7 text-emerald-600"
+            ></lucide-icon>
           </div>
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Digital Health Agency</span>
-              <span class="text-lg font-extrabold text-emerald-700 uppercase">DHA COMPLIANCE MODE</span>
-              <span class="px-2.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full uppercase">Enabled</span>
+              <span
+                class="text-xs font-bold text-slate-500 uppercase tracking-wider"
+                >Digital Health Agency</span
+              >
+              <span class="text-lg font-extrabold text-emerald-700 uppercase"
+                >DHA COMPLIANCE MODE</span
+              >
+              <span
+                class="px-2.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full uppercase"
+                >Enabled</span
+              >
             </div>
             <p class="text-sm text-slate-600 mt-1">
-              All clinical records (EHR and Visits) are now strictly enforcing coded diagnoses. 
-              The terminology provenance log below tracks all clinical concepts recorded by your facility staff.
+              All clinical records (EHR and Visits) are now strictly enforcing
+              coded diagnoses. The terminology provenance log below tracks all
+              clinical concepts recorded by your facility staff.
             </p>
           </div>
         </div>
       </div>
 
       <!-- Terminology Logs Table -->
-      <div class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm">
-        <div class="flex items-center justify-between pb-6 mb-6 border-b border-slate-100">
+      <div
+        class="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm"
+      >
+        <div
+          class="flex items-center justify-between pb-6 mb-6 border-b border-slate-100"
+        >
           <div>
-            <h2 class="text-xl font-bold text-slate-800">Immutable Terminology Log</h2>
-            <p class="text-sm text-slate-500 mt-1">Audit log of standard medical concepts (ICD-10, SNOMED, KNHTS) assigned during patient encounters.</p>
+            <h2 class="text-xl font-bold text-slate-800">
+              Immutable Terminology Log
+            </h2>
+            <p class="text-sm text-slate-500 mt-1">
+              Audit log of standard medical concepts (ICD-10, SNOMED, KNHTS)
+              assigned during patient encounters.
+            </p>
           </div>
           <button
             class="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             (click)="fac.id ? loadTerminologyLogs(fac.id) : null"
             title="Refresh Logs"
           >
-            <lucide-icon [img]="RefreshCw" class="w-5 h-5" [class.spin-icon]="loadingLogs()"></lucide-icon>
+            <lucide-icon
+              [img]="RefreshCw"
+              class="w-5 h-5"
+              [class.spin-icon]="loadingLogs()"
+            ></lucide-icon>
           </button>
         </div>
 
         <div *ngIf="loadingLogs()" class="flex justify-center p-8">
-          <lucide-icon [img]="RefreshCw" class="spin-icon text-blue-600 w-8 h-8"></lucide-icon>
+          <lucide-icon
+            [img]="RefreshCw"
+            class="spin-icon text-blue-600 w-8 h-8"
+          ></lucide-icon>
         </div>
 
-        <div *ngIf="!loadingLogs() && terminologyLogs().length === 0" class="text-center py-12">
-          <lucide-icon [img]="FileBadge2" class="w-12 h-12 text-slate-300 mx-auto mb-3"></lucide-icon>
-          <p class="font-semibold text-slate-700">No terminology logs recorded yet.</p>
-          <p class="text-xs text-slate-400 mt-1">Logs will appear here once doctors start assigning compliant diagnoses.</p>
+        <div
+          *ngIf="!loadingLogs() && terminologyLogs().length === 0"
+          class="text-center py-12"
+        >
+          <lucide-icon
+            [img]="FileBadge2"
+            class="w-12 h-12 text-slate-300 mx-auto mb-3"
+          ></lucide-icon>
+          <p class="font-semibold text-slate-700">
+            No terminology logs recorded yet.
+          </p>
+          <p class="text-xs text-slate-400 mt-1">
+            Logs will appear here once doctors start assigning compliant
+            diagnoses.
+          </p>
         </div>
 
-        <div *ngIf="!loadingLogs() && terminologyLogs().length > 0" class="overflow-x-auto">
+        <div
+          *ngIf="!loadingLogs() && terminologyLogs().length > 0"
+          class="overflow-x-auto"
+        >
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-500 tracking-wider">
+              <tr
+                class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase text-slate-500 tracking-wider"
+              >
                 <th class="py-3 px-4">Date/Time</th>
                 <th class="py-3 px-4">User</th>
                 <th class="py-3 px-4">Code System</th>
@@ -691,18 +1079,32 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-sm">
-              <tr *ngFor="let log of terminologyLogs()" class="hover:bg-slate-50/50 transition-colors">
-                <td class="py-3.5 px-4 text-slate-500 text-xs">{{ log.created_at | date: 'mediumDate' }} {{ log.created_at | date: 'shortTime' }}</td>
-                <td class="py-3.5 px-4 font-semibold text-slate-700 text-xs">{{ log.user }}</td>
+              <tr
+                *ngFor="let log of terminologyLogs()"
+                class="hover:bg-slate-50/50 transition-colors"
+              >
+                <td class="py-3.5 px-4 text-slate-500 text-xs">
+                  {{ log.created_at | date: "mediumDate" }}
+                  {{ log.created_at | date: "shortTime" }}
+                </td>
+                <td class="py-3.5 px-4 font-semibold text-slate-700 text-xs">
+                  {{ log.user }}
+                </td>
                 <td class="py-3.5 px-4">
-                  <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-md uppercase border border-blue-100">
+                  <span
+                    class="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-md uppercase border border-blue-100"
+                  >
                     {{ log.code_system }}
                   </span>
                 </td>
-                <td class="py-3.5 px-4 font-mono font-bold text-slate-800">{{ log.code }}</td>
+                <td class="py-3.5 px-4 font-mono font-bold text-slate-800">
+                  {{ log.code }}
+                </td>
                 <td class="py-3.5 px-4 text-slate-600">{{ log.display }}</td>
                 <td class="py-3.5 px-4">
-                  <span class="inline-flex items-center text-xs font-semibold text-slate-500">
+                  <span
+                    class="inline-flex items-center text-xs font-semibold text-slate-500"
+                  >
                     {{ log.record_type | uppercase }} #{{ log.record_id }}
                   </span>
                 </td>
@@ -715,43 +1117,76 @@
   </ng-container>
 
   <!-- ================= CHECKOUT & PAYMENT MODAL ================= -->
-  <div *ngIf="showCheckoutModal() && selectedPackageForCheckout() as pkg" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-
-    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+  <div
+    *ngIf="showCheckoutModal() && selectedPackageForCheckout() as pkg"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+  >
+    <div
+      class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+    >
+      <div
+        class="flex items-center justify-between px-6 py-4 border-b border-slate-100"
+      >
         <div class="flex items-center gap-2">
-          <lucide-icon [img]="CreditCard" class="w-5 h-5 text-blue-600"></lucide-icon>
-          <h3 class="text-lg font-bold text-slate-800">Subscription Payment Checkout</h3>
+          <lucide-icon
+            [img]="CreditCard"
+            class="w-5 h-5 text-blue-600"
+          ></lucide-icon>
+          <h3 class="text-lg font-bold text-slate-800">
+            Subscription Payment Checkout
+          </h3>
         </div>
-        <button type="button" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors" (click)="closeCheckoutModal()">
+        <button
+          type="button"
+          class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+          (click)="closeCheckoutModal()"
+        >
           <lucide-icon [img]="X" class="w-5 h-5"></lucide-icon>
         </button>
       </div>
 
       <div class="p-6 space-y-5">
         <!-- Summary Box -->
-        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+        <div
+          class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2"
+        >
           <div class="flex justify-between text-sm">
             <span class="text-slate-500">Target Package:</span>
             <span class="font-bold text-blue-600">{{ pkg.name }}</span>
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-slate-500">Billing Cycle:</span>
-            <span class="font-semibold text-slate-700 capitalize">{{ billingCycle() }} Billing</span>
+            <span class="font-semibold text-slate-700 capitalize"
+              >{{ billingCycle() }} Billing</span
+            >
           </div>
           <div class="flex justify-between text-sm">
             <span class="text-slate-500">Facility:</span>
-            <span class="font-semibold text-slate-700">{{ facility()?.name }}</span>
+            <span class="font-semibold text-slate-700">{{
+              facility()?.name
+            }}</span>
           </div>
-          <div class="border-t border-slate-200 my-2 pt-2 flex justify-between items-center">
-            <span class="font-bold text-slate-800 text-sm">Total Amount Payable:</span>
-            <span class="text-lg font-extrabold text-blue-600">{{ formatCurrency(billingCycle() === 'yearly' ? pkg.yearlyPriceKES : pkg.monthlyPriceKES) }}</span>
+          <div
+            class="border-t border-slate-200 my-2 pt-2 flex justify-between items-center"
+          >
+            <span class="font-bold text-slate-800 text-sm"
+              >Total Amount Payable:</span
+            >
+            <span class="text-lg font-extrabold text-blue-600">{{
+              formatCurrency(
+                billingCycle() === "yearly"
+                  ? pkg.yearlyPriceKES
+                  : pkg.monthlyPriceKES
+              )
+            }}</span>
           </div>
         </div>
 
         <!-- Payment Method Selection -->
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Select Payment Method</label>
+          <label class="block text-sm font-semibold text-slate-700 mb-2"
+            >Select Payment Method</label
+          >
           <div class="grid grid-cols-3 gap-3">
             <button
               type="button"
@@ -763,7 +1198,10 @@
               [class.text-slate-600]="paymentMethod() !== 'mpesa'"
               (click)="paymentMethod.set('mpesa')"
             >
-              <lucide-icon [img]="Smartphone" class="w-5 h-5 mb-1 text-emerald-600"></lucide-icon>
+              <lucide-icon
+                [img]="Smartphone"
+                class="w-5 h-5 mb-1 text-emerald-600"
+              ></lucide-icon>
               <span>M-Pesa (STK)</span>
             </button>
 
@@ -777,7 +1215,10 @@
               [class.text-slate-600]="paymentMethod() !== 'card'"
               (click)="paymentMethod.set('card')"
             >
-              <lucide-icon [img]="CreditCard" class="w-5 h-5 mb-1 text-blue-600"></lucide-icon>
+              <lucide-icon
+                [img]="CreditCard"
+                class="w-5 h-5 mb-1 text-blue-600"
+              ></lucide-icon>
               <span>Card</span>
             </button>
 
@@ -791,17 +1232,28 @@
               [class.text-slate-600]="paymentMethod() !== 'bank_transfer'"
               (click)="paymentMethod.set('bank_transfer')"
             >
-              <lucide-icon [img]="Landmark" class="w-5 h-5 mb-1 text-amber-600"></lucide-icon>
+              <lucide-icon
+                [img]="Landmark"
+                class="w-5 h-5 mb-1 text-amber-600"
+              ></lucide-icon>
               <span>Bank Transfer</span>
             </button>
           </div>
         </div>
 
         <!-- M-Pesa STK Push Form -->
-        <div *ngIf="paymentMethod() === 'mpesa'" class="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-          <label class="block text-sm font-semibold text-slate-700">M-Pesa Phone Number <span class="text-rose-500">*</span></label>
+        <div
+          *ngIf="paymentMethod() === 'mpesa'"
+          class="space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200"
+        >
+          <label class="block text-sm font-semibold text-slate-700"
+            >M-Pesa Phone Number <span class="text-rose-500">*</span></label
+          >
           <div class="relative flex items-center">
-            <lucide-icon [img]="Smartphone" class="absolute left-3.5 w-5 h-5 text-emerald-600 pointer-events-none"></lucide-icon>
+            <lucide-icon
+              [img]="Smartphone"
+              class="absolute left-3.5 w-5 h-5 text-emerald-600 pointer-events-none"
+            ></lucide-icon>
             <input
               type="tel"
               class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
@@ -809,18 +1261,35 @@
               placeholder="e.g. 254712345678"
             />
           </div>
-          <p class="text-xs text-slate-400">An STK push prompt will be sent directly to your phone to authorize payment.</p>
+          <p class="text-xs text-slate-400">
+            An STK push prompt will be sent directly to your phone to authorize
+            payment.
+          </p>
 
-          <div *ngIf="stkPushSent()" class="flex items-center p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-semibold">
-            <lucide-icon [img]="RefreshCw" class="spin-icon w-4 h-4 mr-2 shrink-0"></lucide-icon>
-            <span>STK Push prompt sent! Please enter your PIN on your phone to complete transaction...</span>
+          <div
+            *ngIf="stkPushSent()"
+            class="flex items-center p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-semibold"
+          >
+            <lucide-icon
+              [img]="RefreshCw"
+              class="spin-icon w-4 h-4 mr-2 shrink-0"
+            ></lucide-icon>
+            <span
+              >STK Push prompt sent! Please enter your PIN on your phone to
+              complete transaction...</span
+            >
           </div>
         </div>
 
         <!-- Card Form -->
-        <div *ngIf="paymentMethod() === 'card'" class="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+        <div
+          *ngIf="paymentMethod() === 'card'"
+          class="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200"
+        >
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1">Card Number</label>
+            <label class="block text-sm font-semibold text-slate-700 mb-1"
+              >Card Number</label
+            >
             <input
               type="text"
               class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
@@ -830,19 +1299,38 @@
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-1">Expiry (MM/YY)</label>
-              <input type="text" class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600" [(ngModel)]="cardExpiry" placeholder="12/28" />
+              <label class="block text-sm font-semibold text-slate-700 mb-1"
+                >Expiry (MM/YY)</label
+              >
+              <input
+                type="text"
+                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                [(ngModel)]="cardExpiry"
+                placeholder="12/28"
+              />
             </div>
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-1">CVV Code</label>
-              <input type="password" class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600" [(ngModel)]="cardCvv" placeholder="123" />
+              <label class="block text-sm font-semibold text-slate-700 mb-1"
+                >CVV Code</label
+              >
+              <input
+                type="password"
+                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                [(ngModel)]="cardCvv"
+                placeholder="123"
+              />
             </div>
           </div>
         </div>
 
         <!-- Bank Transfer Information -->
-        <div *ngIf="paymentMethod() === 'bank_transfer'" class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-slate-800 space-y-1 text-xs">
-          <p class="font-bold text-sm text-slate-900 mb-2">Bank Payment Instructions:</p>
+        <div
+          *ngIf="paymentMethod() === 'bank_transfer'"
+          class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-slate-800 space-y-1 text-xs"
+        >
+          <p class="font-bold text-sm text-slate-900 mb-2">
+            Bank Payment Instructions:
+          </p>
           <p><strong>Bank Name:</strong> Equity Bank Kenya</p>
           <p><strong>Account Name:</strong> Afyora Healthcare Ltd</p>
           <p><strong>Account Number:</strong> 0123456789101</p>
@@ -850,7 +1338,9 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-100">
+      <div
+        class="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-100"
+      >
         <button
           type="button"
           class="px-5 py-2.5 rounded-xl font-semibold text-sm text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
@@ -863,11 +1353,26 @@
           type="button"
           class="inline-flex items-center justify-center px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
           (click)="processSubscriptionPayment()"
-          [disabled]="paymentProcessing() || (paymentMethod() === 'mpesa' && !stkPhoneNumber())"
+          [disabled]="
+            paymentProcessing() ||
+            (paymentMethod() === 'mpesa' && !stkPhoneNumber())
+          "
         >
-          <lucide-icon *ngIf="!paymentProcessing()" [img]="CheckCircle2" class="w-4 h-4 mr-2"></lucide-icon>
-          <lucide-icon *ngIf="paymentProcessing()" [img]="RefreshCw" class="spin-icon w-4 h-4 mr-2"></lucide-icon>
-          {{ paymentProcessing() ? 'Authorizing & Processing...' : 'Pay & Activate Plan' }}
+          <lucide-icon
+            *ngIf="!paymentProcessing()"
+            [img]="CheckCircle2"
+            class="w-4 h-4 mr-2"
+          ></lucide-icon>
+          <lucide-icon
+            *ngIf="paymentProcessing()"
+            [img]="RefreshCw"
+            class="spin-icon w-4 h-4 mr-2"
+          ></lucide-icon>
+          {{
+            paymentProcessing()
+              ? "Authorizing & Processing..."
+              : "Pay & Activate Plan"
+          }}
         </button>
       </div>
     </div>

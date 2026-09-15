@@ -226,10 +226,11 @@ export class BillingComponent implements OnInit {
 
   openRecordPaymentDialog(invoice: Invoice): void {
     const patientObj = (this.patients || []).find(
-      (p) => String(p.id) === String(invoice.patientId) || (p as any).patient_id === invoice.patientId
+      (p) =>
+        String(p.id) === String(invoice.patientId) ||
+        (p as any).patient_id === invoice.patientId,
     );
     const phoneNumber = patientObj?.phone || '';
-
 
     const dialogRef = this.dialog.open<
       RecordPaymentDialogComponent,
@@ -254,7 +255,6 @@ export class BillingComponent implements OnInit {
       this.applyRecordedPayment(invoice.id, result);
     });
   }
-
 
   setActiveTab(index: number): void {
     this.activeTab = index === 1 ? 'payments' : 'invoices';
@@ -461,10 +461,10 @@ export class BillingComponent implements OnInit {
       paymentMethod: null,
       insurance: payload.insurance
         ? {
-          company: payload.insurance.company,
-          coverage: payload.insurance.coverage ?? 0,
-          claim: `CLM-${Date.now().toString().slice(-5)}`,
-        }
+            company: payload.insurance.company,
+            coverage: payload.insurance.coverage ?? 0,
+            claim: `CLM-${Date.now().toString().slice(-5)}`,
+          }
         : null,
     };
 
@@ -475,27 +475,29 @@ export class BillingComponent implements OnInit {
     invoiceId: string,
     payload: RecordPaymentPayload,
   ): void {
-    this.billingService.recordPayment(invoiceId, payload, this.facilityId).subscribe({
-      next: ({ data }) => {
-        const invoice = this.invoices.find((entry) => entry.id === invoiceId);
-        if (!invoice) {
-          return;
-        }
+    this.billingService
+      .recordPayment(invoiceId, payload, this.facilityId)
+      .subscribe({
+        next: ({ data }) => {
+          const invoice = this.invoices.find((entry) => entry.id === invoiceId);
+          if (!invoice) {
+            return;
+          }
 
-        this.invoices = this.invoices.map((entry) =>
-          entry.id === invoiceId
-            ? { ...entry, status: 'Paid', paymentMethod: payload.method }
-            : entry,
-        );
-        this.payments = [
-          data,
-          ...this.payments.filter((entry) => entry.id !== data.id),
-        ];
-      },
-      error: () => {
-        this.applyLocalRecordedPayment(invoiceId, payload);
-      },
-    });
+          this.invoices = this.invoices.map((entry) =>
+            entry.id === invoiceId
+              ? { ...entry, status: 'Paid', paymentMethod: payload.method }
+              : entry,
+          );
+          this.payments = [
+            data,
+            ...this.payments.filter((entry) => entry.id !== data.id),
+          ];
+        },
+        error: () => {
+          this.applyLocalRecordedPayment(invoiceId, payload);
+        },
+      });
   }
 
   private applyLocalRecordedPayment(
@@ -537,7 +539,7 @@ export class BillingComponent implements OnInit {
       next: ({ data }) => {
         this.invoices = data.items;
       },
-      error: () => { },
+      error: () => {},
     });
   }
 
@@ -546,7 +548,7 @@ export class BillingComponent implements OnInit {
       next: ({ data }) => {
         this.payments = data.items;
       },
-      error: () => { },
+      error: () => {},
     });
   }
 
@@ -557,7 +559,7 @@ export class BillingComponent implements OnInit {
   private formatCurrency(value: number): string {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'KES',
       minimumFractionDigits: 2,
     }).format(value);
   }

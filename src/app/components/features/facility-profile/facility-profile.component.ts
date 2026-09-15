@@ -45,8 +45,6 @@ export interface PackageTier {
   popular?: boolean;
   monthlyPriceKES: number;
   yearlyPriceKES: number;
-  monthlyPriceUSD: number;
-  yearlyPriceUSD: number;
   staffLimit: string;
   features: string[];
 }
@@ -88,7 +86,9 @@ export class FacilityProfileComponent implements OnInit {
   readonly FileBadge2 = FileBadge2;
 
   // Active Tab
-  activeTab = signal<'profile' | 'subscription' | 'history' | 'mpesa' | 'compliance'>('profile');
+  activeTab = signal<
+    'profile' | 'subscription' | 'history' | 'mpesa' | 'compliance'
+  >('profile');
 
   // State Signals
   loading = signal<boolean>(true);
@@ -154,8 +154,6 @@ export class FacilityProfileComponent implements OnInit {
       name: 'Basic Plan',
       monthlyPriceKES: 2999,
       yearlyPriceKES: 28790,
-      monthlyPriceUSD: 24,
-      yearlyPriceUSD: 230,
       staffLimit: '3 Users • Up to 100 Patients',
       features: [
         'Up to 100 patients',
@@ -171,8 +169,6 @@ export class FacilityProfileComponent implements OnInit {
       popular: true,
       monthlyPriceKES: 5999,
       yearlyPriceKES: 57590,
-      monthlyPriceUSD: 48,
-      yearlyPriceUSD: 460,
       staffLimit: '15 Users • Up to 500 Patients',
       features: [
         'Up to 500 patients',
@@ -186,8 +182,6 @@ export class FacilityProfileComponent implements OnInit {
       name: 'Enterprise Plan',
       monthlyPriceKES: 12999,
       yearlyPriceKES: 124790,
-      monthlyPriceUSD: 104,
-      yearlyPriceUSD: 998,
       staffLimit: 'Unlimited Users • Unlimited Patients',
       features: [
         'Unlimited patients',
@@ -259,17 +253,20 @@ export class FacilityProfileComponent implements OnInit {
           this.mpesaConfig.set(res.data);
         }
         this.savingMpesa.set(false);
-        this.successMessage.set('M-Pesa payment configuration updated successfully!');
+        this.successMessage.set(
+          'M-Pesa payment configuration updated successfully!',
+        );
         setTimeout(() => this.successMessage.set(null), 4000);
       },
       error: (err) => {
         console.error('Failed to save M-Pesa config:', err);
         this.savingMpesa.set(false);
-        this.errorMessage.set(err?.error?.error || 'Failed to save M-Pesa configuration.');
+        this.errorMessage.set(
+          err?.error?.error || 'Failed to save M-Pesa configuration.',
+        );
       },
     });
   }
-
 
   populateProfileForm(data: FacilityProfile): void {
     this.profileForm = {
@@ -329,9 +326,7 @@ export class FacilityProfileComponent implements OnInit {
         this.facility.set(updated);
         this.populateProfileForm(updated);
         this.saving.set(false);
-        this.successMessage.set(
-          'Facility profile updated successfully!',
-        );
+        this.successMessage.set('Facility profile updated successfully!');
         setTimeout(() => this.successMessage.set(null), 4000);
       },
       error: (err) => {
@@ -339,9 +334,9 @@ export class FacilityProfileComponent implements OnInit {
         this.saving.set(false);
         this.errorMessage.set(
           err?.error?.detail ||
-          err?.error?.email?.[0] ||
-          err?.error?.name?.[0] ||
-          'Failed to update facility profile.',
+            err?.error?.email?.[0] ||
+            err?.error?.name?.[0] ||
+            'Failed to update facility profile.',
         );
       },
     });
@@ -364,7 +359,10 @@ export class FacilityProfileComponent implements OnInit {
 
   private subscriptionPollTimer: any = null;
 
-  startSubscriptionStatusPolling(checkoutReqId: string, packageName: string): void {
+  startSubscriptionStatusPolling(
+    checkoutReqId: string,
+    packageName: string,
+  ): void {
     this.clearSubscriptionPolling();
     let elapsed = 0;
     const maxAttempts = 20; // 60 seconds
@@ -375,7 +373,9 @@ export class FacilityProfileComponent implements OnInit {
         this.clearSubscriptionPolling();
         this.paymentProcessing.set(false);
         this.stkPushSent.set(false);
-        this.errorMessage.set('M-Pesa transaction validation timed out. Please retry or check your PIN entry.');
+        this.errorMessage.set(
+          'M-Pesa transaction validation timed out. Please retry or check your PIN entry.',
+        );
         return;
       }
 
@@ -389,7 +389,7 @@ export class FacilityProfileComponent implements OnInit {
               this.closeCheckoutModal();
 
               this.successMessage.set(
-                `Payment verified! Your facility has been successfully upgraded to ${packageName}.`
+                `Payment verified! Your facility has been successfully upgraded to ${packageName}.`,
               );
               this.loadFacilityData();
               setTimeout(() => this.successMessage.set(null), 5000);
@@ -398,14 +398,15 @@ export class FacilityProfileComponent implements OnInit {
               this.paymentProcessing.set(false);
               this.stkPushSent.set(false);
               this.errorMessage.set(
-                res.data.result_desc || `M-Pesa transaction was ${status.toLowerCase()}.`
+                res.data.result_desc ||
+                  `M-Pesa transaction was ${status.toLowerCase()}.`,
               );
             }
           }
         },
         error: (err) => {
           console.error('Polling subscription error:', err);
-        }
+        },
       });
     }, 3000);
   }
@@ -458,14 +459,13 @@ export class FacilityProfileComponent implements OnInit {
         this.stkPushSent.set(false);
         this.errorMessage.set(
           err?.error?.detail ||
-          err?.error?.error ||
-          err?.error?.message ||
-          'Payment processing failed. Please check your details and try again.',
+            err?.error?.error ||
+            err?.error?.message ||
+            'Payment processing failed. Please check your details and try again.',
         );
       },
     });
   }
-
 
   getDaysRemaining(endDateStr?: string | null): number {
     if (!endDateStr) return 0;
