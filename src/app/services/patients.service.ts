@@ -16,6 +16,9 @@ type VisitRecordPayload = {
   date: string;
   doctor: string;
   diagnosis: string;
+  diagnosisCode?: string;
+  diagnosisSystem?: string;
+  diagnosisText?: string;
   prescriptions: {
     drugs: { name: string; quantity: number; dosage: string }[];
     status: 'Pending' | 'Dispensed';
@@ -32,23 +35,36 @@ export class PatientsService {
   private readonly baseUrl = apiUrl('/patients');
 
   getPatients(facilityId: string | number): Observable<Patient[]> {
-    return this.dataSync.query(`patients:${facilityId}`, () => this.http
-      .get<
-        ApiResponse<Patient[]>
-      >(`${this.baseUrl}/?facilityId=${encodeURIComponent(facilityId)}`)
-      .pipe(map((response: any) => response.results || response.data || (Array.isArray(response) ? response : []))));
+    return this.dataSync.query(`patients:${facilityId}`, () =>
+      this.http
+        .get<
+          ApiResponse<Patient[]>
+        >(`${this.baseUrl}/?facilityId=${encodeURIComponent(facilityId)}`)
+        .pipe(
+          map(
+            (response: any) =>
+              response.results ||
+              response.data ||
+              (Array.isArray(response) ? response : []),
+          ),
+        ),
+    );
   }
 
   getPatientById(patientId: string): Observable<ApiResponse<Patient>> {
-    return this.dataSync.query(`patients:detail:${patientId}`, () => this.http.get<ApiResponse<Patient>>(
-      `${this.baseUrl}/${encodeURIComponent(patientId)}/`,
-    ));
+    return this.dataSync.query(`patients:detail:${patientId}`, () =>
+      this.http.get<ApiResponse<Patient>>(
+        `${this.baseUrl}/${encodeURIComponent(patientId)}/`,
+      ),
+    );
   }
 
   registerPatient(
     payload: RegisterPatientRequest,
   ): Observable<ApiResponse<Patient>> {
-    return this.http.post<ApiResponse<Patient>>(`${this.baseUrl}/`, payload).pipe(tap(() => this.dataSync.invalidate('patients:')));
+    return this.http
+      .post<ApiResponse<Patient>>(`${this.baseUrl}/`, payload)
+      .pipe(tap(() => this.dataSync.invalidate('patients:')));
   }
 
   updatePatient(
@@ -60,7 +76,10 @@ export class PatientsService {
       .patch<
         ApiResponse<Patient>
       >(`${this.baseUrl}/${encodeURIComponent(patientId)}/?facilityId=${encodeURIComponent(facilityId)}`, payload)
-      .pipe(map((response) => response), tap(() => this.dataSync.invalidate('patients:')));
+      .pipe(
+        map((response) => response),
+        tap(() => this.dataSync.invalidate('patients:')),
+      );
   }
 
   getPatientAppointments(

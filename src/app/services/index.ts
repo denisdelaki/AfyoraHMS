@@ -13,4 +13,4 @@ export * from './session-timeout.service';
 export * from './visit-queue.service';
 export * from './facility.service';
 export * from './inventory.service';
-
+export * from './knhts.service';

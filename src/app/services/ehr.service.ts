@@ -41,9 +41,15 @@ export class EhrService {
   createRecord(
     payload: CreateEhrRecordRequest,
   ): Observable<ApiResponse<EhrRecord>> {
+    const normalizedPayload = {
+      ...payload,
+      diagnosisSystem: payload.diagnosisSystem || 'KNHTS',
+      diagnosisText: payload.diagnosisText || payload.diagnosis,
+    };
+
     return this.http.post<ApiResponse<EhrRecord>>(
       `${this.baseUrl}records/`,
-      payload,
+      normalizedPayload,
     );
   }
 }

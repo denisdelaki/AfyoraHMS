@@ -20,6 +20,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { PharmacyService } from '../../../services/pharmacy.service';
+import { ClinicalConcept } from '../../../models';
+import { KnhtsConceptSearchComponent } from '../../shared/knhts-concept-search/knhts-concept-search.component';
 
 export type PrescriptionDrug = {
   id: string;
@@ -39,6 +41,9 @@ export type VisitRecordFormValue = {
   date: string;
   doctor: string;
   diagnosis: string;
+  diagnosisCode?: string;
+  diagnosisSystem?: string;
+  diagnosisText?: string;
   prescriptions: PrescriptionEntry[];
   amountBilled: string;
   whatHappened: string;
@@ -68,6 +73,7 @@ type AddVisitRecordDialogData = {
     MatIconModule,
     MatInputModule,
     MatSelectModule,
+    KnhtsConceptSearchComponent,
   ],
   templateUrl: './add-visit-record-dialog.component.html',
   styleUrl: './add-visit-record-dialog.component.css',
@@ -87,6 +93,21 @@ export class AddVisitRecordDialogComponent implements OnInit {
   drugs: Drug[] = [];
 
   ngOnInit(): void {
+    if (this.data.initialValue?.diagnosis) {
+      this.initialConcept = {
+        code: this.data.initialValue.diagnosisCode || '',
+        system: this.data.initialValue.diagnosisSystem || 'KNHTS',
+        text: this.data.initialValue.diagnosisText || this.data.initialValue.diagnosis,
+        display: this.data.initialValue.diagnosisText || this.data.initialValue.diagnosis,
+        coding: [{
+          code: this.data.initialValue.diagnosisCode || '',
+          system: this.data.initialValue.diagnosisSystem || 'KNHTS',
+          display: this.data.initialValue.diagnosisText || this.data.initialValue.diagnosis
+        }]
+      };
+      this.selectedConcept = this.initialConcept;
+    }
+
     this.facilityId =
       JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
     this.loadDrugs();
@@ -113,7 +134,6 @@ export class AddVisitRecordDialogComponent implements OnInit {
       [Validators.required],
     ],
     doctor: [this.data.initialValue?.doctor ?? '', [Validators.required]],
-    diagnosis: [this.data.initialValue?.diagnosis ?? '', [Validators.required]],
     prescriptions: this.formBuilder.array(
       (this.data.initialValue?.prescriptions ?? []).map((p) =>
         this.buildPrescriptionGroup(p),
@@ -133,6 +153,9 @@ export class AddVisitRecordDialogComponent implements OnInit {
     ],
   });
 
+  selectedConcept: ClinicalConcept | null = null;
+  initialConcept: ClinicalConcept | undefined = undefined;
+
   get title(): string {
     return this.data.mode === 'edit' ? 'Edit Visit Record' : 'Add Visit Record';
   }
@@ -147,6 +170,10 @@ export class AddVisitRecordDialogComponent implements OnInit {
 
   drugsArray(prescriptionIndex: number): FormArray {
     return this.prescriptions.at(prescriptionIndex).get('drugs') as FormArray;
+  }
+
+  onConceptSelected(concept: ClinicalConcept | null): void {
+    this.selectedConcept = concept;
   }
 
   addPrescription(): void {
@@ -227,7 +254,7 @@ export class AddVisitRecordDialogComponent implements OnInit {
   }
 
   save(): void {
-    if (this.visitForm.invalid) {
+    if (this.visitForm.invalid || !this.selectedConcept) {
       this.visitForm.markAllAsTouched();
       return;
     }
@@ -238,10 +265,17 @@ export class AddVisitRecordDialogComponent implements OnInit {
       return;
     }
 
+    const diagnosisCode = this.selectedConcept.coding?.[0]?.code || this.selectedConcept.code || '';
+    const diagnosisSystem = this.selectedConcept.coding?.[0]?.system || this.selectedConcept.system || 'KNHTS';
+    const diagnosisText = this.selectedConcept.display || this.selectedConcept.text || '';
+
     this.dialogRef.close({
       date: value.date ?? this.todayDateValue(),
       doctor: (value.doctor ?? '').trim(),
-      diagnosis: (value.diagnosis ?? '').trim(),
+      diagnosis: diagnosisText,
+      diagnosisCode,
+      diagnosisSystem,
+      diagnosisText,
       prescriptions: (value.prescriptions ?? []).map((p) => ({
         id: ((p['id'] as string) ?? '').trim() || undefined,
         drugs: (

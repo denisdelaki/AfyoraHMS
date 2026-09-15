@@ -25,6 +25,9 @@ export type EhrRecord = {
   date: string;
   doctor: string;
   diagnosis: string;
+  diagnosisCode?: string;
+  diagnosisSystem?: string;
+  diagnosisText?: string;
   prescriptions: Prescription[];
   labResults: EhrLabResult[];
   notes: string;
@@ -43,6 +46,9 @@ export type RadiologyImage = {
 export type CreateEhrRecordRequest = {
   patientId: string;
   diagnosis: string;
+  diagnosisCode?: string;
+  diagnosisSystem?: string;
+  diagnosisText?: string;
   symptoms: string;
   treatment: string;
   doctorNotes: string;

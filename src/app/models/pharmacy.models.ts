@@ -11,6 +11,7 @@ export type DrugCategory = {
 export type Drug = {
   id: string;
   name: string;
+  category?: string;
   categoryId?: number;
   categoryName?: string;
   stock: number;
@@ -52,7 +53,13 @@ export type DrugPurchaseOrder = {
   vendorName?: string;
   vendorEmail?: string;
   items: DrugPurchaseOrderItem[];
-  status: 'Draft' | 'Pending' | 'Approved' | 'Shipped' | 'Delivered' | 'Cancelled';
+  status:
+    | 'Draft'
+    | 'Pending'
+    | 'Approved'
+    | 'Shipped'
+    | 'Delivered'
+    | 'Cancelled';
   total: number;
   notes?: string;
   orderDate: string;

@@ -43,6 +43,9 @@ export type VisitHistory = {
   date: string;
   doctor: string;
   diagnosis: string;
+  diagnosisCode?: string;
+  diagnosisSystem?: string;
+  diagnosisText?: string;
   prescriptions: Prescription[];
   amountBilled: number | string;
   whatHappened: string;

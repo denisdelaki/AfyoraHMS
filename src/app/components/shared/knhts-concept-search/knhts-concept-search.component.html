@@ -1,0 +1,56 @@
+<mat-form-field appearance="fill" class="w-full">
+  <mat-label>{{ label }}</mat-label>
+  <div class="flex items-center">
+    <input 
+      matInput 
+      type="text" 
+      [placeholder]="placeholder" 
+      [formControl]="searchControl" 
+      [matAutocomplete]="auto"
+      [required]="required"
+    >
+    <button 
+      *ngIf="searchControl.value" 
+      mat-icon-button 
+      matSuffix 
+      (click)="clearSelection($event)"
+      aria-label="Clear"
+      type="button"
+      class="clear-button"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  
+  <mat-autocomplete 
+    #auto="matAutocomplete" 
+    [displayWith]="displayFn"
+    (optionSelected)="onOptionSelected($event)"
+  >
+    <mat-option *ngIf="isLoading" class="is-loading">
+      <mat-spinner diameter="20"></mat-spinner>
+    </mat-option>
+    
+    <mat-option *ngFor="let option of filteredOptions$ | async" [value]="option">
+      <div class="concept-option">
+        <div class="concept-display">{{ option.display || option.text }}</div>
+        <div class="concept-meta">
+          <span class="system-badge">{{ option.system }}</span>
+          <span class="code-badge">{{ option.code }}</span>
+        </div>
+      </div>
+    </mat-option>
+  </mat-autocomplete>
+
+  <mat-hint *ngIf="!selectedConcept && hasMinSearchLength && !isLoading">
+    DHA requires a coded clinical concept. Please select from the dropdown.
+  </mat-hint>
+  
+  <mat-hint *ngIf="selectedConcept" class="compliant-hint">
+    <mat-icon class="status-icon" [ngClass]="{'compliant': isCompliant, 'non-compliant': !isCompliant}">
+      {{ isCompliant ? 'check_circle' : 'warning' }}
+    </mat-icon>
+    <span *ngIf="isCompliant">DHA Compliant ({{ selectedConcept.system }})</span>
+    <span *ngIf="!isCompliant">Missing required coding fields</span>
+  </mat-hint>
+</mat-form-field>

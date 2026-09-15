@@ -124,7 +124,7 @@ export class EhrComponent implements OnInit {
           });
         }
       },
-      error: () => { },
+      error: () => {},
     });
   }
 
@@ -151,7 +151,7 @@ export class EhrComponent implements OnInit {
             this.patientPrescriptions = records.flatMap((r) => r.prescriptions);
           }
         },
-        error: () => { },
+        error: () => {},
       });
   }
 
@@ -170,7 +170,7 @@ export class EhrComponent implements OnInit {
             parameters: labResult.parameters,
           }));
       },
-      error: () => { },
+      error: () => {},
     });
   }
 
@@ -436,6 +436,14 @@ export class EhrComponent implements OnInit {
     const requestPayload: CreateEhrRecordRequest = {
       patientId: payload.patientId,
       diagnosis: payload.diagnosis,
+      diagnosisCode:
+        payload.diagnosisCode || payload.clinicalConcept?.code || '',
+      diagnosisSystem:
+        payload.diagnosisSystem || payload.clinicalConcept?.system || 'KNHTS',
+      diagnosisText:
+        payload.diagnosisText ||
+        payload.clinicalConcept?.text ||
+        payload.diagnosis,
       symptoms: payload.symptoms,
       treatment: payload.treatment,
       doctorNotes: payload.doctorNotes,
@@ -482,32 +490,32 @@ export class EhrComponent implements OnInit {
 
     const prescriptionsHtml = this.patientPrescriptions.length
       ? this.patientPrescriptions
-        .map(
-          (item) => `
+          .map(
+            (item) => `
           <div class="record">
             <h3>${this.escapeHtml(item.drugs.map((d) => `${d.name} ${d.dosage}`).join(', '))}</h3>
             <p class="meta">Prescribed by ${this.escapeHtml(item.doctorId)} on ${this.escapeHtml(item.date)}</p>
             <ul>
               ${item.drugs
-              .map(
-                (d) =>
-                  `<li>${this.escapeHtml(d.name)} — Dosage: ${this.escapeHtml(d.dosage)}, Quantity: ${this.escapeHtml(d.quantity?.toString())}</li>`,
-              )
-              .join('')}
+                .map(
+                  (d) =>
+                    `<li>${this.escapeHtml(d.name)} — Dosage: ${this.escapeHtml(d.dosage)}, Quantity: ${this.escapeHtml(d.quantity?.toString())}</li>`,
+                )
+                .join('')}
             </ul>
             <span class="badge badge-active">Active</span>
           </div>
         `,
-        )
-        .join('')
+          )
+          .join('')
       : '<p>No prescriptions found for this patient.</p>';
 
     const labResultsHtml = this.patientLabResults.length
       ? this.patientLabResults
-        .map((lab) => {
-          const paramsRows = (lab.parameters ?? [])
-            .map(
-              (param: any) => `
+          .map((lab) => {
+            const paramsRows = (lab.parameters ?? [])
+              .map(
+                (param: any) => `
               <tr>
                 <td>${this.escapeHtml(param.name)}</td>
                 <td><strong>${this.escapeHtml(param.value)}</strong></td>
@@ -516,18 +524,19 @@ export class EhrComponent implements OnInit {
                 <td><span class="badge ${param.status === 'Normal' ? 'badge-normal' : 'badge-abnormal'}">${this.escapeHtml(param.status)}</span></td>
               </tr>
             `,
-            )
-            .join('');
+              )
+              .join('');
 
-          return `
+            return `
           <div class="record">
             <div class="flex-between">
               <h3>${this.escapeHtml(lab.test)}</h3>
               <span class="badge ${lab.status === 'Normal' ? 'badge-normal' : 'badge-abnormal'}">${this.escapeHtml(lab.status)}</span>
             </div>
             <p class="meta">Date: ${this.escapeHtml(lab.date)} • Result: ${this.escapeHtml(lab.result)}</p>
-            ${paramsRows
-              ? `<table class="lab-table">
+            ${
+              paramsRows
+                ? `<table class="lab-table">
                     <thead>
                       <tr>
                         <th>Parameter</th><th>Value</th><th>Unit</th><th>Reference Range</th><th>Status</th>
@@ -535,18 +544,18 @@ export class EhrComponent implements OnInit {
                     </thead>
                     <tbody>${paramsRows}</tbody>
                   </table>`
-              : ''
+                : ''
             }
           </div>
         `;
-        })
-        .join('')
+          })
+          .join('')
       : '<p>No lab results found for this patient.</p>';
 
     const radiologyHtml = this.patientRadiologyReports.length
       ? this.patientRadiologyReports
-        .map(
-          (report) => `
+          .map(
+            (report) => `
             <div class="record">
               <h3>${this.escapeHtml(report.type)} - ${this.escapeHtml(report.status)}</h3>
               <p class="meta">Order ID: ${this.escapeHtml(report.orderId)} • Scan Date: ${this.escapeHtml(report.scanDate)} • Radiologist: ${this.escapeHtml(report.radiologist)}</p>
@@ -555,8 +564,8 @@ export class EhrComponent implements OnInit {
               ${report.recommendations ? `<p><strong>Recommendations:</strong> ${this.escapeHtml(report.recommendations)}</p>` : ''}
             </div>
           `,
-        )
-        .join('')
+          )
+          .join('')
       : '<p>No radiology reports found for this patient.</p>';
 
     return `
@@ -648,7 +657,7 @@ export class EhrComponent implements OnInit {
       next: ({ data }) => {
         this.ehrRecords = data ?? [];
       },
-      error: () => { },
+      error: () => {},
     });
   }
 

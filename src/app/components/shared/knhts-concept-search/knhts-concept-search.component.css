@@ -1,0 +1,68 @@
+.concept-option {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  line-height: 1.2;
+}
+
+.concept-display {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.concept-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+
+.system-badge, .code-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.system-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.is-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.compliant-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #15803d;
+}
+
+.status-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.status-icon.compliant {
+  color: #15803d;
+}
+
+.status-icon.non-compliant {
+  color: #b45309;
+}
+
+.clear-button {
+  transform: scale(0.8);
+  opacity: 0.6;
+}
+
+.clear-button:hover {
+  opacity: 1;
+}

@@ -1,9 +1,5 @@
 import { TransformIdsPipe } from './transform-ids.pipe';
-import type {
-  Drug,
-  LabTest,
-  Patient,
-} from '../../models';
+import type { Drug, LabTest, Patient } from '../../models';
 import type { Department, Employee } from '../../models/employee.model';
 
 describe('TransformIdsPipe', () => {
@@ -13,6 +9,7 @@ describe('TransformIdsPipe', () => {
   });
 
   it('returns the full name for a patient ID', () => {
+    const pipe = new TransformIdsPipe();
     const patients: Patient[] = [
       {
         id: 'P001',
@@ -33,6 +30,7 @@ describe('TransformIdsPipe', () => {
   });
 
   it('returns names for employee, department, drug, and lab-test IDs', () => {
+    const pipe = new TransformIdsPipe();
     const employee: Employee = {
       id: 'E001',
       name: 'Dr. John Smith',
@@ -49,7 +47,7 @@ describe('TransformIdsPipe', () => {
     const drug: Drug = {
       id: 'DR001',
       name: 'Paracetamol',
-      category: 'Analgesic',
+      categoryName: 'Analgesic',
       stock: 20,
       minStock: 5,
       price: 10,

@@ -25,9 +25,11 @@ import {
   Landmark,
   CheckCircle2,
   X,
+  FileBadge2,
 } from 'lucide-angular';
 import { FacilityService } from '../../../services/facility.service';
 import { BillingService } from '../../../services/billing.service';
+import { KnhtsService } from '../../../services/knhts.service';
 import {
   FacilityProfile,
   FacilityUpdateRequest,
@@ -83,9 +85,10 @@ export class FacilityProfileComponent implements OnInit {
   readonly Landmark = Landmark;
   readonly CheckCircle2 = CheckCircle2;
   readonly X = X;
+  readonly FileBadge2 = FileBadge2;
 
   // Active Tab
-  activeTab = signal<'profile' | 'subscription' | 'history' | 'mpesa'>('profile');
+  activeTab = signal<'profile' | 'subscription' | 'history' | 'mpesa' | 'compliance'>('profile');
 
   // State Signals
   loading = signal<boolean>(true);
@@ -110,6 +113,11 @@ export class FacilityProfileComponent implements OnInit {
   // Facility & Payment Data
   facility = signal<FacilityProfile | null>(null);
   paymentHistory = signal<SubscriptionPaymentRecord[]>([]);
+
+  // Compliance Data
+  terminologyLogs = signal<any[]>([]);
+  loadingLogs = signal<boolean>(false);
+  private readonly knhtsService = inject(KnhtsService);
 
   // Profile Edit Form Model
   profileForm: FacilityUpdateRequest = {
@@ -210,6 +218,7 @@ export class FacilityProfileComponent implements OnInit {
         if (data.id) {
           this.loadSubscriptionHistory(data.id);
           this.loadMpesaConfig(data.id);
+          this.loadTerminologyLogs(data.id);
         }
         this.loading.set(false);
       },
@@ -287,6 +296,22 @@ export class FacilityProfileComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load payment history:', err);
+      },
+    });
+  }
+
+  loadTerminologyLogs(facilityId: number | string, page = 1): void {
+    this.loadingLogs.set(true);
+    this.knhtsService.getTerminologyLog(facilityId, page, 50).subscribe({
+      next: (res) => {
+        if (res.results) {
+          this.terminologyLogs.set(res.results);
+        }
+        this.loadingLogs.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load terminology logs:', err);
+        this.loadingLogs.set(false);
       },
     });
   }

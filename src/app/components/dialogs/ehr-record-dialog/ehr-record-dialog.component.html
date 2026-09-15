@@ -12,14 +12,11 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Diagnosis</mat-label>
-      <input
-        matInput
-        formControlName="diagnosis"
-        placeholder="Enter diagnosis"
-      />
-    </mat-form-field>
+    <app-knhts-concept-search
+      (conceptSelected)="onConceptSelected($event)"
+      [required]="true"
+      label="Clinical Diagnosis (DHA Compliant)"
+    ></app-knhts-concept-search>
 
     <mat-form-field appearance="fill" class="w-full">
       <mat-label>Symptoms</mat-label>
