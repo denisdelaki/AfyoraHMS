@@ -237,6 +237,29 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'insurance-onboarding',
+        canActivate: [permissionGuard],
+        data: {
+          adminOnly: true,
+          seo: { title: 'Insurance Payer Onboarding' },
+        },
+        loadComponent: () =>
+          import('./components/features/insurance-management/insurance-management.component').then(
+            (m) => m.InsuranceManagementComponent,
+          ),
+      },
+      {
+        path: 'eclaims',
+        canActivate: [permissionGuard],
+        data: {
+          seo: { title: 'DHA AfyaConnect eClaims & Preauth' },
+        },
+        loadComponent: () =>
+          import('./components/features/dha-afyaconnect/dha-afyaconnect.component').then(
+            (m) => m.DhaAfyaConnectComponent,
+          ),
+      },
+      {
         path: 'facility-profile',
         canActivate: [permissionGuard],
         data: {
@@ -248,6 +271,7 @@ export const routes: Routes = [
             (m) => m.FacilityProfileComponent,
           ),
       },
+
     ],
   },
 ];

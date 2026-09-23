@@ -28,6 +28,79 @@
 
     <!-- Prescriptions -->
     <div formArrayName="prescriptions" class="space-y-4">
+      <!-- DHA AfyaConnect ePrescription API Verification Box -->
+      <div class="rounded-lg border border-teal-200 bg-teal-50/70 p-3.5 space-y-3 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center rounded-md bg-teal-600 px-2 py-0.5 text-xs font-semibold text-white">
+              DHA AfyaConnect
+            </span>
+            <span class="text-sm font-semibold text-gray-800">ePrescription API Integration</span>
+          </div>
+          <button
+            mat-flat-button
+            type="button"
+            color="primary"
+            [disabled]="dhaVerifying"
+            (click)="checkDhaPrescription()"
+            class="text-xs"
+          >
+            <mat-icon class="mr-1 text-sm">verified</mat-icon>
+            {{ dhaVerifying ? 'Checking API...' : 'Check with DHA Prescription API' }}
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Consent Token</label>
+            <input
+              type="text"
+              [(ngModel)]="dhaConsentToken"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="e.g. TOK-SHA-9912048"
+              class="w-full rounded border border-gray-300 px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Intervention Code</label>
+            <input
+              type="text"
+              [(ngModel)]="dhaInterventionCode"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="e.g. INT-PHARM-01"
+              class="w-full rounded border border-gray-300 px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Doctor Reg Number</label>
+            <input
+              type="text"
+              [(ngModel)]="dhaDoctorRegNumber"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="e.g. KMPDC-REG-01"
+              class="w-full rounded border border-gray-300 px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-teal-500"
+            />
+          </div>
+        </div>
+
+        <!-- Verification Results -->
+        <div *ngIf="dhaVerificationResult" class="flex items-center gap-2 rounded bg-emerald-100 p-2.5 text-xs text-emerald-800 border border-emerald-300">
+          <mat-icon class="text-emerald-600 text-sm">check_circle</mat-icon>
+          <div>
+            <span class="font-bold">DHA ePrescription Verified & Issued:</span> Code
+            <code class="bg-emerald-200 px-1 py-0.5 rounded font-mono font-bold">{{ dhaVerificationResult.code }}</code>
+            | Status: <span class="font-semibold">{{ dhaVerificationResult.status || 'Active' }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="dhaVerificationError" class="flex items-center gap-2 rounded bg-rose-100 p-2.5 text-xs text-rose-800 border border-rose-300">
+          <mat-icon class="text-rose-600 text-sm">error</mat-icon>
+          <div>
+            <span class="font-bold">DHA Check Failed:</span> {{ dhaVerificationError }}
+          </div>
+        </div>
+      </div>
+
       <div class="flex items-center justify-between">
         <p class="font-medium">Prescriptions</p>
         <button mat-stroked-button type="button" (click)="addPrescription()">

@@ -14,3 +14,8 @@ export * from './visit-queue.service';
 export * from './facility.service';
 export * from './inventory.service';
 export * from './knhts.service';
+export * from './surveillance.service';
+export * from './cds.service';
+export * from './hie.service';
+export * from './dha-afyaconnect.service';
+

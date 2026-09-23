@@ -1,4 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
   FormArray,
   FormBuilder,
@@ -12,7 +13,9 @@ import { MatInputModule } from '@angular/material/input';
 import { NewInvoicePayload } from '../../../models/billing.models';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { PatientsService, BillingService } from '../../../services';
+import { DhaAfyaConnectService } from '../../../services/dha-afyaconnect.service';
 import { Patient } from '../../../models';
+import { InsuranceProvider, SHAEligibilityResult } from '../../../models/dha-connect.models';
 import { MatOptionModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
@@ -25,11 +28,16 @@ import {
   Trash2,
   Activity,
   FileText,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-angular';
 
 @Component({
   selector: 'app-new-invoice-dialog',
+  standalone: true,
   imports: [
+    CommonModule,
     ReactiveFormsModule,
     MatButtonModule,
     MatDialogModule,
@@ -48,6 +56,7 @@ export class NewInvoiceDialogComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly patientService = inject(PatientsService);
   private readonly billingService = inject(BillingService);
+  private readonly dhaService = inject(DhaAfyaConnectService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly dialogRef = inject(
     MatDialogRef<NewInvoiceDialogComponent, NewInvoicePayload | undefined>,
@@ -59,9 +68,19 @@ export class NewInvoiceDialogComponent implements OnInit {
   readonly Trash2 = Trash2;
   readonly Activity = Activity;
   readonly FileText = FileText;
+  readonly ShieldCheck = ShieldCheck;
+  readonly CheckCircle2 = CheckCircle2;
+  readonly AlertCircle = AlertCircle;
 
   patients: Patient[] = [];
   facilityId: string | number = '';
+
+  // Maintained Insurance Providers & Live Verification State
+  insuranceProviders: InsuranceProvider[] = [];
+  selectedInsuranceProvider: InsuranceProvider | null = null;
+  isCheckingEligibility = false;
+  eligibilityResult: SHAEligibilityResult | null = null;
+  eligibilityError: string | null = null;
 
   // Pharmacy charges state
   isLoadingPharmacyCharges = false;
@@ -92,6 +111,7 @@ export class NewInvoiceDialogComponent implements OnInit {
         ],
       }),
     ]),
+    insuranceProviderId: [''],
     insuranceCompany: [''],
     coverage: [null as number | null],
   });
@@ -104,11 +124,30 @@ export class NewInvoiceDialogComponent implements OnInit {
     this.facilityId =
       JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
     this.loadPatients(this.facilityId);
+    this.loadInsuranceProviders();
 
-    // Watch patient selection changes to automatically fetch all outstanding charges
+    // Watch patient selection changes to fetch outstanding charges and trigger eligibility check
     this.invoiceForm.controls.patientId.valueChanges.subscribe((patientId) => {
       if (patientId) {
         this.fetchOutstandingCharges(patientId);
+        this.checkEligibilityIfReady();
+      }
+    });
+
+    // Watch insurance provider selection changes
+    this.invoiceForm.controls.insuranceProviderId.valueChanges.subscribe((providerId) => {
+      if (providerId) {
+        const provider = this.insuranceProviders.find(p => String(p.id) === String(providerId) || p.code === providerId);
+        if (provider) {
+          this.selectedInsuranceProvider = provider;
+          this.invoiceForm.patchValue({ insuranceCompany: provider.name });
+          this.checkEligibilityIfReady();
+        }
+      } else {
+        this.selectedInsuranceProvider = null;
+        this.invoiceForm.patchValue({ insuranceCompany: '' });
+        this.eligibilityResult = null;
+        this.eligibilityError = null;
       }
     });
   }
@@ -129,6 +168,60 @@ export class NewInvoiceDialogComponent implements OnInit {
           },
         );
       },
+    });
+  }
+
+  private loadInsuranceProviders(): void {
+    this.dhaService.getInsuranceProviders().subscribe({
+      next: (providers) => {
+        this.insuranceProviders = Array.isArray(providers) ? providers.filter(p => p.is_active !== false) : [];
+      },
+      error: (err) => {
+        console.error('Failed to load maintained insurance providers:', err);
+      }
+    });
+  }
+
+  checkEligibilityIfReady(): void {
+    const patientId = this.invoiceForm.controls.patientId.value;
+    const providerId = this.invoiceForm.controls.insuranceProviderId.value;
+
+    if (!patientId || !providerId) {
+      return;
+    }
+
+    const patient = this.patients.find(p => String(p.id) === String(patientId));
+    if (!patient) {
+      return;
+    }
+
+    const idNumber = patient.nationalId || patient.passportNumber || patient.birthCertificateNumber || patient.id;
+    if (!idNumber) {
+      this.eligibilityError = 'Selected patient does not have a National ID or Identification Number registered.';
+      this.eligibilityResult = null;
+      return;
+    }
+
+    this.isCheckingEligibility = true;
+    this.eligibilityError = null;
+    this.eligibilityResult = null;
+
+    this.dhaService.checkEligibility(idNumber, 'National ID').subscribe({
+      next: (result) => {
+        this.isCheckingEligibility = false;
+        this.eligibilityResult = result;
+        if (result && (result.statusCode === '00' || result.whitelistedForOTP || (result.schemes && result.schemes.length > 0))) {
+          if (!this.invoiceForm.controls.coverage.value) {
+            this.invoiceForm.patchValue({ coverage: 100 });
+          }
+        } else {
+          this.eligibilityError = result?.statusDesc || 'Patient status not verified as eligible for selected insurance.';
+        }
+      },
+      error: (err) => {
+        this.isCheckingEligibility = false;
+        this.eligibilityError = 'Unable to verify insurance eligibility against DHA Gateway for this patient.';
+      }
     });
   }
 
@@ -290,7 +383,7 @@ export class NewInvoiceDialogComponent implements OnInit {
 
             this.radiologyTotal = res.data.totalAmount;
             this.radiologyItemCount = res.data.items.length;
-            this.radiologyMessage = `Fetched ${res.data.items.length} radiology charge(s) ($${res.data.totalAmount.toFixed(2)}).`;
+            this.radiologyMessage = `Fetched ${res.data.items.length} radiology charge(s) (KES ${res.data.totalAmount.toFixed(2)}).`;
           } else {
             this.radiologyTotal = 0;
             this.radiologyItemCount = 0;
@@ -326,6 +419,10 @@ export class NewInvoiceDialogComponent implements OnInit {
     this.services.removeAt(index);
   }
 
+  get isInsuranceIneligible(): boolean {
+    return !!this.selectedInsuranceProvider && (!!this.eligibilityError || !this.eligibilityResult);
+  }
+
   onCancel(): void {
     this.dialogRef.close();
   }
@@ -334,6 +431,35 @@ export class NewInvoiceDialogComponent implements OnInit {
     if (this.invoiceForm.invalid) {
       this.invoiceForm.markAllAsTouched();
       return;
+    }
+
+    if (this.selectedInsuranceProvider) {
+      if (this.isCheckingEligibility) {
+        this.snackBar.open(
+          'Verifying insurance eligibility... Please wait.',
+          'Close',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          }
+        );
+        return;
+      }
+
+      if (this.isInsuranceIneligible) {
+        const msg = this.eligibilityError || `Patient is ineligible for ${this.selectedInsuranceProvider.name}.`;
+        this.snackBar.open(
+          `Cannot Generate Invoice: ${msg}`,
+          'Close',
+          {
+            duration: 5000,
+            horizontalPosition: 'center',
+            verticalPosition: 'top',
+          }
+        );
+        return;
+      }
     }
 
     const value = this.invoiceForm.getRawValue();
@@ -357,7 +483,7 @@ export class NewInvoiceDialogComponent implements OnInit {
       insurance: company
         ? {
             company,
-            coverage: value.coverage !== null ? Number(value.coverage) : null,
+            coverage: value.coverage !== null ? Number(value.coverage) : 100,
           }
         : null,
     });

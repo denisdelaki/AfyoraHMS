@@ -237,13 +237,14 @@ export class BillingComponent implements OnInit {
       RecordPaymentDialogData,
       RecordPaymentPayload
     >(RecordPaymentDialogComponent, {
-      width: '500px',
-      maxWidth: '92vw',
+      width: '520px',
+      maxWidth: '94vw',
       data: {
         invoiceId: invoice.id,
         amount: invoice.total,
         facilityId: this.facilityId,
         phoneNumber: phoneNumber,
+        insurance: invoice.insurance,
       },
     });
 

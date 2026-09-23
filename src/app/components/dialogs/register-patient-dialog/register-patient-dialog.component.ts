@@ -49,6 +49,15 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
     { value: 'AB+', label: 'AB+' },
     { value: 'AB-', label: 'AB-' },
   ];
+
+  kenyaCounties = [
+    'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Uasin Gishu', 'Kiambu', 'Machakos', 'Kajiado', 'Kilifi', 'Kakamega', 'Meru', 'Nyeri', 'Bomet', 'Kericho', 'Garissa', 'Other'
+  ];
+
+  relationships = [
+    'Spouse', 'Parent', 'Child', 'Sibling', 'Guardian', 'Relative', 'Other'
+  ];
+
   readonly today = new Date();
   private readonly destroy$ = new Subject<void>();
   private readonly formBuilder = inject(FormBuilder);
@@ -67,6 +76,8 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
 
   registerForm = this.formBuilder.group({
     nationalId: [''],
+    passportNumber: [''],
+    birthCertificateNumber: [''],
     firstName: ['', [Validators.required]],
     lastName: ['', [Validators.required]],
     age: [null as number | null, [Validators.required, Validators.min(0)]],
@@ -76,6 +87,13 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
     bloodGroup: ['', [Validators.required]],
     dob: [''],
     address: [''],
+    county: ['Nairobi'],
+    subCounty: [''],
+    ward: [''],
+    village: [''],
+    nextOfKinName: [''],
+    nextOfKinRelationship: ['Spouse'],
+    nextOfKinPhone: [''],
     emergencyContact: [''],
     medicalHistory: [''],
   });
@@ -87,6 +105,8 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
 
     this.registerForm.patchValue({
       nationalId: this.patientToEdit.nationalId ?? '',
+      passportNumber: this.patientToEdit.passportNumber ?? '',
+      birthCertificateNumber: this.patientToEdit.birthCertificateNumber ?? '',
       firstName: this.patientToEdit.firstName ?? '',
       lastName: this.patientToEdit.lastName ?? '',
       age: this.patientToEdit.age,
@@ -94,6 +114,17 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
       phone: this.patientToEdit.phone,
       email: this.patientToEdit.email,
       bloodGroup: this.patientToEdit.bloodGroup,
+      dob: this.patientToEdit.dob ?? '',
+      address: this.patientToEdit.address ?? '',
+      county: this.patientToEdit.county ?? 'Nairobi',
+      subCounty: this.patientToEdit.subCounty ?? '',
+      ward: this.patientToEdit.ward ?? '',
+      village: this.patientToEdit.village ?? '',
+      nextOfKinName: this.patientToEdit.nextOfKinName ?? '',
+      nextOfKinRelationship: this.patientToEdit.nextOfKinRelationship ?? 'Spouse',
+      nextOfKinPhone: this.patientToEdit.nextOfKinPhone ?? '',
+      emergencyContact: this.patientToEdit.emergencyContact ?? '',
+      medicalHistory: this.patientToEdit.medicalHistory ?? '',
     });
   }
 
@@ -114,10 +145,6 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * Calculates full years between dob and registrationDate.
-   * Returns null when dob is missing or invalid.
-   */
   private calculateAge(dob: string | Date | null | undefined, registrationDate: Date): number | null {
     if (!dob) return null;
     const birth = new Date(dob);
@@ -144,7 +171,10 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
     const value = this.registerForm.getRawValue();
 
     this.dialogRef.close({
+      facilityId: '',
       nationalId: value.nationalId ?? '',
+      passportNumber: value.passportNumber ?? '',
+      birthCertificateNumber: value.birthCertificateNumber ?? '',
       firstName: value.firstName ?? '',
       lastName: value.lastName ?? '',
       age: value.age ?? 0,
@@ -154,7 +184,14 @@ export class RegisterPatientDialogComponent implements OnInit, OnDestroy {
       bloodGroup: value.bloodGroup ?? '',
       dob: value.dob ?? '',
       address: value.address ?? '',
-      emergencyContact: value.emergencyContact ?? '',
+      county: value.county ?? '',
+      subCounty: value.subCounty ?? '',
+      ward: value.ward ?? '',
+      village: value.village ?? '',
+      nextOfKinName: value.nextOfKinName ?? '',
+      nextOfKinRelationship: value.nextOfKinRelationship ?? '',
+      nextOfKinPhone: value.nextOfKinPhone ?? '',
+      emergencyContact: value.emergencyContact || value.nextOfKinPhone || '',
       medicalHistory: value.medicalHistory ?? '',
     });
   }

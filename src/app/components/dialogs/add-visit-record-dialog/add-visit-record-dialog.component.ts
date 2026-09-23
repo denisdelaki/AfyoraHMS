@@ -3,6 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { Drug, QueueDestination } from '../../../models';
 import {
   ReactiveFormsModule,
+  FormsModule,
   FormBuilder,
   Validators,
   FormArray,
@@ -20,6 +21,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { PharmacyService } from '../../../services/pharmacy.service';
+import { DhaAfyaConnectService } from '../../../services/dha-afyaconnect.service';
+import { DHAPrescription } from '../../../models/dha-connect.models';
 import { ClinicalConcept } from '../../../models';
 import { KnhtsConceptSearchComponent } from '../../shared/knhts-concept-search/knhts-concept-search.component';
 
@@ -35,6 +38,10 @@ export type PrescriptionEntry = {
   drugs: PrescriptionDrug[];
   status: 'Pending' | 'Dispensed';
   date: string;
+  dhaPrescriptionCode?: string;
+  dhaStatus?: string;
+  dhaVerified?: boolean;
+  dhaConsentToken?: string;
 };
 
 export type VisitRecordFormValue = {
@@ -60,6 +67,10 @@ type AddVisitRecordDialogData = {
   doctors: DoctorOption[];
   initialValue?: Partial<VisitRecordFormValue>;
   nextDestinations?: QueueDestination[];
+  patientId?: string;
+  patientName?: string;
+  patientNationalId?: string;
+  consentToken?: string;
 };
 
 @Component({
@@ -67,6 +78,7 @@ type AddVisitRecordDialogData = {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatDialogModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -82,6 +94,7 @@ export class AddVisitRecordDialogComponent implements OnInit {
   readonly data = inject<AddVisitRecordDialogData>(MAT_DIALOG_DATA);
   private readonly formBuilder = inject(FormBuilder);
   private readonly pharmacyService = inject(PharmacyService);
+  private readonly dhaService = inject(DhaAfyaConnectService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialogRef = inject(
     MatDialogRef<
@@ -92,7 +105,16 @@ export class AddVisitRecordDialogComponent implements OnInit {
   facilityId: string | number = '';
   drugs: Drug[] = [];
 
+  // DHA AfyaConnect ePrescription verification state
+  dhaConsentToken: string = '';
+  dhaInterventionCode: string = 'INT-PHARM-01';
+  dhaDoctorRegNumber: string = 'KMPDC-REG-01';
+  dhaVerifying = false;
+  dhaVerificationResult: DHAPrescription | null = null;
+  dhaVerificationError: string | null = null;
+
   ngOnInit(): void {
+    this.dhaConsentToken = this.data.consentToken || 'TOK-SHA-9912048';
     if (this.data.initialValue?.diagnosis) {
       this.initialConcept = {
         code: this.data.initialValue.diagnosisCode || '',
@@ -249,6 +271,86 @@ export class AddVisitRecordDialogComponent implements OnInit {
     this.drugsArray(prescriptionIndex).removeAt(drugIndex);
   }
 
+  checkDhaPrescription(): void {
+    const rawPrescriptions = (this.prescriptions.getRawValue() as Array<{
+      drugs?: Array<{ id?: string; name?: string; quantity?: number; dosage?: string }>;
+    }>) ?? [];
+
+    const allItems: { drug_name: string; dosage: string; quantity: number }[] = [];
+    for (const p of rawPrescriptions) {
+      for (const d of p.drugs ?? []) {
+        if (d.name && d.name.trim()) {
+          allItems.push({
+            drug_name: d.name.trim(),
+            dosage: d.dosage?.trim() || 'As directed',
+            quantity: Math.max(1, Number(d.quantity || 1)),
+          });
+        }
+      }
+    }
+
+    if (allItems.length === 0) {
+      this.snackBar.open(
+        'Please add at least one drug before checking with the DHA ePrescription API.',
+        'Close',
+        {
+          duration: 4000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+        },
+      );
+      return;
+    }
+
+    const token = this.dhaConsentToken.trim() || 'TOK-SHA-9912048';
+    this.dhaVerifying = true;
+    this.dhaVerificationError = null;
+    this.dhaVerificationResult = null;
+
+    this.pharmacyService
+      .verifyAndCreateDhaPrescription({
+        consentToken: token,
+        interventionCode: this.dhaInterventionCode.trim() || 'INT-PHARM-01',
+        identificationNumber: this.dhaDoctorRegNumber.trim() || 'KMPDC-REG-01',
+        identificationType: 'registration_number',
+        regulationBody: 'KMPDC',
+        items: allItems,
+      })
+      .subscribe({
+        next: (res) => {
+          this.dhaVerifying = false;
+          this.dhaVerificationResult = res;
+          this.snackBar.open(
+            `✓ DHA ePrescription Verified & Issued! Code: ${res.code || 'PRE-SHA-OK'}`,
+            'Close',
+            {
+              duration: 5000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top',
+            },
+          );
+        },
+        error: (err) => {
+          this.dhaVerifying = false;
+          const errorMsg =
+            err?.error?.error ||
+            err?.error?.detail ||
+            err?.message ||
+            'DHA ePrescription API check failed';
+          this.dhaVerificationError = errorMsg;
+          this.snackBar.open(
+            `DHA ePrescription Check Failed: ${errorMsg}`,
+            'Close',
+            {
+              duration: 6000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top',
+            },
+          );
+        },
+      });
+  }
+
   cancel(): void {
     this.dialogRef.close();
   }
@@ -293,6 +395,10 @@ export class AddVisitRecordDialogComponent implements OnInit {
         })),
         status: p['status'] as 'Pending' | 'Dispensed',
         date: (p['date'] as string) ?? this.todayDateValue(),
+        dhaPrescriptionCode: this.dhaVerificationResult?.code,
+        dhaStatus: this.dhaVerificationResult?.status || (this.dhaVerificationResult ? 'VERIFIED' : undefined),
+        dhaVerified: !!this.dhaVerificationResult,
+        dhaConsentToken: this.dhaConsentToken
       })),
       amountBilled: String(value.amountBilled ?? '0.00').trim(),
       whatHappened: (value.whatHappened ?? '').trim(),

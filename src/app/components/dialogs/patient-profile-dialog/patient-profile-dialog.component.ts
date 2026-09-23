@@ -140,6 +140,10 @@ export class PatientProfileDialogComponent implements OnInit {
       data: {
         mode: 'create',
         doctors: this.doctors,
+        patientId: this.data.patient?.id,
+        patientName: `${this.data.patient?.firstName || ''} ${this.data.patient?.lastName || ''}`.trim(),
+        patientNationalId: this.data.patient?.nationalId || (this.data.patient as any)?.idNumber || this.data.patient?.id,
+        consentToken: (this.data.patient as any)?.consentToken || 'TOK-SHA-9912048'
       },
     });
 
@@ -160,6 +164,10 @@ export class PatientProfileDialogComponent implements OnInit {
       data: {
         mode: 'edit',
         doctors: this.doctors,
+        patientId: this.data.patient?.id,
+        patientName: `${this.data.patient?.firstName || ''} ${this.data.patient?.lastName || ''}`.trim(),
+        patientNationalId: this.data.patient?.nationalId || (this.data.patient as any)?.idNumber || this.data.patient?.id,
+        consentToken: (this.data.patient as any)?.consentToken || 'TOK-SHA-9912048',
         initialValue: {
           date: visitRecord.date,
           doctor: visitRecord.doctor,

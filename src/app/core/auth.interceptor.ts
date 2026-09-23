@@ -82,9 +82,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         httpError?.status !== 401 ||
         alreadyRetried ||
         !refreshToken ||
-        isTokenExpired(refreshToken)
+        isTokenExpired(refreshToken) ||
+        isExternalGatewayRequest(req.url)
       ) {
-        if (httpError?.status === 401) {
+        if (httpError?.status === 401 && !isExternalGatewayRequest(req.url)) {
           toastService.showError('Authentication failed. Please log in again.');
           return forceLogout(
             authService,
@@ -141,6 +142,10 @@ function isAuthBypassRequest(url: string): boolean {
     url.includes('/auth/signup') ||
     url.includes('/auth/refresh')
   );
+}
+
+function isExternalGatewayRequest(url: string): boolean {
+  return url.includes('/dha/') || url.includes('/knhts/') || url.includes('/interoperability/');
 }
 
 function isTokenExpired(token: string): boolean {

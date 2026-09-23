@@ -13,3 +13,4 @@ export * from './reports.models';
 export * from './visit-ticket.models';
 export * from './facility.model';
 export * from './knhts.models';
+export * from './interoperability.models';

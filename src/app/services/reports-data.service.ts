@@ -109,6 +109,20 @@ export class ReportsDataService {
         description: 'Income, expenditure, and net profit margins',
         allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'Accountant'],
       },
+      {
+        value: 'surveillance',
+        label: 'Public Health & Surveillance',
+        iconKey: 'shieldCheck',
+        description: 'IDSR 504, Notifiable Outbreaks, IHR 2005 & MOH 705 Returns',
+        allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'Doctor', 'Nurse'],
+      },
+      {
+        value: 'interoperability',
+        label: 'Kenya HIE & Interoperability',
+        iconKey: 'network',
+        description: 'FHIR R4 Bundles, SDMX Exports, KNHTS & Quality Measures',
+        allowedRoles: ['Admin', 'SuperAdmin', 'Manager', 'Doctor', 'Nurse', 'Pharmacist', 'Lab Technician'],
+      },
     ];
   }
 

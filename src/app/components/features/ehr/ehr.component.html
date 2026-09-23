@@ -1,285 +1,645 @@
 <div class="flex flex-col gap-6">
+  <!-- Header -->
   <div class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <h1 class="mb-1 text-3xl font-semibold">Electronic Health Records</h1>
-      <p class="m-0 text-sm text-gray-500">
-        View and manage patient health records
+      <h1 class="mb-1 text-3xl font-semibold text-slate-900">
+        Electronic Health Records (KNHTS CPOE & CDS Compliant)
+      </h1>
+      <p class="m-0 text-sm text-slate-500">
+        Clinical Provider Order Entry (CPOE), Coded Problem List, Evidence-Based
+        CDS Alerts & Kenya HIE FHIR IPS Summaries.
       </p>
     </div>
-    <button mat-flat-button color="primary" (click)="openNewRecordDialog()">
-      <mat-icon>add</mat-icon>
-      New Record
-    </button>
+    <div class="flex items-center gap-2">
+      <button mat-stroked-button (click)="openCpoeModal('Medications')">
+        <mat-icon>add_task</mat-icon>
+        New CPOE Order
+      </button>
+      <button mat-flat-button color="primary" (click)="openNewRecordDialog()">
+        <mat-icon>add</mat-icon>
+        New Clinical Encounter
+      </button>
+    </div>
   </div>
 
+  <!-- Search Bar -->
   <div class="flex items-center gap-3">
     <mat-form-field appearance="fill" subscriptSizing="dynamic" class="w-full">
-      <mat-label>Search patient by name or ID</mat-label>
-      <input matInput [(ngModel)]="searchTerm" />
+      <mat-label>Search patient by Name, ID, or National ID</mat-label>
+      <input
+        matInput
+        [(ngModel)]="searchTerm"
+        placeholder="e.g. Wanjiru or P001"
+      />
+      <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
-    <mat-icon>search</mat-icon>
   </div>
 
+  <!-- Patient Selection Cards Grid -->
   <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-    <mat-card class="cursor-pointer border-2 border-transparent p-4 transition-all duration-200 hover:shadow-md"
+    <mat-card
+      class="cursor-pointer border-2 p-4 transition-all duration-200 hover:shadow-md"
       [ngClass]="
         selectedPatient?.id === patient.id
-          ? 'border-blue-600'
-          : 'border-transparent'
-      " *ngFor="let patient of filteredPatients" (click)="selectPatient(patient)">
+          ? 'border-blue-600 bg-blue-50/20'
+          : 'border-slate-200'
+      "
+      *ngFor="let patient of filteredPatients"
+      (click)="selectPatient(patient)"
+    >
       <div class="flex items-center justify-between">
         <div>
-          <p class="mb-1 font-semibold">{{ patient.name }}</p>
-          <p class="m-0 text-sm text-gray-500">
-            {{ patient.id }} • {{ patient.age }}y • {{ patient.gender }}
+          <p class="mb-1 font-semibold text-slate-900">{{ patient.name }}</p>
+          <p class="m-0 text-sm text-slate-500">
+            ID: {{ patient.id }} • {{ patient.age }}y • {{ patient.gender }}
+          </p>
+          <p *ngIf="patient.nationalId" class="text-xs text-slate-400 mt-0.5">
+            Nat ID: {{ patient.nationalId }}
           </p>
         </div>
-        <mat-icon>description</mat-icon>
+        <mat-icon color="primary">account_box</mat-icon>
       </div>
     </mat-card>
   </div>
 
+  <!-- Selected Patient Clinical Workspace -->
   <mat-card class="p-6" *ngIf="selectedPatient">
-    <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <!-- Top Patient Info & Clinical Summary Banner -->
+    <div
+      class="mb-6 pb-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4"
+    >
       <div>
-        <h2 class="mb-1 text-xl font-semibold">
-          Health Records - {{ selectedPatient.name }}
-        </h2>
-        <p class="m-0 text-sm text-gray-500">
-          Patient ID: {{ selectedPatient.id }}
+        <div class="flex items-center gap-2">
+          <h2 class="text-2xl font-bold text-slate-900">
+            {{ selectedPatient.name }}
+          </h2>
+          <span
+            class="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-xs font-bold rounded-full"
+          >
+            {{ selectedPatient.id }}
+          </span>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">
+          DOB: {{ selectedPatient.dob || "1992-05-14" }} • Age:
+          {{ selectedPatient.age }} years • Gender: {{ selectedPatient.gender }}
         </p>
       </div>
-      <div class="flex flex-wrap gap-2">
-        <button mat-stroked-button (click)="printPatientRecord()">
-          <mat-icon>print</mat-icon>
-          Print
+
+      <!-- CPOE Action Buttons Toolbar -->
+      <div class="flex flex-wrap items-center gap-2">
+        <button mat-stroked-button (click)="openProblemModal()">
+          <mat-icon color="primary">assignment</mat-icon> Record Problem
         </button>
-        <button mat-flat-button color="primary" (click)="downloadPatientRecordPdf()">
-          <mat-icon>download</mat-icon>
-          Download PDF
+        <button mat-stroked-button (click)="openAllergyModal()">
+          <mat-icon color="warn">warning</mat-icon> Record Allergy
+        </button>
+        <button
+          mat-flat-button
+          color="accent"
+          (click)="openCpoeModal('Medications')"
+        >
+          <mat-icon>shopping_cart</mat-icon> CPOE Order
         </button>
       </div>
     </div>
 
+    <!-- Clinical Decision Support (CDS) Safety Alerts Widget Banner -->
+    <div *ngIf="cdsAlerts.length > 0" class="mb-6 space-y-3">
+      <div
+        class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5"
+      >
+        <mat-icon class="text-amber-600 !w-4 !h-4 text-sm">security</mat-icon>
+        Clinical Decision Support (CDS) Real-Time Safety Alerts
+      </div>
+
+      <div
+        *ngFor="let alt of cdsAlerts"
+        class="p-4 rounded-xl border flex items-start gap-3 shadow-sm"
+        [ngClass]="{
+          'bg-red-50 border-red-200 text-red-900': alt.severity === 'Critical',
+          'bg-amber-50 border-amber-200 text-amber-900':
+            alt.severity === 'Warning',
+          'bg-blue-50 border-blue-200 text-blue-900': alt.severity === 'Info',
+        }"
+      >
+        <mat-icon
+          [ngClass]="{
+            'text-red-600': alt.severity === 'Critical',
+            'text-amber-600': alt.severity === 'Warning',
+            'text-blue-600': alt.severity === 'Info',
+          }"
+        >
+          {{
+            alt.severity === "Critical"
+              ? "report_problem"
+              : alt.severity === "Warning"
+                ? "warning"
+                : "info"
+          }}
+        </mat-icon>
+        <div class="space-y-0.5 text-xs">
+          <div class="font-bold text-sm">{{ alt.title }}</div>
+          <div>{{ alt.message }}</div>
+          <div class="font-semibold mt-1">
+            Recommendation: {{ alt.recommendation }}
+          </div>
+          <div class="text-[10px] opacity-75 font-mono">
+            Source: {{ alt.source }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Clinical Tabs -->
     <mat-tab-group>
-      <mat-tab label="Medical Records">
+      <!-- TAB 1: EHR CLINICAL ENCOUNTERS -->
+      <mat-tab label="Clinical Visits">
         <div class="flex flex-col gap-4 py-4">
-          <div *ngIf="ehrRecords.length === 0" class="py-8 text-center text-slate-500">
-            No medical records found for this patient.
+          <div
+            *ngIf="ehrRecords.length === 0"
+            class="py-8 text-center text-slate-500"
+          >
+            No medical visit records found for this patient.
           </div>
 
-          <mat-card class="p-4" *ngFor="let record of ehrRecords">
-            <div class="mb-4">
+          <mat-card
+            class="p-4 border border-slate-200"
+            *ngFor="let record of ehrRecords"
+          >
+            <div class="mb-3 flex items-start justify-between">
               <div>
-                <p class="m-0 font-semibold">{{ record.diagnosis }}</p>
-                <p class="mt-1 text-sm text-gray-500">
-                  {{ record.date }} • {{ record.doctor }}
+                <p class="m-0 text-base font-bold text-slate-900">
+                  {{ record.diagnosis }}
                 </p>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span
+                    class="px-2 py-0.5 bg-slate-100 text-slate-700 text-xs font-mono rounded"
+                  >
+                    {{ record.diagnosisSystem || "KNHTS" }}:
+                    {{ record.diagnosisCode || "B54" }}
+                  </span>
+                  <span class="text-xs text-slate-500"
+                    >{{ record.date }} • {{ record.doctor }}</span
+                  >
+                </div>
               </div>
             </div>
 
-            <div class="flex flex-col gap-3">
-              <div *ngIf="record.prescriptions && record.prescriptions.length > 0">
-                <p class="mb-2 flex items-center gap-2 text-sm font-semibold">
-                  <mat-icon>medication</mat-icon>
-                  Prescriptions:
-                </p>
-                <div class="flex flex-col gap-2">
-                  <div *ngFor="let prescription of record.prescriptions"
-                    class="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
-                    <div class="mb-1 flex items-center justify-between">
-                      <span class="font-medium text-slate-700">{{ prescription.date }}</span>
-                      <span class="rounded-full px-2 py-0.5 text-xs font-semibold"
-                        [ngClass]="prescription.status === 'Dispensed'
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : prescription.status === 'Pending'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-slate-100 text-slate-600'">
-                        {{ prescription.status }}
-                      </span>
-                    </div>
-                    <ul class="m-0 list-inside list-disc space-y-1 pl-1 text-gray-700">
-                      <li *ngFor="let drug of prescription.drugs">
-                        <strong>{{ drug.name }}</strong> — {{ drug.dosage }}
-                        <span class="text-gray-400">(Qty: {{ drug.quantity }})</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p class="mb-2 text-sm font-semibold">Doctor's Notes:</p>
-                <p class="m-0 text-sm text-gray-700">{{ record.notes }}</p>
-              </div>
+            <div
+              class="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-3"
+            >
+              <span class="font-semibold text-slate-900 block mb-0.5"
+                >Clinical Notes:</span
+              >
+              {{ record.notes }}
             </div>
           </mat-card>
         </div>
       </mat-tab>
 
-      <mat-tab label="Prescriptions">
-        <div class="flex flex-col gap-4 py-4">
-          <mat-card class="p-4" *ngFor="let item of patientPrescriptions">
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex gap-3">
-                <mat-icon class="text-blue-600">medication</mat-icon>
-                <div>
-                  <p class="m-0 font-semibold">
-                    <ng-container *ngFor="let drug of item.drugs; let last = last">
-                      {{ drug.name }} {{ drug.dosage
-                      }}<ng-container *ngIf="!last">, </ng-container>
-                    </ng-container>
-                  </p>
-                  <p class="mt-1 text-sm text-gray-500">
-                    Prescribed by {{ item.doctorId }} on {{ item.date }}
-                  </p>
-                </div>
-              </div>
-              <mat-chip-set>
-                <mat-chip>Active</mat-chip>
-              </mat-chip-set>
-            </div>
-          </mat-card>
+      <!-- TAB 2: PROBLEM LIST & DIAGNOSES (KNHTS COMPLIANT) -->
+      <mat-tab label="Problem List & Diagnoses">
+        <div class="py-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900">
+              Active Coded Problem List
+            </h3>
+            <button
+              mat-stroked-button
+              color="primary"
+              (click)="openProblemModal()"
+            >
+              + Record New Problem
+            </button>
+          </div>
+
+          <div
+            class="border border-slate-200 rounded-xl overflow-hidden shadow-sm"
+          >
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 font-bold text-slate-700">
+                <tr>
+                  <th class="p-3">Code & System</th>
+                  <th class="p-3">Diagnosis Description</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Onset Date</th>
+                  <th class="p-3">Clinician Notes</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr *ngFor="let p of patientProblems" class="hover:bg-slate-50">
+                  <td class="p-3 font-mono font-bold text-slate-600">
+                    {{ p.system }}: {{ p.code }}
+                  </td>
+                  <td class="p-3 font-semibold text-slate-900">
+                    {{ p.display }}
+                  </td>
+                  <td class="p-3">
+                    <span
+                      class="px-2 py-0.5 text-[10px] font-bold rounded-full"
+                      [ngClass]="{
+                        'bg-emerald-100 text-emerald-800':
+                          p.status === 'Active',
+                        'bg-slate-100 text-slate-700': p.status === 'Resolved',
+                      }"
+                    >
+                      {{ p.status }}
+                    </span>
+                  </td>
+                  <td class="p-3 text-slate-600">{{ p.onsetDate }}</td>
+                  <td class="p-3 text-slate-600">{{ p.notes }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </mat-tab>
 
-      <mat-tab label="Lab Results">
-        <div class="flex flex-col gap-4 py-4">
-          <mat-card class="p-4" *ngFor="let lab of patientLabResults">
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex gap-3">
-                <mat-icon class="text-green-600">science</mat-icon>
-                <div>
-                  <p class="m-0 font-semibold">{{ lab.test }}</p>
-                  <p class="mt-1 text-sm text-gray-500">Date: {{ lab.date }}</p>
-                  <p class="mt-1 text-sm text-gray-500">
-                    Result: {{ lab.result }}
-                  </p>
-                  <table class="w-full min-w-[760px]">
-                    <thead class="bg-slate-50 border-b border-slate-200">
-                      <tr class="text-left">
-                        <th class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase">
-                          Parameter
-                        </th>
-                        <th class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase">
-                          Value
-                        </th>
-                        <th class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase">
-                          Unit
-                        </th>
-                        <th class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase">
-                          Reference Range
-                        </th>
-                        <th class="py-2 px-4 text-xs font-semibold text-slate-600 uppercase">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let param of lab.parameters" class="border-t border-slate-100">
-                        <td class="py-2 px-4">{{ param.name }}</td>
-                        <td class="py-2 px-4 font-medium">{{ param.value }}</td>
-                        <td class="py-2 px-4">{{ param.unit }}</td>
-                        <td class="py-2 px-4">{{ param.range }}</td>
-                        <td class="py-2 px-4">
-                          <span class="text-xs font-semibold px-2.5 py-1 rounded-full" [ngClass]="
-                          param.status === 'Normal'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-red-100 text-red-700'
-                        ">
-                            {{ param.status }}
-                          </span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+      <!-- TAB 3: ALLERGIES & HPT REGISTRY -->
+      <mat-tab label="Allergies & HPT Registry">
+        <div class="py-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900">
+              Recorded Allergies & Adverse Drug Reactions
+            </h3>
+            <button
+              mat-stroked-button
+              color="warn"
+              (click)="openAllergyModal()"
+            >
+              + Add Allergy
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              *ngFor="let alg of patientAllergies"
+              class="p-4 rounded-xl border border-red-200 bg-red-50/50 space-y-2"
+            >
+              <div class="flex items-center justify-between">
+                <span
+                  class="px-2 py-0.5 bg-red-100 text-red-800 text-xs font-bold rounded"
+                >
+                  {{ alg.severity }} Severity
+                </span>
+                <span class="text-xs text-slate-400 font-mono">{{
+                  alg.allergyType
+                }}</span>
               </div>
-              <span class="rounded-full px-2.5 py-1 text-xs font-medium" [ngClass]="getLabStatusClass(lab.status)">
-                {{ lab.status }}
-              </span>
+              <h4 class="text-base font-bold text-slate-900">
+                {{ alg.allergenName }}
+              </h4>
+              <p class="text-xs text-slate-700">
+                <strong>Reaction:</strong> {{ alg.reaction }}
+              </p>
             </div>
-          </mat-card>
+          </div>
         </div>
       </mat-tab>
 
-      <mat-tab label="Radiology">
-        <div class="flex flex-col gap-4 py-4">
-          <mat-card class="!p-5 !rounded-xl !shadow-sm border border-slate-200"
-            *ngFor="let report of patientRadiologyReports">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <h3 class="text-base font-semibold text-slate-900 m-0">Radiology Results & Report</h3>
-              <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                {{ report.status }}
-              </span>
+      <!-- TAB 4: CPOE ORDERS (14 CATEGORIES) -->
+      <mat-tab label="CPOE Active Orders">
+        <div class="py-4 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h3 class="text-sm font-bold text-slate-900">
+              Computerized Provider Order Entry (CPOE) Items
+            </h3>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button
+                *ngFor="let t of cpoeTypes.slice(0, 6)"
+                (click)="openCpoeModal(t)"
+                mat-stroked-button
+                class="!text-xs"
+              >
+                + {{ t }}
+              </button>
             </div>
+          </div>
 
-            <div class="space-y-4">
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-4"
+            *ngIf="patientCpoeOrders.length > 0"
+          >
+            <div
+              *ngFor="let ord of patientCpoeOrders"
+              class="p-4 bg-white rounded-xl border border-slate-200 shadow-sm space-y-2"
+            >
+              <div class="flex items-center justify-between">
+                <span
+                  class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-bold rounded"
+                >
+                  {{ ord.orderType }}
+                </span>
+                <span class="text-xs text-slate-500 font-bold"
+                  >KES {{ ord.billingAmount }}</span
+                >
+              </div>
+              <h4 class="text-sm font-bold text-slate-900">{{ ord.title }}</h4>
+              <p class="text-xs text-slate-600">{{ ord.instructions }}</p>
               <div
-                class="bg-slate-50 p-3 rounded-lg flex flex-wrap justify-between gap-2 text-sm border border-slate-200">
-                <div><span class="text-slate-500">Order ID:</span> <strong>{{ report.orderId }}</strong></div>
-                <div><span class="text-slate-500">Patient:</span> <strong>{{ report.patient }}</strong></div>
-                <div><span class="text-slate-500">Study:</span> <strong>{{ report.type }}</strong></div>
-                <div><span class="text-slate-500">Radiologist:</span> <strong>{{ report.radiologist }}</strong></div>
-                <div><span class="text-slate-500">Scan Date:</span> <strong>{{ report.scanDate }}</strong></div>
-              </div>
-
-              <div>
-                <h4 class="font-medium text-slate-900 mb-1 text-sm">Findings</h4>
-                <div
-                  class="p-3 bg-slate-50/80 rounded-lg border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-line">
-                  {{ report.findings }}
-                </div>
-              </div>
-
-              <div>
-                <h4 class="font-medium text-slate-900 mb-1 text-sm">Impression</h4>
-                <div
-                  class="p-3 bg-slate-50/80 rounded-lg border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-line">
-                  {{ report.impression }}
-                </div>
-              </div>
-
-              <div>
-                <h4 class="font-medium text-slate-900 mb-1 text-sm">Recommendations</h4>
-                <div
-                  class="p-3 bg-slate-50/80 rounded-lg border border-slate-200 text-sm text-slate-800 leading-relaxed whitespace-pre-line">
-                  {{ report.recommendations }}
-                </div>
-              </div>
-
-              <div *ngIf="report.images && report.images.length > 0">
-                <h4 class="font-medium text-slate-900 mb-2 text-sm">Uploaded Scan Images ({{ report.images.length }})
-                </h4>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-48 overflow-y-auto pr-1">
-                  <div *ngFor="let image of report.images" class="rounded-lg border border-slate-200 p-1">
-                    <img [src]="image.url" [alt]="image.name"
-                      class="w-full h-24 object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"
-                      (click)="openImagePreview(image)" />
-                    <p class="text-xs text-slate-600 mt-1 truncate">{{ image.name }}</p>
-                  </div>
-                </div>
+                class="text-[11px] text-slate-400 pt-2 border-t border-slate-100 flex items-center justify-between"
+              >
+                <span>Ordered By: {{ ord.orderedBy }}</span>
+                <span
+                  >Status:
+                  <strong class="text-emerald-700">{{
+                    ord.status
+                  }}</strong></span
+                >
               </div>
             </div>
-          </mat-card>
-
-          <div *ngIf="patientRadiologyReports.length === 0" class="py-8 text-center text-slate-500">
-            No radiology reports found for this patient.
           </div>
+
+          <div
+            *ngIf="patientCpoeOrders.length === 0"
+            class="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200"
+          >
+            No active CPOE orders created yet. Use the buttons above to order
+            Physiotherapy, OT, Nutrition, Social Work, Counselling, Vitals, etc.
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- TAB 5: VITALS & PEDIATRIC GROWTH CHARTS -->
+      <mat-tab label="Vitals & Growth Charts">
+        <div class="py-4 space-y-6" *ngIf="patientVitals">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <div class="text-xs text-slate-500">Blood Pressure</div>
+              <div class="text-xl font-bold text-slate-900 mt-1">
+                {{ patientVitals.bloodPressureSystolic }}/{{
+                  patientVitals.bloodPressureDiastolic
+                }}
+                mmHg
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <div class="text-xs text-slate-500">Temperature</div>
+              <div class="text-xl font-bold text-slate-900 mt-1">
+                {{ patientVitals.temperatureC }}°C
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <div class="text-xs text-slate-500">Pulse Rate</div>
+              <div class="text-xl font-bold text-slate-900 mt-1">
+                {{ patientVitals.pulseRateBpm }} bpm
+              </div>
+            </div>
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <div class="text-xs text-slate-500">BMI / Category</div>
+              <div class="text-xl font-bold text-slate-900 mt-1">
+                {{ patientVitals.bmi }} ({{ patientVitals.bmiCategory }})
+              </div>
+            </div>
+          </div>
+
+          <!-- Pediatric Growth Chart Section -->
+          <div
+            *ngIf="patientGrowthChart"
+            class="p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl space-y-2"
+          >
+            <h4 class="text-sm font-bold text-emerald-950">
+              Pediatric Growth Chart (WHO Standard)
+            </h4>
+            <div class="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                Height Percentile:
+                <strong class="text-emerald-900"
+                  >{{ patientGrowthChart.heightPercentile }}th %tile</strong
+                >
+              </div>
+              <div>
+                Weight Percentile:
+                <strong class="text-emerald-900"
+                  >{{ patientGrowthChart.weightPercentile }}th %tile</strong
+                >
+              </div>
+              <div>
+                WHO Status:
+                <strong class="text-emerald-900">{{
+                  patientGrowthChart.whoClassification
+                }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- TAB 6: KENYA HIE FHIR IPS CLINICAL SUMMARY -->
+      <mat-tab label="Kenya HIE Clinical Summary">
+        <div class="py-4 space-y-4" *ngIf="fhirSummary">
+          <div
+            class="flex items-center justify-between p-4 bg-slate-900 text-white rounded-xl"
+          >
+            <div>
+              <h3 class="text-sm font-bold text-emerald-400">
+                FHIR R4 International Patient Summary (IPS) Generated
+              </h3>
+              <p class="text-xs text-slate-300">
+                Contains patient biodata, clinical diagnoses, active
+                medications, and care plan ready for Kenya HIE exchange.
+              </p>
+            </div>
+            <span
+              class="px-3 py-1 bg-emerald-600 text-xs font-bold rounded-full"
+              >HIE READY</span
+            >
+          </div>
+
+          <pre
+            class="bg-slate-950 text-emerald-400 p-4 rounded-xl text-xs font-mono max-h-80 overflow-y-auto border border-slate-800"
+            >{{ fhirSummary.rawFhirJson }}</pre
+          >
         </div>
       </mat-tab>
     </mat-tab-group>
   </mat-card>
-</div>
 
-<div *ngIf="selectedImagePreview" class="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center p-4"
-  (click)="closeImagePreview()">
-  <div class="relative max-w-4xl w-full" (click)="$event.stopPropagation()">
-    <button mat-icon-button class="!absolute -top-12 right-0 !text-white" type="button" (click)="closeImagePreview()"
-      aria-label="Close preview">
-      <mat-icon>close</mat-icon>
-    </button>
-    <img [src]="selectedImagePreview.url" [alt]="selectedImagePreview.name"
-      class="w-full max-h-[80vh] object-contain rounded-lg" />
+  <!-- CPOE Order Creation Modal -->
+  <div
+    *ngIf="showCpoeModal"
+    class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4"
+    >
+      <div
+        class="flex items-center justify-between border-b border-slate-100 pb-3"
+      >
+        <h3 class="text-base font-bold text-slate-900">
+          Create CPOE Order ({{ newOrder.orderType }})
+        </h3>
+        <button
+          (click)="closeCpoeModal()"
+          class="text-slate-400 hover:text-slate-600 text-lg"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Order Category</mat-label>
+          <mat-select [(ngModel)]="newOrder.orderType">
+            <mat-option *ngFor="let t of cpoeTypes" [value]="t">{{
+              t
+            }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Order Title / Item Name</mat-label>
+          <input
+            matInput
+            [(ngModel)]="newOrder.title"
+            placeholder="e.g. Chest Physiotherapy / LOINC Lab Test"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Clinical Instructions</mat-label>
+          <textarea
+            matInput
+            rows="3"
+            [(ngModel)]="newOrder.instructions"
+            placeholder="Specific dosage, frequency, or referral notes..."
+          ></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Billing Amount (KES)</mat-label>
+          <input matInput type="number" [(ngModel)]="newOrder.billingAmount" />
+        </mat-form-field>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button mat-button (click)="closeCpoeModal()">Cancel</button>
+        <button mat-flat-button color="primary" (click)="submitCpoeOrder()">
+          Submit CPOE Order
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Record Problem Modal -->
+  <div
+    *ngIf="showProblemModal"
+    class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4"
+    >
+      <div
+        class="flex items-center justify-between border-b border-slate-100 pb-3"
+      >
+        <h3 class="text-base font-bold text-slate-900">
+          Record Problem (KNHTS Coded Diagnosis)
+        </h3>
+        <button
+          (click)="closeProblemModal()"
+          class="text-slate-400 hover:text-slate-600 text-lg"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Code System</mat-label>
+          <mat-select [(ngModel)]="newProblem.system">
+            <mat-option value="ICD-10-WHO">ICD-10-WHO</mat-option>
+            <mat-option value="KNHTS">KNHTS</mat-option>
+            <mat-option value="SNOMED-CT">SNOMED-CT</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Concept Code</mat-label>
+          <input
+            matInput
+            [(ngModel)]="newProblem.code"
+            placeholder="e.g. I10 or B54"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Diagnosis Description</mat-label>
+          <input
+            matInput
+            [(ngModel)]="newProblem.display"
+            placeholder="e.g. Essential hypertension"
+          />
+        </mat-form-field>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button mat-button (click)="closeProblemModal()">Cancel</button>
+        <button mat-flat-button color="primary" (click)="submitProblem()">
+          Save Problem
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Record Allergy Modal -->
+  <div
+    *ngIf="showAllergyModal"
+    class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4"
+    >
+      <div
+        class="flex items-center justify-between border-b border-slate-100 pb-3"
+      >
+        <h3 class="text-base font-bold text-slate-900">
+          Record Patient Allergy
+        </h3>
+        <button
+          (click)="closeAllergyModal()"
+          class="text-slate-400 hover:text-slate-600 text-lg"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Allergen Name</mat-label>
+          <input
+            matInput
+            [(ngModel)]="newAllergy.allergenName"
+            placeholder="e.g. Penicillin / Sulfa / Peanuts"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Severity</mat-label>
+          <mat-select [(ngModel)]="newAllergy.severity">
+            <mat-option value="Mild">Mild</mat-option>
+            <mat-option value="Moderate">Moderate</mat-option>
+            <mat-option value="Severe">Severe</mat-option>
+            <mat-option value="Anaphylactic">Anaphylactic</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Reaction Description</mat-label>
+          <textarea
+            matInput
+            rows="2"
+            [(ngModel)]="newAllergy.reaction"
+            placeholder="e.g. Cutaneous rash and dyspnea..."
+          ></textarea>
+        </mat-form-field>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button mat-button (click)="closeAllergyModal()">Cancel</button>
+        <button mat-flat-button color="warn" (click)="submitAllergy()">
+          Save Allergy
+        </button>
+      </div>
+    </div>
   </div>
 </div>

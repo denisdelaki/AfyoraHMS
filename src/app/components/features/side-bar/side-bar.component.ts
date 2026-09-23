@@ -18,8 +18,10 @@ import {
   Pill,
   Scan,
   Shield,
+  ShieldCheck,
   Ticket,
   LogOut,
+
   UserCog,
   Users,
   X,
@@ -99,11 +101,24 @@ export class SideBarComponent implements OnInit {
       permission: 'billing',
     },
     {
+      name: 'eClaims & Preauth (DHA)',
+      href: '/eclaims',
+      icon: ShieldCheck,
+      permission: 'billing',
+    },
+    {
+      name: 'Insurance & Payers',
+      href: '/insurance-onboarding',
+      icon: Shield,
+      adminOnly: true,
+    },
+    {
       name: 'Inventory',
       href: '/inventory',
       icon: Package,
       permission: 'inventory',
     },
+
     {
       name: 'Reports',
       href: '/reports',

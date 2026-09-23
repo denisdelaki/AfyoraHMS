@@ -1,26 +1,47 @@
-<h2 mat-dialog-title>
-  {{ patientToEdit ? "Update Patient Information" : "Register New Patient" }}
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon color="primary">person_add</mat-icon>
+  {{ patientToEdit ? "Update Patient Information (KNHTS Compliant)" : "Register New Patient (KNHTS Demographics
+  Compliant)" }}
 </h2>
 <mat-dialog-content>
   <form [formGroup]="registerForm" class="space-y-4 py-2">
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>National ID / Birth Certificate (Optional)</mat-label>
-      <input matInput formControlName="nationalId" placeholder="e.g. 12345678 or BC-123456" />
-    </mat-form-field>
 
+    <!-- National Identity Section -->
+    <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+      <span class="text-xs font-semibold text-slate-700 uppercase tracking-wider block">Identity Documents (Kenya
+        Certification Standard)</span>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>National ID Number</mat-label>
+          <input matInput formControlName="nationalId" placeholder="e.g. 12345678" />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Passport Number</mat-label>
+          <input matInput formControlName="passportNumber" placeholder="e.g. A1234567" />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Birth Certificate No.</mat-label>
+          <input matInput formControlName="birthCertificateNumber" placeholder="e.g. BC-987654" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Personal Demographics -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>First Name</mat-label>
-        <input matInput formControlName="firstName" placeholder="John" />
+        <input matInput formControlName="firstName" placeholder="Jane" />
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Last Name</mat-label>
-        <input matInput formControlName="lastName" placeholder="Doe" />
+        <input matInput formControlName="lastName" placeholder="Muthoni" />
       </mat-form-field>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Date of Birth</mat-label>
         <input matInput [matDatepicker]="picker" [max]="today" formControlName="dob" />
@@ -29,59 +50,105 @@
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Gender</mat-label>
+        <mat-label>Age (Years)</mat-label>
+        <input matInput type="number" formControlName="age" placeholder="Calculated" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Sex / Gender</mat-label>
         <mat-select formControlName="gender" placeholder="Select gender">
           <mat-option value="male">Male</mat-option>
           <mat-option value="female">Female</mat-option>
-          <mat-option value="other">Other</mat-option>
+          <mat-option value="other">Intersex</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Phone Number</mat-label>
-        <input matInput type="tel" maxlength="13" formControlName="phone" placeholder="+25412345678" />
+        <input matInput type="tel" maxlength="13" formControlName="phone" placeholder="+254712345678" />
       </mat-form-field>
 
       <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Email (Optional)</mat-label>
-        <input matInput type="email" formControlName="email" placeholder="patient@email.com" />
+        <mat-label>Email Address</mat-label>
+        <input matInput type="email" formControlName="email" placeholder="patient@example.com" />
       </mat-form-field>
-    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Select blood group</mat-label>
+        <mat-label>Blood Group</mat-label>
         <mat-select formControlName="bloodGroup">
           <mat-option *ngFor="let group of bloodGroups" [value]="group.value">
             {{ group.label }}
           </mat-option>
         </mat-select>
       </mat-form-field>
+    </div>
 
+    <!-- Location Hierarchy -->
+    <div class="p-3 bg-blue-50/50 border border-blue-100 rounded-lg space-y-3">
+      <span class="text-xs font-semibold text-blue-800 uppercase tracking-wider block">Kenya Residence & Location
+        Hierarchy</span>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>County</mat-label>
+          <mat-select formControlName="county">
+            <mat-option *ngFor="let c of kenyaCounties" [value]="c">{{ c }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Sub-County</mat-label>
+          <input matInput formControlName="subCounty" placeholder="e.g. Westlands" />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Ward</mat-label>
+          <input matInput formControlName="ward" placeholder="e.g. Parklands" />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Village / Estate</mat-label>
+          <input matInput formControlName="village" placeholder="e.g. Highridge" />
+        </mat-form-field>
+      </div>
       <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Age</mat-label>
-        <input matInput type="number" formControlName="age" placeholder="Auto-calculated" readonly />
-        <mat-hint>Auto-calculated from Date of Birth</mat-hint>
+        <mat-label>Street Address / House No.</mat-label>
+        <input matInput formControlName="address" placeholder="e.g. House 14, 3rd Avenue" />
       </mat-form-field>
     </div>
 
+    <!-- Next of Kin Details -->
+    <div class="p-3 bg-emerald-50/50 border border-emerald-100 rounded-lg space-y-3">
+      <span class="text-xs font-semibold text-emerald-800 uppercase tracking-wider block">Next of Kin & Emergency
+        Contact</span>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Next of Kin Full Name</mat-label>
+          <input matInput formControlName="nextOfKinName" placeholder="e.g. Peter Kamau" />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Relationship</mat-label>
+          <mat-select formControlName="nextOfKinRelationship">
+            <mat-option *ngFor="let r of relationships" [value]="r">{{ r }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Next of Kin Phone</mat-label>
+          <input matInput type="tel" formControlName="nextOfKinPhone" placeholder="+254722000111" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Medical History & Notes -->
     <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Address</mat-label>
-      <input matInput formControlName="address" placeholder="Street address" />
+      <mat-label>Clinical Notes / Medical History</mat-label>
+      <textarea matInput rows="2" formControlName="medicalHistory"
+        placeholder="Known allergies, chronic conditions, surgical history..."></textarea>
     </mat-form-field>
 
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Next of kin phone number</mat-label>
-      <input matInput type="tel" maxlength="12" formControlName="emergencyContact" placeholder="Phone Number" />
-    </mat-form-field>
-
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Medical History</mat-label>
-      <textarea matInput rows="3" formControlName="medicalHistory"
-        placeholder="Enter medical history, allergies, chronic conditions..."></textarea>
-    </mat-form-field>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

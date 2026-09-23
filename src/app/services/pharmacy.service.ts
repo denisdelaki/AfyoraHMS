@@ -3,12 +3,15 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map, tap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import { ApiResponse, CreateDrugPurchaseOrderRequest, CreateDrugRequest, Drug, DrugCategory, DrugPurchaseOrder, Prescription } from '../models';
+import { DHAPrescription } from '../models/dha-connect.models';
 import { DataSyncService } from './data-sync.service';
+import { DhaAfyaConnectService } from './dha-afyaconnect.service';
 
 @Injectable({ providedIn: 'root' })
 export class PharmacyService {
   private readonly http = inject(HttpClient);
   private readonly dataSync = inject(DataSyncService);
+  private readonly dhaService = inject(DhaAfyaConnectService);
   private readonly baseUrl = apiUrl('/pharmacy');
 
   getDrugs(facilityId: string | number): Observable<Drug[]> {
@@ -114,6 +117,24 @@ export class PharmacyService {
       .pipe(map((response: any) => response?.items ?? response?.results ?? response?.data ?? (Array.isArray(response) ? response : []))));
   }
 
+  verifyAndCreateDhaPrescription(payload: {
+    consentToken: string;
+    interventionCode?: string;
+    items: { drug_name: string; dosage: string; quantity: number }[];
+    identificationNumber?: string;
+    identificationType?: string;
+    regulationBody?: string;
+  }): Observable<DHAPrescription> {
+    return this.dhaService.createPrescription({
+      consent_token: payload.consentToken,
+      intervention_code: payload.interventionCode || 'INT-PHARM-01',
+      identification_number: payload.identificationNumber || 'KMPDC-REG-01',
+      identification_type: payload.identificationType || 'registration_number',
+      regulation_body: payload.regulationBody || 'KMPDC',
+      items: payload.items,
+    });
+  }
+
   createPrescription(
     patientId: string,
     payload: {
@@ -121,6 +142,10 @@ export class PharmacyService {
       status: 'Pending' | 'Dispensed';
       date: string;
       doctorId: string;
+      dhaPrescriptionCode?: string;
+      dhaStatus?: string;
+      dhaVerified?: boolean;
+      consentToken?: string;
     },
     facilityId: string | number,
   ): Observable<ApiResponse<Prescription>> {

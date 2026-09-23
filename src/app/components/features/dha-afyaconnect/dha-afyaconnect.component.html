@@ -1,0 +1,527 @@
+<div class="dha-container">
+  <!-- Page Banner -->
+  <div class="banner">
+    <div class="banner-title">
+      <lucide-icon [img]="Shield" class="banner-icon"></lucide-icon>
+      <div>
+        <h1>DHA AfyaConnect eClaims & Preauth Hub</h1>
+        <p>Kenya Social Health Authority (SHA) ILM Integration Gateway & Digital Claim Processing Workflow</p>
+      </div>
+    </div>
+    <div class="banner-badge">
+      <span class="live-dot"></span> DHA UAT Middleware Connected
+    </div>
+  </div>
+
+  <!-- Toast Alert -->
+  <div *ngIf="toast" [class]="'toast-alert toast-' + toast.type">
+    <span>{{ toast.text }}</span>
+  </div>
+
+  <!-- Dynamic Patient Selector Bar -->
+  <div class="card mb-4" *ngIf="patients.length > 0">
+    <div class="card-body py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <lucide-icon [img]="Users" class="icon-sm text-blue-600"></lucide-icon>
+        <span class="font-semibold text-sm">Select Registered Patient for DHA Claim:</span>
+      </div>
+      <div class="flex-1 max-w-md">
+        <select class="form-control" (change)="onSelectPatient($any($event.target).value)">
+          <option value="">-- Choose Patient from HMS Database --</option>
+          <option *ngFor="let p of patients" [value]="p.id" [selected]="selectedPatient?.id === p.id">
+            {{ p.firstName }} {{ p.lastName }} | National ID: {{ p.nationalId || p.id }}
+          </option>
+        </select>
+      </div>
+      <div *ngIf="selectedPatient" class="text-xs bg-blue-50 px-3 py-1.5 rounded-md text-blue-700">
+        Selected: <strong>{{ selectedPatient.firstName }} {{ selectedPatient.lastName }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Consent Token Quick Context Bar -->
+  <div class="consent-bar mb-4 p-3 bg-slate-100 rounded-lg flex items-center justify-between border border-slate-200">
+    <div class="flex items-center gap-2 text-xs text-slate-700">
+      <lucide-icon [img]="Lock" class="icon-sm text-emerald-600"></lucide-icon>
+      <span>Active SHA Consent Token:</span>
+      <input type="text" [(ngModel)]="consentToken" placeholder="Enter or generated after Visit/Auth..." class="form-control form-control-sm font-mono w-64 inline-block" />
+    </div>
+    <div class="text-xs text-slate-500">
+      Facility Code: <strong class="font-mono text-slate-800">{{ facilityCode || 'Loading...' }}</strong>
+    </div>
+  </div>
+
+  <!-- Main Workspace Tabs -->
+  <div class="tabs-nav">
+    <button [class.active]="activeTab === 'eligibility'" (click)="selectTab('eligibility')">
+      <lucide-icon [img]="Search" class="tab-icon"></lucide-icon> SHA Eligibility & Benefits
+    </button>
+    <button [class.active]="activeTab === 'auth'" (click)="selectTab('auth')">
+      <lucide-icon [img]="Lock" class="tab-icon"></lucide-icon> Authorizations & OTP Consent
+    </button>
+    <button [class.active]="activeTab === 'claims'" (click)="selectTab('claims')">
+      <lucide-icon [img]="Ticket" class="tab-icon"></lucide-icon> Virtual Claim Visits
+    </button>
+    <button [class.active]="activeTab === 'billing'" (click)="selectTab('billing')">
+      <lucide-icon [img]="CreditCard" class="tab-icon"></lucide-icon> Claim Billing & Items
+    </button>
+    <button [class.active]="activeTab === 'prescriptions'" (click)="selectTab('prescriptions')">
+      <lucide-icon [img]="Pill" class="tab-icon"></lucide-icon> ePrescriptions & Dispenses
+    </button>
+    <button [class.active]="activeTab === 'discharge'" (click)="selectTab('discharge')">
+      <lucide-icon [img]="Send" class="tab-icon"></lucide-icon> Claim Dispatch & Discharge
+    </button>
+    <button [class.active]="activeTab === 'emergency'" (click)="selectTab('emergency')">
+      <lucide-icon [img]="Stethoscope" class="tab-icon"></lucide-icon> Emergency & EMT Cases
+    </button>
+    <button [class.active]="activeTab === 'logs'" (click)="selectTab('logs')">
+      <lucide-icon [img]="FileCheck" class="tab-icon"></lucide-icon> Security Audit Logs
+    </button>
+  </div>
+
+  <!-- TAB 1: SHA ELIGIBILITY & BENEFITS -->
+  <div *ngIf="activeTab === 'eligibility'" class="tab-content">
+    <div class="grid-2">
+      <!-- Search Form Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3><lucide-icon [img]="Search" class="icon-sm"></lucide-icon> SHA Beneficiary Eligibility Search</h3>
+        </div>
+        <div class="card-body">
+          <form (ngSubmit)="runEligibilityCheck()">
+            <div class="form-group">
+              <label>Identification Number *</label>
+              <input type="text" [(ngModel)]="eligibilityQuery.id_number" name="id_number" class="form-control" placeholder="Enter National ID, Passport, or CR Number" required />
+            </div>
+            <div class="form-group">
+              <label>Identification Type *</label>
+              <select [(ngModel)]="eligibilityQuery.id_type" name="id_type" class="form-control">
+                <option value="National ID">National Identity Card</option>
+                <option value="Alien ID">Alien ID</option>
+                <option value="Passport">Passport</option>
+                <option value="Birth Certificate">Birth Certificate</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-full" [disabled]="loadingEligibility">
+              <lucide-icon [img]="RefreshCw" class="icon-sm" [class.spin]="loadingEligibility"></lucide-icon>
+              {{ loadingEligibility ? 'Verifying with DHA Gateway...' : 'Verify SHA Eligibility' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Eligibility Result Details Card -->
+      <div class="card" *ngIf="eligibilityResult">
+        <div class="card-header bg-emerald-50">
+          <h3><lucide-icon [img]="CheckCircle2" class="icon-sm text-emerald-600"></lucide-icon> Beneficiary Verification Report</h3>
+          <span class="badge badge-success">{{ eligibilityResult.statusDesc }}</span>
+        </div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div><span class="text-muted">Full Name:</span> <strong>{{ eligibilityResult.fullName }}</strong></div>
+            <div><span class="text-muted">Member CR Number:</span> <code>{{ eligibilityResult.memberCrNumber }}</code></div>
+            <div><span class="text-muted">Age / DOB:</span> {{ eligibilityResult.age }} Yrs ({{ eligibilityResult.dateOfBirth }})</div>
+            <div><span class="text-muted">Gender:</span> {{ eligibilityResult.gender }}</div>
+            <div><span class="text-muted">OTP Consent Whitelisted:</span> 
+              <span class="tag" [class.tag-green]="eligibilityResult.whitelistedForOTP">{{ eligibilityResult.whitelistedForOTP ? 'YES' : 'NO' }}</span>
+            </div>
+          </div>
+
+          <h4 class="mt-4 mb-2 text-sm font-semibold">Active Enrolled Schemes:</h4>
+          <div class="schemes-stack">
+            <div *ngFor="let sch of eligibilityResult.schemes" class="scheme-card">
+              <div class="scheme-title">
+                <strong>{{ sch.schemeName }}</strong>
+                <span class="badge badge-outline">{{ sch.schemeCode }}</span>
+              </div>
+              <div class="scheme-balance">
+                Available Cap: <strong>KES {{ sch.availableBalance | number:'1.2-2' }}</strong> / {{ sch.benefitLimit | number:'1.2-2' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Utilization & Bed Occupancy Stats -->
+    <div class="grid-2 mt-4">
+      <div class="card" *ngIf="utilizationData">
+        <div class="card-header">
+          <h3><lucide-icon [img]="Activity" class="icon-sm"></lucide-icon> Patient Payer Utilization Balances</h3>
+        </div>
+        <div class="card-body">
+          <div class="utilization-bars">
+            <div class="util-item">
+              <div class="util-label">Individual Utilised Cap</div>
+              <div class="util-progress">
+                <div class="bar-fill" [style.width.%]="(utilizationData.individualUtilisedLimit / (utilizationData.individualMaxLimit || 1)) * 100"></div>
+              </div>
+              <div class="util-val">KES {{ utilizationData.individualUtilisedLimit | number }} / KES {{ utilizationData.individualMaxLimit | number }}</div>
+            </div>
+            <div class="util-item">
+              <div class="util-label">Household Utilised Limit</div>
+              <div class="util-progress">
+                <div class="bar-fill bg-amber" [style.width.%]="(utilizationData.householdUtilisedLimit / (utilizationData.householdMaxLimit || 1)) * 100"></div>
+              </div>
+              <div class="util-val">KES {{ utilizationData.householdUtilisedLimit | number }} / KES {{ utilizationData.householdMaxLimit | number }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="bedOccupancy">
+        <div class="card-header">
+          <h3><lucide-icon [img]="Activity" class="icon-sm"></lucide-icon> Facility Bed Occupancy Status</h3>
+        </div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div><span class="text-muted">Facility:</span> <strong>{{ bedOccupancy.name }}</strong></div>
+            <div><span class="text-muted">Level:</span> {{ bedOccupancy.bp_level }}</div>
+            <div><span class="text-muted">Occupancy Rate:</span> <strong>{{ bedOccupancy.bed_occupancy_rate.occupancy_percentage }}%</strong></div>
+            <div><span class="text-muted">Available Beds:</span> {{ bedOccupancy.bed_occupancy_rate.available_beds }} / {{ bedOccupancy.bed_occupancy_rate.total_beds }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: AUTHORIZATIONS & PREAUTH -->
+  <div *ngIf="activeTab === 'auth'" class="tab-content">
+    <div class="grid-2">
+      <!-- Create Auth Form -->
+      <div class="card">
+        <div class="card-header">
+          <h3><lucide-icon [img]="Lock" class="icon-sm"></lucide-icon> Request Patient Consent & Pre-Authorization</h3>
+        </div>
+        <div class="card-body">
+          <form (ngSubmit)="submitAuthorization()">
+            <div class="form-group">
+              <label>Patient Client Registry ID *</label>
+              <input type="text" [(ngModel)]="authForm.patient_id" name="patient_id" class="form-control" placeholder="e.g. Patient ID or CR Number" required />
+            </div>
+            <div class="form-group">
+              <label>Patient Full Name</label>
+              <input type="text" [(ngModel)]="authForm.patient_name" name="patient_name" class="form-control" placeholder="Beneficiary Full Name" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Service Type *</label>
+                <select [(ngModel)]="authForm.service_type" name="service_type" class="form-control">
+                  <option value="OUTPATIENT">OUTPATIENT</option>
+                  <option value="INPATIENT">INPATIENT</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Patient One-Time Password (OTP) *</label>
+                <input type="text" [(ngModel)]="authForm.otp" name="otp" class="form-control" placeholder="Enter 6-digit OTP code" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Requested Intervention Codes (Comma separated)</label>
+              <input type="text" [(ngModel)]="interventionsInput" name="interventions" class="form-control" placeholder="e.g. INT-CONS-01, INT-LAB-CBC" />
+            </div>
+            <button type="submit" class="btn btn-primary w-full">Request Pre-Authorization</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Auth Output -->
+      <div class="card" *ngIf="createdAuth">
+        <div class="card-header bg-blue-50">
+          <h3>Authorization Record Granted</h3>
+          <span class="badge badge-primary">{{ createdAuth.status }}</span>
+        </div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div><span class="text-muted">Auth Code:</span> <code>{{ createdAuth.authCode }}</code></div>
+            <div><span class="text-muted">Consent Token:</span> <code>{{ createdAuth.token }}</code></div>
+            <div><span class="text-muted">GUID:</span> <code>{{ createdAuth.guid }}</code></div>
+            <div><span class="text-muted">Beneficiary:</span> {{ createdAuth.beneficiaryName }}</div>
+            <div><span class="text-muted">Expires:</span> {{ createdAuth.expiry }}</div>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-danger btn-sm" (click)="rejectCurrentAuth()">Reject Pending Authorization</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: VIRTUAL CLAIM VISITS -->
+  <div *ngIf="activeTab === 'claims'" class="tab-content">
+    <div class="card max-w-xl mx-auto">
+      <div class="card-header">
+        <h3><lucide-icon [img]="Ticket" class="icon-sm"></lucide-icon> Initiate Virtual Claim Visit</h3>
+      </div>
+      <div class="card-body">
+        <form (ngSubmit)="startVisitClaim()">
+          <div class="form-group">
+            <label>Beneficiary Client Registry ID *</label>
+            <input type="text" [(ngModel)]="visitForm.patient_id" name="patient_id" class="form-control" placeholder="Enter Patient ID" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Service Type *</label>
+              <select [(ngModel)]="visitForm.service_type" name="service_type" class="form-control">
+                <option value="OUTPATIENT">OUTPATIENT</option>
+                <option value="INPATIENT">INPATIENT</option>
+                <option value="CAPITATION">CAPITATION</option>
+                <option value="EMERGENCY">EMERGENCY</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Patient Verification OTP *</label>
+              <input type="text" [(ngModel)]="visitForm.otp" name="otp" class="form-control" placeholder="6-digit OTP code" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Intervention Codes (Comma separated)</label>
+            <input type="text" [(ngModel)]="visitInterventionsInput" name="visitInterventions" class="form-control" placeholder="e.g. INT-CONS-01, INT-LAB-CBC" />
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Start Virtual Claim Visit</button>
+        </form>
+
+        <div *ngIf="activeClaim" class="active-claim-box mt-4">
+          <h4>Active Virtual Claim Started:</h4>
+          <p>Invoice Number: <strong>{{ activeClaim.invoice_number }}</strong></p>
+          <p>Authorization Code: <code>{{ activeClaim.authorization_code }}</code></p>
+          <p>Claim State: <span class="badge badge-success">{{ activeClaim.workflow_state }}</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: CLAIM BILLING & ITEMS -->
+  <div *ngIf="activeTab === 'billing'" class="tab-content">
+    <div class="grid-2">
+      <!-- Add Diagnosis -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Add Diagnosis (ICD Code) to Claim</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>ICD Diagnosis Code *</label>
+            <input type="text" [(ngModel)]="diagnosisForm.icd_code" class="form-control" placeholder="e.g. J06.9" />
+          </div>
+          <div class="form-group">
+            <label>Intervention Code *</label>
+            <input type="text" [(ngModel)]="diagnosisForm.intervention_code" class="form-control" placeholder="e.g. INT-CONS-01" />
+          </div>
+          <div class="form-group">
+            <label>Facility Code</label>
+            <input type="text" [(ngModel)]="diagnosisForm.facilityID" class="form-control" placeholder="Facility Code" />
+          </div>
+          <button class="btn btn-primary" (click)="addDiagnosis()">Link Diagnosis</button>
+        </div>
+      </div>
+
+      <!-- Add Claim Line Item -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Add Billed Line Item</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Intervention Code *</label>
+              <input type="text" [(ngModel)]="lineItemForm.intervention_code" class="form-control" placeholder="e.g. INT-CONS-01" />
+            </div>
+            <div class="form-group">
+              <label>Unit Price (KES) *</label>
+              <input type="number" [(ngModel)]="lineItemForm.unit_price" class="form-control" placeholder="0.00" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Quantity *</label>
+              <input type="number" [(ngModel)]="lineItemForm.quantity" class="form-control" placeholder="1" />
+            </div>
+            <div class="form-group">
+              <label>Scheme Code</label>
+              <input type="text" [(ngModel)]="lineItemForm.scheme_code" class="form-control" placeholder="e.g. SHA-OPT-01" />
+            </div>
+          </div>
+          <button class="btn btn-primary" (click)="addLineItem()">Add Claim Line Item</button>
+          <button class="btn btn-secondary ml-2" (click)="resubmitClaimLine()">Resubmit Line Item</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: E-PRESCRIPTIONS & DISPENSES -->
+  <div *ngIf="activeTab === 'prescriptions'" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <h3>Issue ePrescription</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Intervention Code *</label>
+            <input type="text" [(ngModel)]="rxForm.intervention_code" class="form-control" placeholder="e.g. INT-PHARM-01" />
+          </div>
+          <div class="form-group">
+            <label>Practitioner Registration Number</label>
+            <input type="text" [(ngModel)]="rxForm.identification_number" class="form-control" placeholder="e.g. KMPDC-DOC-XXXX" />
+          </div>
+          <div class="form-group">
+            <label>Regulation Body</label>
+            <input type="text" [(ngModel)]="rxForm.regulation_body" class="form-control" placeholder="e.g. KMPDC" />
+          </div>
+
+          <!-- Add Prescription Items -->
+          <div class="border-t pt-3 mt-3">
+            <h4 class="text-xs font-semibold mb-2">Prescription Items:</h4>
+            <div class="form-row mb-2">
+              <input type="text" [(ngModel)]="newRxItem.drug_name" placeholder="Drug Name" class="form-control col-span-2" />
+              <input type="text" [(ngModel)]="newRxItem.dosage" placeholder="Dosage" class="form-control" />
+              <input type="number" [(ngModel)]="newRxItem.quantity" placeholder="Qty" class="form-control" />
+              <button class="btn btn-secondary btn-sm" (click)="addRxItem()">Add Item</button>
+            </div>
+            <ul class="text-xs space-y-1 mb-3">
+              <li *ngFor="let item of rxForm.items; let i = index" class="flex justify-between items-center bg-slate-50 p-2 rounded">
+                <span><strong>{{ item.drug_name }}</strong> - {{ item.dosage }} (Qty: {{ item.quantity }})</span>
+                <button class="text-red-500 hover:text-red-700" (click)="removeRxItem(i)">✕</button>
+              </li>
+            </ul>
+          </div>
+
+          <button class="btn btn-primary w-full" (click)="createRx()">Create ePrescription</button>
+        </div>
+      </div>
+
+      <div class="card" *ngIf="rxPreview">
+        <div class="card-header bg-blue-50">
+          <h3>ePrescription Issued: {{ rxPreview.code }}</h3>
+        </div>
+        <div class="card-body">
+          <p>Status: <strong>{{ rxPreview.status }}</strong></p>
+          <button class="btn btn-success mt-2" (click)="recordDispense()">Record Drug Dispense</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: CLAIM DISPATCH & DISCHARGE -->
+  <div *ngIf="activeTab === 'discharge'" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <h3>Inpatient Discharge & OTP Consent</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Patient ID *</label>
+            <input type="text" [(ngModel)]="dischargeOtpForm.patient_id" class="form-control" placeholder="Patient ID" />
+          </div>
+          <button class="btn btn-secondary mb-3" (click)="sendDischargeOtp()">Send Discharge OTP to Patient</button>
+          <div class="form-group">
+            <label>Discharge Reason *</label>
+            <select [(ngModel)]="dischargeForm.discharge_reason" class="form-control">
+              <option value="RECOVERED">RECOVERED</option>
+              <option value="REFERRED">REFERRED</option>
+              <option value="DECEASED">DECEASED</option>
+              <option value="ABSCONDED">ABSCONDED</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Patient Discharge OTP *</label>
+            <input type="text" [(ngModel)]="dischargeForm.otp" class="form-control" placeholder="6-digit OTP" />
+          </div>
+          <button class="btn btn-primary" (click)="processDischarge()">Confirm Patient Discharge</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Final Claim Dispatch Submission</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Invoice Number *</label>
+            <input type="text" [(ngModel)]="submitClaimForm.invoice_number" class="form-control" placeholder="Invoice Number" />
+          </div>
+          <button class="btn btn-primary w-full" (click)="submitClaimFinal()">Submit Claim for Reimbursement</button>
+          <button class="btn btn-danger w-full mt-2" (click)="closeClaim()">Terminate / Close Claim</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 7: EMERGENCY & EMT CASES -->
+  <div *ngIf="activeTab === 'emergency'" class="tab-content">
+    <div class="card max-w-xl mx-auto">
+      <div class="card-header">
+        <h3>Create Virtual Emergency Case Claim</h3>
+      </div>
+      <div class="card-body">
+        <form (ngSubmit)="submitEmergencyClaim()">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Emergency Reference Number *</label>
+              <input type="text" [(ngModel)]="emergencyForm.reference_number" name="reference_number" class="form-control" placeholder="e.g. EMERG-REF-XXXX" required />
+            </div>
+            <div class="form-group">
+              <label>Brought By *</label>
+              <select [(ngModel)]="emergencyForm.brought_by" name="brought_by" class="form-control">
+                <option value="PARAMEDICS">PARAMEDICS</option>
+                <option value="RELATIVE">RELATIVE</option>
+                <option value="SAMARITAN">SAMARITAN</option>
+                <option value="UNKNOWN">UNKNOWN</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Identification Number</label>
+            <input type="text" [(ngModel)]="emergencyForm.identification_number" name="id_num" class="form-control" placeholder="National ID / Passport / CR Number" />
+          </div>
+          <div class="form-group">
+            <label>Mode of Arrival *</label>
+            <select [(ngModel)]="emergencyForm.mode_of_arrival" name="mode_of_arrival" class="form-control">
+              <option value="AMBULANCE">AMBULANCE</option>
+              <option value="WALK-IN">WALK-IN</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Emergency Interventions (Comma separated)</label>
+            <input type="text" [(ngModel)]="emergencyInterventionsInput" name="emergInterventions" class="form-control" placeholder="e.g. INT-EMERG-01, INT-EMERG-RESUS" />
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Register Emergency Claim</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 8: AUDIT LOGS -->
+  <div *ngIf="activeTab === 'logs'" class="tab-content">
+    <div class="card">
+      <div class="card-header">
+        <h3>DHA Security Audit Trail Transmission Logs</h3>
+        <button class="btn btn-outline" (click)="fetchAuditLogs()">Refresh Logs</button>
+      </div>
+      <div class="card-body">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Status</th>
+              <th>Mocked</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let log of auditLogs">
+              <td>{{ log.timestamp | date:'medium' }}</td>
+              <td><code>{{ log.method }}</code></td>
+              <td>{{ log.endpoint }}</td>
+              <td><span class="badge" [class.badge-success]="log.status_code === 200">{{ log.status_code }}</span></td>
+              <td>{{ log.is_mocked ? 'YES (Sandbox)' : 'NO (Live)' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

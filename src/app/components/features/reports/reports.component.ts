@@ -18,6 +18,7 @@ import {
   FlaskConical,
   Loader2,
   LucideAngularModule,
+  Network,
   Package,
   Pill,
   Play,
@@ -28,6 +29,8 @@ import {
   UserCog,
   Users,
 } from 'lucide-angular';
+import { SurveillanceReportingComponent } from './surveillance-reporting/surveillance-reporting.component';
+import { InteroperabilityHubComponent } from './interoperability-hub/interoperability-hub.component';
 import {
   CustomReportPayload,
   EmployeePerformance,
@@ -57,11 +60,14 @@ import {
     LucideAngularModule,
     MatSnackBarModule,
     MatDialogModule,
+    SurveillanceReportingComponent,
+    InteroperabilityHubComponent,
   ],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.css',
 })
 export class ReportsComponent implements OnInit {
+  readonly Network = Network;
   private readonly reportsDataService = inject(ReportsDataService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);

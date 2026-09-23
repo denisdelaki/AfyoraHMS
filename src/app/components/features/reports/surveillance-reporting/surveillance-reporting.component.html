@@ -1,0 +1,917 @@
+<div class="space-y-6">
+  <!-- Top Banner: Certification & Compliance Score Header -->
+  <div
+    class="bg-gradient-to-r from-emerald-900 via-teal-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden"
+  >
+    <div
+      class="absolute right-0 top-0 opacity-10 translate-x-12 -translate-y-6"
+    >
+      <lucide-angular
+        [img]="ShieldCheck"
+        class="w-64 h-64 text-emerald-400"
+      ></lucide-angular>
+    </div>
+
+    <div
+      class="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"
+    >
+      <div class="space-y-2">
+        <div class="flex items-center gap-3">
+          <span
+            class="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-full border border-emerald-400/30 flex items-center gap-1.5"
+          >
+            <lucide-angular
+              [img]="CheckCircle"
+              class="w-3.5 h-3.5 text-emerald-400"
+            ></lucide-angular>
+            DHA & KNHTS CERTIFIED COMPLIANT
+          </span>
+          <span class="text-xs text-slate-300">IDSR 3rd Edition Standard</span>
+        </div>
+        <h2 class="text-2xl font-bold tracking-tight text-white">
+          Public Health & Disease Surveillance Reporting
+        </h2>
+        <p class="text-slate-300 text-sm max-w-2xl">
+          Real-time outbreak detection, automated IDSR 504 weekly reporting, IHR
+          2005 international compliance, and routine MOH statutory returns (MOH
+          705A/B, 711, 717).
+        </p>
+      </div>
+
+      <!-- Compliance Score Badge Card -->
+      <div
+        class="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 flex items-center gap-5 min-w-[280px]"
+      >
+        <div class="relative flex items-center justify-center">
+          <div
+            class="w-20 h-20 rounded-full border-4 border-emerald-400 flex items-center justify-center bg-emerald-950/50"
+          >
+            <span class="text-2xl font-black text-emerald-300">100%</span>
+          </div>
+        </div>
+        <div>
+          <div
+            class="text-xs text-slate-300 font-medium uppercase tracking-wider"
+          >
+            Reporting Score
+          </div>
+          <div class="text-lg font-bold text-white flex items-center gap-1.5">
+            Full Readiness
+            <lucide-angular
+              [img]="CheckCircle"
+              class="w-5 h-5 text-emerald-400"
+            ></lucide-angular>
+          </div>
+          <div class="text-xs text-emerald-300 mt-0.5">
+            0 Gaps Detected • MOH Aligned
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance Area Status Metrics Bar -->
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4" *ngIf="complianceSummary">
+    <div
+      *ngFor="let m of complianceSummary.metrics"
+      class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-emerald-300 transition-all"
+    >
+      <div class="flex items-start justify-between gap-2">
+        <span
+          class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
+          >{{ m.name }}</span
+        >
+        <span
+          class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded"
+        >
+          {{ m.scorePercentage }}%
+        </span>
+      </div>
+      <div class="mt-3 flex items-center justify-between">
+        <span
+          class="text-xs text-emerald-700 font-medium flex items-center gap-1"
+        >
+          <lucide-angular
+            [img]="CheckCircle"
+            class="w-3.5 h-3.5 text-emerald-600"
+          ></lucide-angular>
+          {{ m.status }}
+        </span>
+        <span class="text-[11px] text-slate-400">Weight {{ m.weight }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Surveillance Module Tabs -->
+  <mat-tab-group
+    animationDuration="200ms"
+    class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4"
+  >
+    <!-- TAB 1: IMMEDIATE REPORTABLE OUTBREAK DISEASES -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="flex items-center gap-2 py-2">
+          <lucide-angular
+            [img]="AlertTriangle"
+            class="w-4 h-4 text-amber-600"
+          ></lucide-angular>
+          <span class="font-medium text-slate-800"
+            >Immediate Notifiable Outbreaks</span
+          >
+          <span
+            class="ml-1 px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-full"
+          >
+            {{ notifiableAlerts.length }}
+          </span>
+        </div>
+      </ng-template>
+
+      <div class="p-4 space-y-6">
+        <div
+          class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-amber-50/50 p-4 rounded-xl border border-amber-200"
+        >
+          <div>
+            <h3
+              class="text-base font-bold text-amber-950 flex items-center gap-2"
+            >
+              <lucide-angular
+                [img]="Bell"
+                class="w-5 h-5 text-amber-600"
+              ></lucide-angular>
+              Real-Time Outbreak Alert & MOH Notification Engine
+            </h3>
+            <p class="text-xs text-amber-800 mt-1">
+              Immediate reporting for critical communicable conditions (Cholera,
+              Measles, Anthrax, Yellow Fever, Rabies, Polio, Ebola, Rift Valley
+              Fever, COVID-19).
+            </p>
+          </div>
+          <button
+            (click)="openAlertModal()"
+            mat-flat-button
+            color="warn"
+            class="flex items-center gap-2"
+          >
+            <lucide-angular [img]="Plus" class="w-4 h-4"></lucide-angular>
+            Trigger New MOH Alert
+          </button>
+        </div>
+
+        <!-- Alert Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            *ngFor="let alt of notifiableAlerts"
+            class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3 relative overflow-hidden hover:shadow-md transition-all"
+          >
+            <div
+              class="h-1.5 w-full absolute top-0 left-0"
+              [ngClass]="{
+                'bg-red-600': alt.urgency === 'CRITICAL',
+                'bg-amber-500': alt.urgency === 'HIGH',
+                'bg-blue-500': alt.urgency === 'MEDIUM',
+              }"
+            ></div>
+
+            <div class="flex items-center justify-between">
+              <span
+                class="px-2.5 py-1 text-xs font-bold rounded-full"
+                [ngClass]="{
+                  'bg-red-100 text-red-800': alt.urgency === 'CRITICAL',
+                  'bg-amber-100 text-amber-800': alt.urgency === 'HIGH',
+                  'bg-blue-100 text-blue-800': alt.urgency === 'MEDIUM',
+                }"
+              >
+                {{ alt.urgency }} URGENCY
+              </span>
+              <span class="text-xs text-slate-400 font-mono">{{
+                alt.icdCode
+              }}</span>
+            </div>
+
+            <div>
+              <h4 class="text-base font-bold text-slate-900">
+                {{ alt.diseaseName }}
+              </h4>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Patient: {{ alt.patientName }} ({{ alt.age }}y,
+                {{ alt.gender }}) • {{ alt.subCounty }}
+              </p>
+            </div>
+
+            <div
+              class="p-2.5 bg-slate-50 rounded-lg text-xs text-slate-700 font-mono border border-slate-100"
+            >
+              <span class="font-bold text-slate-900 block mb-0.5"
+                >Action Protocol:</span
+              >
+              {{ alt.actionTaken }}
+            </div>
+
+            <div
+              class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs"
+            >
+              <span
+                class="text-emerald-700 font-medium flex items-center gap-1"
+              >
+                <lucide-angular
+                  [img]="CheckCircle"
+                  class="w-3.5 h-3.5 text-emerald-600"
+                ></lucide-angular>
+                MOH Notified
+              </span>
+              <span class="text-slate-400">{{
+                alt.detectedAt | date: "shortTime"
+              }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 2: IDSR 504 WEEKLY REPORTING -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="flex items-center gap-2 py-2">
+          <lucide-angular
+            [img]="FileSpreadsheet"
+            class="w-4 h-4 text-emerald-600"
+          ></lucide-angular>
+          <span class="font-medium text-slate-800"
+            >IDSR 504 Weekly Reporting</span
+          >
+        </div>
+      </ng-template>
+
+      <div class="p-4 space-y-6" *ngIf="idsrReport">
+        <!-- EPI Week Selector Header -->
+        <div
+          class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200"
+        >
+          <div class="flex items-center gap-4">
+            <mat-form-field appearance="fill" class="w-36">
+              <mat-label>EPI Week</mat-label>
+              <mat-select
+                [(ngModel)]="selectedEpiWeek"
+                (selectionChange)="loadAllSurveillanceData()"
+              >
+                <mat-option [value]="35">EPI Week 35</mat-option>
+                <mat-option [value]="36">EPI Week 36</mat-option>
+                <mat-option [value]="37">EPI Week 37 (Current)</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <div>
+              <h4 class="text-sm font-bold text-slate-900">
+                IDSR Form 504 Summary (Week {{ idsrReport.epiWeek }})
+              </h4>
+              <p class="text-xs text-slate-500">
+                {{ idsrReport.startDate }} to {{ idsrReport.endDate }} •
+                {{ idsrReport.facilityName }} ({{ idsrReport.facilityMflCode }})
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button mat-stroked-button (click)="exportReport('IDSR 504 Excel')">
+              <lucide-angular
+                [img]="Download"
+                class="w-4 h-4 mr-1"
+              ></lucide-angular>
+              Excel / SDMX
+            </button>
+            <button
+              (click)="submitIdsrWeekly()"
+              mat-flat-button
+              color="primary"
+              [disabled]="idsrReport.status === 'SUBMITTED'"
+            >
+              <lucide-angular
+                [img]="Send"
+                class="w-4 h-4 mr-1"
+              ></lucide-angular>
+              {{
+                idsrReport.status === "SUBMITTED"
+                  ? "Submitted to MOH"
+                  : "Submit Weekly Return"
+              }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Weekly Summary Stat Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <div
+              class="text-xs text-emerald-800 font-semibold uppercase tracking-wider"
+            >
+              Total Weekly Cases
+            </div>
+            <div class="text-3xl font-black text-emerald-950 mt-1">
+              {{ idsrReport.totalCasesSummary }}
+            </div>
+            <div class="text-xs text-emerald-700 mt-1">
+              Aggregated across all registered encounters
+            </div>
+          </div>
+
+          <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div
+              class="text-xs text-red-800 font-semibold uppercase tracking-wider"
+            >
+              Total Weekly Deaths
+            </div>
+            <div class="text-3xl font-black text-red-950 mt-1">
+              {{ idsrReport.totalDeathsSummary }}
+            </div>
+            <div class="text-xs text-red-700 mt-1">
+              Reported inpatient & ED mortalities
+            </div>
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div
+              class="text-xs text-blue-800 font-semibold uppercase tracking-wider"
+            >
+              MOH Submission Status
+            </div>
+            <div
+              class="text-xl font-bold text-blue-950 mt-2 flex items-center gap-2"
+            >
+              <lucide-angular
+                [img]="CheckCircle"
+                class="w-5 h-5 text-emerald-600"
+              ></lucide-angular>
+              {{ idsrReport.status }}
+            </div>
+            <div class="text-xs text-blue-700 mt-1">
+              Sent: {{ idsrReport.submissionDate }}
+            </div>
+          </div>
+        </div>
+
+        <!-- IDSR Table -->
+        <div
+          class="border border-slate-200 rounded-xl overflow-hidden shadow-sm"
+        >
+          <table mat-table [dataSource]="idsrReport.diseases" class="w-full">
+            <ng-container matColumnDef="diseaseCode">
+              <th
+                mat-header-cell
+                *matHeader-cellDef
+                class="bg-slate-100 font-bold"
+              >
+                Code
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let row"
+                class="font-mono text-xs font-semibold"
+              >
+                {{ row.diseaseCode }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="diseaseName">
+              <th
+                mat-header-cell
+                *matHeader-cellDef
+                class="bg-slate-100 font-bold"
+              >
+                Disease Condition
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let row"
+                class="font-medium text-slate-900"
+              >
+                {{ row.diseaseName }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="casesUnder5">
+              <th
+                mat-header-cell
+                *matHeader-cellDef
+                class="bg-slate-100 font-bold text-center"
+              >
+                &lt;5 Yrs Cases
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let row"
+                class="text-center font-bold text-slate-700"
+              >
+                {{ row.casesUnder5 }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="deathsUnder5">
+              <th
+                mat-header-cell
+                *matHeader-cellDef
+                class="bg-slate-100 font-bold text-center"
+              >
+                &lt;5 Yrs Deaths
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let row"
+                class="text-center font-bold text-red-600"
+              >
+                {{ row.deathsUnder5 }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="casesOver5">
+              <th
+                mat-header-cell
+                *matHeader-cellDef
+                class="bg-slate-100 font-bold text-center"
+              >
+                ≥5 Yrs Cases
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let row"
+                class="text-center font-bold text-slate-700"
+              >
+                {{ row.casesOver5 }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="deathsOver5">
+              <th
+                mat-header-cell
+                *matHeader-cellDef
+                class="bg-slate-100 font-bold text-center"
+              >
+                ≥5 Yrs Deaths
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let row"
+                class="text-center font-bold text-red-600"
+              >
+                {{ row.deathsOver5 }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="totalCases">
+              <th
+                mat-header-cell
+                *matHeader-cellDef
+                class="bg-slate-100 font-bold text-center"
+              >
+                Total Cases
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let row"
+                class="text-center font-black text-slate-900"
+              >
+                {{ row.totalCases }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="totalDeaths">
+              <th
+                mat-header-cell
+                *matHeader-cellDef
+                class="bg-slate-100 font-bold text-center"
+              >
+                Total Deaths
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let row"
+                class="text-center font-black text-red-700"
+              >
+                {{ row.totalDeaths }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="labConfirmed">
+              <th
+                mat-header-cell
+                *matHeader-cellDef
+                class="bg-slate-100 font-bold text-center"
+              >
+                Lab Confirmed
+              </th>
+              <td
+                mat-cell
+                *matCellDef="let row"
+                class="text-center font-medium text-emerald-700"
+              >
+                {{ row.labConfirmed }}
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeader-rowDef="idsrColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: idsrColumns"></tr>
+          </table>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 3: PUBLIC HEALTH EVENTS & IHR 2005 ASSESSMENT -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="flex items-center gap-2 py-2">
+          <lucide-angular
+            [img]="Globe"
+            class="w-4 h-4 text-blue-600"
+          ></lucide-angular>
+          <span class="font-medium text-slate-800"
+            >Public Health Events & IHR 2005</span
+          >
+        </div>
+      </ng-template>
+
+      <div class="p-4 space-y-6">
+        <!-- Public Events List -->
+        <div>
+          <h3 class="text-base font-bold text-slate-900 mb-3">
+            Detected Public Health Events & Cluster Alerts
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              *ngFor="let ev of publicEvents"
+              class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3"
+            >
+              <div class="flex items-center justify-between">
+                <span
+                  class="px-2.5 py-1 text-xs font-bold rounded"
+                  [ngClass]="{
+                    'bg-red-100 text-red-800': ev.alertLevel === 'RED',
+                    'bg-amber-100 text-amber-800': ev.alertLevel === 'AMBER',
+                    'bg-emerald-100 text-emerald-800':
+                      ev.alertLevel === 'GREEN',
+                  }"
+                >
+                  {{ ev.alertLevel }} ALERT LEVEL
+                </span>
+                <span class="text-xs text-slate-400">{{
+                  ev.detectedDate
+                }}</span>
+              </div>
+
+              <h4 class="text-base font-bold text-slate-900">
+                {{ ev.eventName }}
+              </h4>
+              <div class="text-xs text-slate-600 space-y-1">
+                <div>
+                  Location:
+                  <span class="font-medium text-slate-900">{{
+                    ev.location
+                  }}</span>
+                </div>
+                <div>
+                  Threshold:
+                  <span class="font-medium text-amber-700">{{
+                    ev.thresholdBreached
+                  }}</span>
+                </div>
+                <div>
+                  Cases Count:
+                  <span class="font-bold text-slate-900">{{
+                    ev.casesCount
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- IHR 2005 Decision Instrument Checklist -->
+        <div
+          class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4"
+          *ngIf="ihrResult"
+        >
+          <div
+            class="flex items-center justify-between border-b border-slate-200 pb-3"
+          >
+            <div>
+              <h3
+                class="text-base font-bold text-slate-900 flex items-center gap-2"
+              >
+                <lucide-angular
+                  [img]="Globe"
+                  class="w-5 h-5 text-blue-600"
+                ></lucide-angular>
+                International Health Regulations (IHR 2005) Annex 2 Decision
+                Instrument Assessment
+              </h3>
+              <p class="text-xs text-slate-500">
+                Evaluates whether a public health event constitutes a potential
+                Public Health Emergency of International Concern (PHEIC).
+              </p>
+            </div>
+            <span
+              class="px-3 py-1 rounded-full text-xs font-bold"
+              [ngClass]="{
+                'bg-red-100 text-red-800 border border-red-300':
+                  ihrResult.requiresIhrNotification,
+                'bg-emerald-100 text-emerald-800 border border-emerald-300':
+                  !ihrResult.requiresIhrNotification,
+              }"
+            >
+              {{
+                ihrResult.requiresIhrNotification
+                  ? "MOH NFP NOTIFICATION REQUIRED"
+                  : "LOCAL SURVEILLANCE SUFFICIENT"
+              }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <label
+              class="flex items-center gap-2 bg-white p-3 rounded-lg border border-slate-200 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                [(ngModel)]="ihrForm.isSerious"
+                (change)="reEvaluateIhr()"
+                class="w-4 h-4 text-blue-600 rounded"
+              />
+              <span class="font-medium text-slate-800"
+                >1. Is the public health impact of the event serious?</span
+              >
+            </label>
+
+            <label
+              class="flex items-center gap-2 bg-white p-3 rounded-lg border border-slate-200 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                [(ngModel)]="ihrForm.isUnusual"
+                (change)="reEvaluateIhr()"
+                class="w-4 h-4 text-blue-600 rounded"
+              />
+              <span class="font-medium text-slate-800"
+                >2. Is the event unusual or unexpected?</span
+              >
+            </label>
+
+            <label
+              class="flex items-center gap-2 bg-white p-3 rounded-lg border border-slate-200 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                [(ngModel)]="ihrForm.isInternationalSpread"
+                (change)="reEvaluateIhr()"
+                class="w-4 h-4 text-blue-600 rounded"
+              />
+              <span class="font-medium text-slate-800"
+                >3. Is there a significant risk of international spread?</span
+              >
+            </label>
+
+            <label
+              class="flex items-center gap-2 bg-white p-3 rounded-lg border border-slate-200 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                [(ngModel)]="ihrForm.isTradeTravelRestriction"
+                (change)="reEvaluateIhr()"
+                class="w-4 h-4 text-blue-600 rounded"
+              />
+              <span class="font-medium text-slate-800"
+                >4. Is there a significant risk of travel or trade
+                restrictions?</span
+              >
+            </label>
+          </div>
+
+          <div
+            class="p-3 bg-white rounded-lg border border-slate-200 text-xs space-y-1"
+          >
+            <div class="font-bold text-slate-900">
+              Assessment Decision Instrument Score:
+              {{ ihrResult.decisionInstrumentScore }} / 4
+            </div>
+            <div class="text-slate-600">{{ ihrResult.notes }}</div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 4: ROUTINE MOH REPORTS (MOH 705A/B, 711, 717) -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="flex items-center gap-2 py-2">
+          <lucide-angular
+            [img]="FileText"
+            class="w-4 h-4 text-purple-600"
+          ></lucide-angular>
+          <span class="font-medium text-slate-800"
+            >Routine Statutory Returns (MOH 705A/B)</span
+          >
+        </div>
+      </ng-template>
+
+      <div class="p-4 space-y-6" *ngIf="routineReport">
+        <div
+          class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-purple-50/50 rounded-xl border border-purple-200"
+        >
+          <div class="flex items-center gap-4">
+            <mat-form-field appearance="fill" class="w-64">
+              <mat-label>Select Statutory Form</mat-label>
+              <mat-select
+                [(ngModel)]="selectedRoutineForm"
+                (selectionChange)="loadRoutineReport()"
+              >
+                <mat-option value="MOH_705A"
+                  >MOH 705A - Under 5 Outpatient</mat-option
+                >
+                <mat-option value="MOH_705B"
+                  >MOH 705B - Over 5 Outpatient</mat-option
+                >
+                <mat-option value="MOH_711"
+                  >MOH 711 - MCH & Reproductive Health</mat-option
+                >
+                <mat-option value="MOH_717"
+                  >MOH 717 - Outpatient Workload</mat-option
+                >
+              </mat-select>
+            </mat-form-field>
+            <div>
+              <h4 class="text-sm font-bold text-purple-950">
+                {{ routineReport.title }}
+              </h4>
+              <p class="text-xs text-purple-700">
+                Month: {{ routineReport.month }} {{ routineReport.year }} •
+                Workload Count:
+                {{ routineReport.totalWorkloadCount }} encounters
+              </p>
+            </div>
+          </div>
+
+          <button
+            mat-flat-button
+            color="accent"
+            (click)="exportReport(selectedRoutineForm)"
+          >
+            <lucide-angular
+              [img]="Download"
+              class="w-4 h-4 mr-1"
+            ></lucide-angular>
+            Download Official Form
+          </button>
+        </div>
+
+        <div
+          class="border border-slate-200 rounded-xl overflow-hidden shadow-sm"
+        >
+          <table class="w-full text-left text-xs">
+            <thead
+              class="bg-slate-100 font-bold text-slate-700 border-b border-slate-200"
+            >
+              <tr>
+                <th class="p-3">Indicator Code</th>
+                <th class="p-3">Clinical Condition / Indicator</th>
+                <th class="p-3 text-center">&lt;5 Male</th>
+                <th class="p-3 text-center">&lt;5 Female</th>
+                <th class="p-3 text-center">≥5 Male</th>
+                <th class="p-3 text-center">≥5 Female</th>
+                <th class="p-3 text-center font-black">Total Workload</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr
+                *ngFor="let r of routineReport.rows"
+                class="hover:bg-slate-50"
+              >
+                <td class="p-3 font-mono font-bold text-slate-500">
+                  {{ r.indicatorCode }}
+                </td>
+                <td class="p-3 font-semibold text-slate-900">
+                  {{ r.indicatorName }}
+                </td>
+                <td class="p-3 text-center text-slate-700 font-medium">
+                  {{ r.countUnder5Male }}
+                </td>
+                <td class="p-3 text-center text-slate-700 font-medium">
+                  {{ r.countUnder5Female }}
+                </td>
+                <td class="p-3 text-center text-slate-700 font-medium">
+                  {{ r.countOver5Male }}
+                </td>
+                <td class="p-3 text-center text-slate-700 font-medium">
+                  {{ r.countOver5Female }}
+                </td>
+                <td class="p-3 text-center font-black text-slate-900">
+                  {{ r.total }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <!-- Modal for New Disease Outbreak Alert Trigger -->
+  <div
+    *ngIf="showNewAlertModal"
+    class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4"
+    >
+      <div
+        class="flex items-center justify-between border-b border-slate-100 pb-3"
+      >
+        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <lucide-angular
+            [img]="AlertTriangle"
+            class="w-5 h-5 text-amber-600"
+          ></lucide-angular>
+          Trigger Immediate MOH Outbreak Alert
+        </h3>
+        <button
+          (click)="closeAlertModal()"
+          class="text-slate-400 hover:text-slate-600 text-lg"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Notifiable Disease Name</mat-label>
+          <input
+            matInput
+            [(ngModel)]="newAlertData.diseaseName"
+            placeholder="e.g. Cholera (Vibrio cholerae)"
+          />
+        </mat-form-field>
+
+        <div class="grid grid-cols-2 gap-3">
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label>ICD-10 / KNHTS Code</mat-label>
+            <input
+              matInput
+              [(ngModel)]="newAlertData.icdCode"
+              placeholder="e.g. A00"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label>Urgency Level</mat-label>
+            <mat-select [(ngModel)]="newAlertData.urgency">
+              <mat-option value="CRITICAL">CRITICAL</mat-option>
+              <mat-option value="HIGH">HIGH</mat-option>
+              <mat-option value="MEDIUM">MEDIUM</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Patient Full Name</mat-label>
+          <input
+            matInput
+            [(ngModel)]="newAlertData.patientName"
+            placeholder="Enter patient name"
+          />
+        </mat-form-field>
+
+        <div class="grid grid-cols-3 gap-3">
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label>Age</mat-label>
+            <input matInput type="number" [(ngModel)]="newAlertData.age" />
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label>Gender</mat-label>
+            <mat-select [(ngModel)]="newAlertData.gender">
+              <mat-option value="Male">Male</mat-option>
+              <mat-option value="Female">Female</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label>Sub-County</mat-label>
+            <input matInput [(ngModel)]="newAlertData.subCounty" />
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Immediate Action Taken / Isolation Protocol</mat-label>
+          <textarea
+            matInput
+            rows="2"
+            [(ngModel)]="newAlertData.actionTaken"
+          ></textarea>
+        </mat-form-field>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button mat-button (click)="closeAlertModal()">Cancel</button>
+        <button mat-flat-button color="warn" (click)="submitNewDiseaseAlert()">
+          Dispatch MOH Outbreak Alert
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -5,6 +5,8 @@ export type PatientStatus = 'Active' | 'Admitted' | 'Discharged';
 export type Patient = {
   id: string;
   nationalId?: string;
+  passportNumber?: string;
+  birthCertificateNumber?: string;
   firstName: string;
   lastName: string;
   age: number;
@@ -16,13 +18,23 @@ export type Patient = {
   status: PatientStatus;
   dob?: string;
   address?: string;
+  county?: string;
+  subCounty?: string;
+  ward?: string;
+  village?: string;
+  nextOfKinName?: string;
+  nextOfKinRelationship?: string;
+  nextOfKinPhone?: string;
   emergencyContact?: string;
   medicalHistory?: string;
+  knhtsGenderCode?: string;
 };
 
 export type RegisterPatientRequest = {
   facilityId: string | number;
   nationalId?: string;
+  passportNumber?: string;
+  birthCertificateNumber?: string;
   firstName: string;
   lastName: string;
   age: number;
@@ -32,8 +44,16 @@ export type RegisterPatientRequest = {
   bloodGroup: string;
   dob?: string;
   address?: string;
+  county?: string;
+  subCounty?: string;
+  ward?: string;
+  village?: string;
+  nextOfKinName?: string;
+  nextOfKinRelationship?: string;
+  nextOfKinPhone?: string;
   emergencyContact?: string;
   medicalHistory?: string;
+  knhtsGenderCode?: string;
 };
 
 export type UpdatePatientRequest = Partial<RegisterPatientRequest>;

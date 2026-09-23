@@ -31,8 +31,16 @@ export type Prescription = {
     quantity: number;
     dosage: string;
   }[];
+  medication?: string;
+  dosage?: string;
+  frequency?: string;
+  duration?: string;
   status: 'Pending' | 'Dispensed';
   date: string;
+  dhaPrescriptionCode?: string;
+  dhaStatus?: string;
+  dhaVerified?: boolean;
+  consentToken?: string;
 };
 
 export type CreateDrugRequest = Omit<Drug, 'id' | 'categoryName'>;

@@ -19,7 +19,9 @@ export type ReportType =
   | 'inventory'
   | 'laboratory'
   | 'employees'
-  | 'revenue';
+  | 'revenue'
+  | 'surveillance'
+  | 'interoperability';
 
 export type TimeRange =
   | '7days'
@@ -39,7 +41,9 @@ export interface ReportTypeOption {
   | 'package'
   | 'flask'
   | 'userCog'
-  | 'trendingUp';
+  | 'trendingUp'
+  | 'shieldCheck'
+  | 'network';
   allowedRoles?: string[];
   description?: string;
 }
@@ -155,6 +159,116 @@ export interface SummaryStatistic {
   status: 'Excellent' | 'Good' | 'Stable' | 'Monitor';
 }
 
+export interface SurveillanceComplianceMetric {
+  id: string;
+  category: string;
+  name: string;
+  status: 'Compliant' | 'Partial' | 'Not Ready';
+  scorePercentage: number;
+  weight: number;
+  notes: string;
+}
+
+export interface SurveillanceComplianceSummary {
+  overallScore: number;
+  status: 'Compliant' | 'Not Ready' | 'Action Required';
+  metrics: SurveillanceComplianceMetric[];
+  lastAudited: string;
+}
+
+export interface NotifiableDiseaseAlert {
+  id: string;
+  diseaseName: string;
+  icdCode: string;
+  urgency: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  patientId: string;
+  patientName: string;
+  age: number;
+  gender: string;
+  subCounty: string;
+  detectedAt: string;
+  status: 'TRIGGERED' | 'REPORTED' | 'INVESTIGATING' | 'RESOLVED';
+  mohNotified: boolean;
+  mohNotificationTimestamp?: string;
+  actionTaken?: string;
+}
+
+export interface IdsrWeeklyDiseaseRow {
+  diseaseCode: string;
+  diseaseName: string;
+  casesUnder5: number;
+  deathsUnder5: number;
+  casesOver5: number;
+  deathsOver5: number;
+  totalCases: number;
+  totalDeaths: number;
+  labConfirmed: number;
+}
+
+export interface IdsrWeeklyReport {
+  epiWeek: number;
+  year: number;
+  startDate: string;
+  endDate: string;
+  facilityMflCode: string;
+  facilityName: string;
+  subCounty: string;
+  county: string;
+  status: 'DRAFT' | 'SUBMITTED' | 'VERIFIED';
+  submissionDate?: string;
+  submittedBy?: string;
+  diseases: IdsrWeeklyDiseaseRow[];
+  totalCasesSummary: number;
+  totalDeathsSummary: number;
+}
+
+export interface PublicHealthEvent {
+  id: string;
+  eventName: string;
+  eventType: 'OUTBREAK_CLUSTER' | 'ENVIRONMENTAL' | 'UNUSUALLY_HIGH_CASES' | 'UNKNOWN_ETIOLOGY';
+  location: string;
+  casesCount: number;
+  thresholdBreached: string;
+  detectedDate: string;
+  alertLevel: 'GREEN' | 'AMBER' | 'RED';
+  responseStatus: 'ACTIVE' | 'CONTAINED' | 'UNDER_MONITORING';
+  alertSentToCounties: boolean;
+}
+
+export interface IhrAssessment {
+  id: string;
+  assessmentDate: string;
+  evaluatedBy: string;
+  isPublicHealthImpactSerious: boolean;
+  isEventUnusualOrUnexpected: boolean;
+  isSignificantRiskOfInternationalSpread: boolean;
+  isSignificantRiskOfTravelOrTradeRestrictions: boolean;
+  decisionInstrumentScore: number; // 0 to 4
+  requiresIhrNotification: boolean; // true if score >= 2
+  notes: string;
+}
+
+export interface RoutineMohReportRow {
+  indicatorCode: string;
+  indicatorName: string;
+  countUnder5Male: number;
+  countUnder5Female: number;
+  countOver5Male: number;
+  countOver5Female: number;
+  total: number;
+}
+
+export interface RoutineMohReport {
+  reportForm: 'MOH_705A' | 'MOH_705B' | 'MOH_711' | 'MOH_717';
+  title: string;
+  month: string;
+  year: number;
+  facilityName: string;
+  totalWorkloadCount: number;
+  rows: RoutineMohReportRow[];
+  generatedAt: string;
+}
+
 export interface ReportDataBundle {
   patientData: PatientDataPoint[];
   pharmacyData: PharmacyDataPoint[];
@@ -165,5 +279,8 @@ export interface ReportDataBundle {
   topMedications?: TopMedication[];
   employeePerformance?: EmployeePerformance[];
   summaryStats?: SummaryStatistic[];
+  surveillanceSummary?: SurveillanceComplianceSummary;
+  activeDiseaseAlerts?: NotifiableDiseaseAlert[];
 }
+
 

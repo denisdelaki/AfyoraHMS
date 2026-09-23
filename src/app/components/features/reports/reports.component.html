@@ -642,6 +642,17 @@
         </div>
       </div>
     </ng-container>
+
+    <!-- Public Health & Disease Surveillance Report View -->
+    <ng-container *ngIf="selectedReport === 'surveillance'">
+      <app-surveillance-reporting></app-surveillance-reporting>
+    </ng-container>
+
+    <!-- Kenya HIE & Data Exchange Hub View -->
+    <ng-container *ngIf="selectedReport === 'interoperability'">
+      <app-interoperability-hub></app-interoperability-hub>
+    </ng-container>
+
   </ng-container>
 
   <ng-template #emptyState>

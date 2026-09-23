@@ -9,7 +9,7 @@
         <mat-select formControlName="patientId">
           @for (patient of patients; track patient.id) {
           <mat-option [value]="patient.id">
-            {{ patient.firstName }} {{ patient.lastName }} ({{ patient.id }})
+            {{ patient.firstName }} {{ patient.lastName }} (National ID: {{ patient.nationalId || patient.id }})
           </mat-option>
           }
         </mat-select>
@@ -42,8 +42,7 @@
         <div class="flex items-center gap-2">
           <lucide-angular [img]="Pill" [size]="18" class="text-emerald-600"></lucide-angular>
           <span>
-            <strong>{{ pharmacyItemCount }}</strong> pharmacy item(s): <strong>Kes{{ pharmacyTotal.toFixed(2)
-              }}</strong>
+            <strong>{{ pharmacyItemCount }}</strong> pharmacy item(s): <strong>KES {{ pharmacyTotal.toFixed(2) }}</strong>
           </span>
         </div>
       </div>
@@ -65,7 +64,7 @@
         <div class="flex items-center gap-2">
           <lucide-angular [img]="Activity" [size]="18" class="text-emerald-600"></lucide-angular>
           <span>
-            <strong>{{ labItemCount }}</strong> lab test(s): <strong>Kes{{ labTotal.toFixed(2) }}</strong>
+            <strong>{{ labItemCount }}</strong> lab test(s): <strong>KES {{ labTotal.toFixed(2) }}</strong>
           </span>
         </div>
       </div>
@@ -87,7 +86,7 @@
         <div class="flex items-center gap-2">
           <lucide-angular [img]="FileText" [size]="18" class="text-emerald-600"></lucide-angular>
           <span>
-            <strong>{{ radiologyItemCount }}</strong> study/studies: <strong>Kes{{ radiologyTotal.toFixed(2) }}</strong>
+            <strong>{{ radiologyItemCount }}</strong> study/studies: <strong>KES {{ radiologyTotal.toFixed(2) }}</strong>
           </span>
         </div>
       </div>
@@ -113,7 +112,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Amount (Kes)</mat-label>
+            <mat-label>Amount (KES)</mat-label>
             <input matInput type="number" min="0" step="0.01" formControlName="amount" />
           </mat-form-field>
 
@@ -132,22 +131,83 @@
       </button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Insurance Company</mat-label>
-        <input matInput formControlName="insuranceCompany" placeholder="Insurance (optional)" />
-      </mat-form-field>
+    <!-- Maintained Insurance Selection & Live DHA Eligibility Check -->
+    <div class="border-t border-slate-200 pt-4 mt-4 space-y-3">
+      <div class="flex items-center gap-2">
+        <lucide-angular [img]="ShieldCheck" [size]="18" class="text-blue-600"></lucide-angular>
+        <span class="text-sm font-semibold text-slate-800">Insurance Payer & Eligibility Verification</span>
+      </div>
 
-      <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Coverage %</mat-label>
-        <input matInput type="number" min="0" max="100" formControlName="coverage" placeholder="80" />
-      </mat-form-field>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Select Insurance Provider</mat-label>
+          <mat-select formControlName="insuranceProviderId">
+            <mat-option value="">-- Self Pay / Cash (No Insurance) --</mat-option>
+            @for (provider of insuranceProviders; track provider.id || provider.code) {
+              <mat-option [value]="provider.id || provider.code">
+                {{ provider.name }} ({{ provider.code }})
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Coverage %</mat-label>
+          <input matInput type="number" min="0" max="100" formControlName="coverage" placeholder="100" />
+        </mat-form-field>
+      </div>
+
+      <!-- Live Eligibility Verification Card -->
+      @if (isCheckingEligibility) {
+        <div class="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-sm">
+          <lucide-angular [img]="RefreshCw" [size]="18" class="animate-spin text-blue-600"></lucide-angular>
+          <span>Verifying SHA / Insurance Eligibility with DHA Gateway for Patient National ID...</span>
+        </div>
+      } @else if (eligibilityResult) {
+        <div class="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg text-sm space-y-2">
+          <div class="flex items-center justify-between font-semibold">
+            <div class="flex items-center gap-2 text-emerald-800">
+              <lucide-angular [img]="CheckCircle2" [size]="18" class="text-emerald-600"></lucide-angular>
+              <span>Verified Eligible: {{ eligibilityResult.fullName || 'Beneficiary Verified' }}</span>
+            </div>
+            <span class="px-2 py-0.5 bg-emerald-200 text-emerald-900 text-xs font-bold rounded">
+              {{ eligibilityResult.statusDesc || 'ACTIVE' }}
+            </span>
+          </div>
+          <div class="text-xs text-emerald-700 flex flex-wrap gap-x-4 gap-y-1">
+            <span>Member CR: <strong class="font-mono">{{ eligibilityResult.memberCrNumber || 'Verified' }}</strong></span>
+            <span>OTP Whitelisted: <strong>{{ eligibilityResult.whitelistedForOTP ? 'YES' : 'NO' }}</strong></span>
+          </div>
+          @if (eligibilityResult.schemes && eligibilityResult.schemes.length > 0) {
+            <div class="mt-2 text-xs border-t border-emerald-200/70 pt-2 space-y-1">
+              <span class="font-semibold text-emerald-800">Active Enrolled Schemes:</span>
+              <div class="flex flex-wrap gap-2">
+                @for (sch of eligibilityResult.schemes; track sch.schemeCode) {
+                  <span class="inline-flex items-center gap-1 bg-white px-2 py-1 rounded border border-emerald-300 text-emerald-800 shadow-sm">
+                    <strong>{{ sch.schemeName }}:</strong> Available KES {{ sch.availableBalance | number:'1.2-2' }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (eligibilityError) {
+        <div class="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm">
+          <lucide-angular [img]="AlertCircle" [size]="18" class="text-amber-600 shrink-0"></lucide-angular>
+          <span>{{ eligibilityError }}</span>
+        </div>
+      }
     </div>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-flat-button color="primary" (click)="onGenerateInvoice()">
+  <button
+    mat-flat-button
+    color="primary"
+    [disabled]="invoiceForm.invalid || isCheckingEligibility || isInsuranceIneligible"
+    (click)="onGenerateInvoice()"
+  >
     Generate Invoice
   </button>
 </mat-dialog-actions>

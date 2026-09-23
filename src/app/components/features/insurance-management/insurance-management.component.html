@@ -1,0 +1,232 @@
+<div class="insurance-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">
+        <lucide-icon [img]="ShieldCheck" class="header-icon"></lucide-icon>
+        Insurance Gateway Onboarding & Payer Management
+      </h1>
+      <p class="page-subtitle">
+        Facility Admin Portal for onboarding healthcare insurance services (DHA AfyaConnect / SHA, NHIF, and Private Payers).
+      </p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openAddModal()">
+        <lucide-icon [img]="Plus" class="icon-sm"></lucide-icon>
+        Onboard New Insurance Service
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert Banner -->
+  <div *ngIf="alertMessage" [class]="'alert alert-' + alertMessage.type">
+    <span>{{ alertMessage.text }}</span>
+  </div>
+
+  <!-- System Overview Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon bg-blue-100 text-blue-600">
+        <lucide-icon [img]="ShieldCheck" class="icon-md"></lucide-icon>
+      </div>
+      <div>
+        <div class="stat-value">{{ providers.length }}</div>
+        <div class="stat-label">Configured Payers</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-emerald-100 text-emerald-600">
+        <lucide-icon [img]="CheckCircle2" class="icon-md"></lucide-icon>
+      </div>
+      <div>
+        <div class="stat-value">{{ activeProvidersCount }}</div>
+        <div class="stat-label">Active Middleware Gateways</div>
+      </div>
+
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon bg-amber-100 text-amber-600">
+        <lucide-icon [img]="Server" class="icon-md"></lucide-icon>
+      </div>
+      <div>
+        <div class="stat-value">DHA UAT v1</div>
+        <div class="stat-label">ILM Middleware Target</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Providers List -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Registered Insurance Payers & Middleware Connections</h2>
+      <button class="btn btn-outline" (click)="loadProviders()" [disabled]="loading">
+        <lucide-icon [img]="RefreshCw" class="icon-sm" [class.spin]="loading"></lucide-icon>
+        Refresh List
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+      <lucide-icon [img]="RefreshCw" class="spin icon-lg text-primary"></lucide-icon>
+      <p>Loading insurance provider configurations...</p>
+    </div>
+
+    <div *ngIf="!loading && providers.length === 0" class="empty-state">
+      <lucide-icon [img]="ShieldCheck" class="icon-xl text-muted"></lucide-icon>
+      <h3>No Insurance Services Onboarded</h3>
+      <p>Click "Onboard New Insurance Service" to setup DHA AfyaConnect SHA or other payers.</p>
+    </div>
+
+    <div *ngIf="!loading && providers.length > 0" class="provider-cards-grid">
+      <div *ngFor="let p of providers" class="provider-card" [class.inactive]="!p.is_active">
+        <div class="provider-header">
+          <div class="provider-title">
+            <h3>{{ p.name }}</h3>
+            <span class="badge" [class.badge-social]="p.payer_type === 'SOCIAL'" [class.badge-private]="p.payer_type === 'PRIVATE'">
+              {{ p.payer_type }} PAYER
+            </span>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" [id]="'active-' + p.id" [checked]="p.is_active" (change)="toggleActive(p)">
+            <label [for]="'active-' + p.id"></label>
+          </div>
+        </div>
+
+        <div class="provider-details">
+          <div class="detail-item">
+            <lucide-icon [img]="Globe" class="icon-sm text-muted"></lucide-icon>
+            <span class="detail-label">Gateway Base URL:</span>
+            <code class="detail-code">{{ p.gateway_url }}</code>
+          </div>
+          <div class="detail-item">
+            <lucide-icon [img]="Server" class="icon-sm text-muted"></lucide-icon>
+            <span class="detail-label">Facility FR Code:</span>
+            <strong>{{ p.facility_code }}</strong>
+          </div>
+          <div class="detail-item">
+            <lucide-icon [img]="Key" class="icon-sm text-muted"></lucide-icon>
+            <span class="detail-label">Bearer Token:</span>
+            <span class="token-mask">{{ p.api_token_masked }}</span>
+          </div>
+          <div class="detail-item">
+            <lucide-icon [img]="Activity" class="icon-sm text-muted"></lucide-icon>
+            <span class="detail-label">Health Status:</span>
+            <span class="status-badge" [class.status-healthy]="p.last_ping_status?.includes('Healthy')" [class.status-warning]="!p.last_ping_status?.includes('Healthy')">
+              {{ p.last_ping_status || 'Not Checked' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Scheme Chips -->
+        <div class="schemes-list" *ngIf="p.supported_schemes && p.supported_schemes.length > 0">
+          <span *ngFor="let scheme of p.supported_schemes" class="scheme-chip">
+            {{ scheme }}
+          </span>
+        </div>
+
+        <div class="provider-footer">
+          <button class="btn btn-sm btn-secondary" (click)="pingGateway(p)" [disabled]="pingingId === p.id">
+            <lucide-icon [img]="RefreshCw" class="icon-xs" [class.spin]="pingingId === p.id"></lucide-icon>
+            {{ pingingId === p.id ? 'Testing Connection...' : 'Test Connection' }}
+          </button>
+
+          <div class="action-buttons">
+            <button class="btn-icon" (click)="openEditModal(p)" title="Edit Config">
+              <lucide-icon [img]="Edit3" class="icon-xs"></lucide-icon>
+            </button>
+            <button class="btn-icon danger" (click)="deleteProvider(p)" title="Remove Config">
+              <lucide-icon [img]="Trash2" class="icon-xs"></lucide-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Modal -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ isEditing ? 'Edit Insurance Service Configuration' : 'Onboard Insurance Gateway / Service' }}</h3>
+        <button class="btn-close" (click)="closeModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <form (ngSubmit)="saveProvider()">
+          <div class="form-group">
+            <label>Insurance Provider Name *</label>
+            <input type="text" [(ngModel)]="providerForm.name" name="name" class="form-control" placeholder="e.g. Social Health Authority (SHA)" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Payer Identifier Code *</label>
+              <input type="text" [(ngModel)]="providerForm.code" name="code" class="form-control" placeholder="e.g. SHA, NHIF" required />
+            </div>
+            <div class="form-group">
+              <label>Payer Type *</label>
+              <select [(ngModel)]="providerForm.payer_type" name="payer_type" class="form-control">
+                <option value="SOCIAL">Social Health Authority (SHA / NHIF)</option>
+                <option value="PRIVATE">Private Commercial Insurance</option>
+                <option value="COMMUNITY">Community / Managed Care</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>DHA / Payer Gateway Base URL *</label>
+            <input type="url" [(ngModel)]="providerForm.gateway_url" name="gateway_url" class="form-control" placeholder="https://ilm-dev.dha.go.ke/uat-middleware" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Facility MFL / FR Code *</label>
+              <input type="text" [(ngModel)]="providerForm.facility_code" name="facility_code" class="form-control" placeholder="e.g. MOH-FAC-001" required />
+            </div>
+            <div class="form-group">
+              <label>Environment Mode</label>
+              <select [(ngModel)]="providerForm.environment" name="environment" class="form-control">
+                <option value="UAT">Sandbox / UAT Environment</option>
+                <option value="PROD">Production Middleware</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Bearer Authorization API Token (Optional / Encrypted)</label>
+            <input type="password" [(ngModel)]="providerForm.api_token" name="api_token" class="form-control" placeholder="Enter Bearer Token for DHA Middleware..." />
+            <small class="text-muted">Tokens are encrypted and masked in security audit logs.</small>
+          </div>
+
+          <!-- Scheme Chips Manager -->
+          <div class="form-group">
+            <label>Supported Schemes / Services</label>
+            <div class="scheme-input-row">
+              <input type="text" [(ngModel)]="schemeInput" name="schemeInput" class="form-control" placeholder="Add scheme (e.g. Dental, Maternity)" (keyup.enter)="addScheme()" />
+              <button type="button" class="btn btn-secondary" (click)="addScheme()">Add</button>
+            </div>
+            <div class="schemes-list mt-2">
+              <span *ngFor="let s of providerForm.supported_schemes; let i = index" class="scheme-chip editable">
+                {{ s }}
+                <button type="button" (click)="removeScheme(i)">×</button>
+              </span>
+            </div>
+          </div>
+
+          <div class="form-row mt-3">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="providerForm.sandbox_mode" name="sandbox_mode" />
+              Enable Sandbox Mock Fallback (when DHA middleware is offline during testing)
+            </label>
+          </div>
+
+          <div class="modal-footer mt-4">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              {{ isEditing ? 'Save Changes' : 'Complete Onboarding' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

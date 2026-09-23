@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
@@ -19,6 +19,11 @@ export type RecordPaymentDialogData = {
   amount: number;
   facilityId?: string | number;
   phoneNumber?: string;
+  insurance?: {
+    company: string;
+    coverage: number;
+    claim?: string;
+  } | null;
 };
 
 @Component({
@@ -38,7 +43,7 @@ export type RecordPaymentDialogData = {
   templateUrl: './record-payment-dialog.component.html',
   styleUrl: './record-payment-dialog.component.css',
 })
-export class RecordPaymentDialogComponent implements OnDestroy {
+export class RecordPaymentDialogComponent implements OnInit, OnDestroy {
   readonly data = inject<RecordPaymentDialogData>(MAT_DIALOG_DATA);
   private readonly formBuilder = inject(FormBuilder);
   private readonly billingService = inject(BillingService);
@@ -49,18 +54,26 @@ export class RecordPaymentDialogComponent implements OnDestroy {
     >,
   );
 
+  // Insurance Breakdown State
+  hasInsurance = false;
+  insuranceName = '';
+  coveragePercentage = 0;
+  insurancePayAmount = 0;
+  customerPayAmount = 0;
+
   readonly paymentMethods = [
-    'Cash',
     'Mobile Payment',
+    'Cash',
     'Credit Card',
     'Debit Card',
-    'Insurance',
+    'Insurance Claim Settlement',
   ];
 
   readonly paymentForm = this.formBuilder.group({
     amount: [this.data.amount, [Validators.required, Validators.min(0)]],
     method: ['Mobile Payment', [Validators.required]],
     phoneNumber: [this.data.phoneNumber || '', []],
+    paymentScope: ['customer_copay' as 'customer_copay' | 'full_invoice' | 'insurance_claim' | 'custom'],
   });
 
   // STK Push State Signals
@@ -72,6 +85,43 @@ export class RecordPaymentDialogComponent implements OnDestroy {
   checkoutRequestId = signal<string | null>(null);
 
   private pollTimer: any = null;
+
+  ngOnInit(): void {
+    if (this.data.insurance && this.data.insurance.company && Number(this.data.insurance.coverage) > 0) {
+      this.hasInsurance = true;
+      this.insuranceName = this.data.insurance.company;
+      this.coveragePercentage = Math.min(100, Math.max(0, Number(this.data.insurance.coverage)));
+
+      this.insurancePayAmount = Number((this.data.amount * (this.coveragePercentage / 100)).toFixed(2));
+      this.customerPayAmount = Number((this.data.amount - this.insurancePayAmount).toFixed(2));
+
+      // Default payment amount to patient co-pay portion if remaining out-of-pocket > 0
+      if (this.customerPayAmount > 0) {
+        this.paymentForm.patchValue({
+          amount: this.customerPayAmount,
+          paymentScope: 'customer_copay',
+          method: 'Mobile Payment'
+        });
+      } else {
+        this.paymentForm.patchValue({
+          amount: this.insurancePayAmount,
+          paymentScope: 'insurance_claim',
+          method: 'Insurance Claim Settlement'
+        });
+      }
+    }
+  }
+
+  setPaymentScope(scope: 'customer_copay' | 'insurance_claim' | 'full_invoice'): void {
+    this.paymentForm.patchValue({ paymentScope: scope });
+    if (scope === 'customer_copay') {
+      this.paymentForm.patchValue({ amount: this.customerPayAmount, method: 'Mobile Payment' });
+    } else if (scope === 'insurance_claim') {
+      this.paymentForm.patchValue({ amount: this.insurancePayAmount, method: 'Insurance Claim Settlement' });
+    } else if (scope === 'full_invoice') {
+      this.paymentForm.patchValue({ amount: this.data.amount });
+    }
+  }
 
   ngOnDestroy(): void {
     this.stopPolling();
@@ -192,4 +242,3 @@ export class RecordPaymentDialogComponent implements OnDestroy {
     });
   }
 }
-
