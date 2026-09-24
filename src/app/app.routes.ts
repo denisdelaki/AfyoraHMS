@@ -90,6 +90,47 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'terms',
+    data: {
+      seo: {
+        title: 'Terms of Service',
+        description:
+          'Terms of Service and Subscription Agreement for Afyora HMS facilities.',
+      },
+    },
+    loadComponent: () =>
+      import('./components/legal/terms/terms.component').then(
+        (m) => m.TermsComponent,
+      ),
+  },
+  {
+    path: 'dpa',
+    data: {
+      seo: {
+        title: 'Data Processing Agreement (DPA)',
+        description:
+          'Data Processing Agreement legally establishing facility ownership of patient health data on Afyora HMS.',
+      },
+    },
+    loadComponent: () =>
+      import('./components/legal/dpa/dpa.component').then(
+        (m) => m.DpaComponent,
+      ),
+  },
+  {
+    path: 'privacy',
+    data: {
+      seo: {
+        title: 'Privacy Policy',
+        description: 'Afyora HMS Privacy Policy.',
+      },
+    },
+    loadComponent: () =>
+      import('./components/legal/privacy/privacy.component').then(
+        (m) => m.PrivacyComponent,
+      ),
+  },
+  {
     path: '',
     data: {
       seo: {

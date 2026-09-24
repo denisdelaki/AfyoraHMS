@@ -66,5 +66,13 @@
   </section>
 
   <section class="cta"><div class="eyebrow">Ready to begin?</div><h2>Better operations start here.</h2><p>Create your facility account and Afyora will guide you through the rest.</p><a class="button button-large" href="/signup" routerLink="/signup">Start setup <lucide-angular [img]="ArrowRight" [size]="18"></lucide-angular></a></section>
-  <footer><a class="brand" routerLink="/"><span class="brand-mark"><lucide-angular [img]="HeartPulse" [size]="18"></lucide-angular></span>Afyora <b>HMS</b></a><span>Healthcare operations, made simple.</span></footer>
+  <footer class="flex flex-col sm:flex-row items-center justify-between gap-4 py-8 border-t border-slate-200 text-sm text-slate-600">
+    <a class="brand" routerLink="/"><span class="brand-mark"><lucide-angular [img]="HeartPulse" [size]="18"></lucide-angular></span>Afyora <b>HMS</b></a>
+    <div class="flex items-center space-x-6 text-xs font-medium">
+      <a routerLink="/terms" class="hover:text-blue-600 hover:underline">Terms of Service</a>
+      <a routerLink="/dpa" class="hover:text-blue-600 hover:underline">Data Processing Agreement (DPA)</a>
+      <a routerLink="/privacy" class="hover:text-blue-600 hover:underline">Privacy Policy</a>
+    </div>
+    <span>Healthcare operations, made simple.</span>
+  </footer>
 </main>

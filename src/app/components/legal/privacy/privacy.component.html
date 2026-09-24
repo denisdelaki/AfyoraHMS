@@ -1,0 +1,132 @@
+<div class="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
+  <!-- Top Navigation Header -->
+  <nav class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center space-x-3 shrink-0">
+        <a routerLink="/" class="flex items-center">
+          <app-logo></app-logo>
+        </a>
+        <span class="text-slate-300">|</span>
+        <span class="text-sm font-semibold text-slate-700 hidden sm:inline-block">Legal Center</span>
+      </div>
+
+      <div class="flex items-center space-x-3 shrink-0">
+        <button
+          type="button"
+          (click)="printDocument()"
+          class="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-colors cursor-pointer whitespace-nowrap"
+        >
+          <mat-icon class="text-slate-600" style="font-size: 18px; width: 18px; height: 18px;">print</mat-icon>
+          <span>Print / Save PDF</span>
+        </button>
+        <a
+          routerLink="/signup"
+          class="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-xs"
+        >
+          <mat-icon class="text-white" style="font-size: 18px; width: 18px; height: 18px;">arrow_back</mat-icon>
+          <span>Back to Registration</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Document Header Banner -->
+  <div class="bg-teal-900 text-white py-12 px-4 sm:px-6 lg:px-8 no-print">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="inline-flex items-center space-x-2 bg-teal-800/80 px-3 py-1 rounded-full text-xs font-medium text-teal-200 mb-4 border border-teal-700">
+        <mat-icon class="text-teal-300 text-sm" style="font-size: 16px; width: 16px; height: 16px;">privacy_tip</mat-icon>
+        <span>Privacy & Data Protection Notice</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">
+        Privacy Policy
+      </h1>
+      <p class="text-teal-200 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+        How Afyora Technologies Ltd. collects, protects, and handles administrative account information and platform metrics.
+      </p>
+      <div class="mt-6 flex flex-wrap justify-center gap-4 text-xs text-teal-300">
+        <span><strong>Effective Date:</strong> {{ lastUpdated }}</span>
+        <span>•</span>
+        <span><strong>Version:</strong> {{ version }}</span>
+        <span>•</span>
+        <span><strong>Complements:</strong> Data Processing Agreement (DPA)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Body -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 print-container">
+    
+    <!-- Executive Box -->
+    <div class="bg-teal-50 border-l-4 border-teal-600 p-6 rounded-r-xl shadow-sm mb-8">
+      <div class="flex items-start">
+        <mat-icon class="text-teal-600 mr-3 mt-0.5" style="font-size: 28px; width: 28px; height: 28px;">shield</mat-icon>
+        <div>
+          <h2 class="text-base font-bold text-teal-950 uppercase tracking-wider mb-1">
+            Important Distinction: Patient Records vs. Platform Accounts
+          </h2>
+          <p class="text-sm text-teal-900 leading-relaxed">
+            All <strong>Patient Health Information (PHI) and clinical facility records</strong> processed by Afyora HMS are strictly governed by our <a routerLink="/dpa" class="underline font-bold text-teal-700">Data Processing Agreement (DPA)</a>, under which your Healthcare Facility is the sole Data Controller. This Privacy Policy describes only how we collect and manage account metadata for facility administrators, subscribers, and website visitors.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Text content -->
+    <div class="bg-white p-8 sm:p-12 rounded-xl border border-slate-200 shadow-sm space-y-8 text-slate-800 leading-relaxed text-sm sm:text-base">
+
+      <section>
+        <h2 class="text-xl font-bold text-slate-900 border-b border-slate-200 pb-2 mb-3">
+          1. Information We Collect
+        </h2>
+        <p class="mb-3">We collect administrative contact and platform telemetry data necessary to operate the platform:</p>
+        <ul class="list-disc pl-6 space-y-1 text-slate-700">
+          <li><strong>Facility & Admin Contact Details:</strong> Facility name, license registration number, administrator name, official email, phone number, and physical billing address provided during signup.</li>
+          <li><strong>Authentication Credentials:</strong> Encrypted passwords and security tokens.</li>
+          <li><strong>Technical & Telemetry Data:</strong> IP addresses, browser types, device identifiers, and system access timestamps logged for security monitoring.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-bold text-slate-900 border-b border-slate-200 pb-2 mb-3">
+          2. How We Use Account Data
+        </h2>
+        <p class="mb-3">We use account information strictly to:</p>
+        <ul class="list-disc pl-6 space-y-1 text-slate-700">
+          <li>Provision, maintain, and secure your facility account workspace.</li>
+          <li>Verify facility licensing and administrator identity.</li>
+          <li>Send security alerts, billing invoices, and critical system notifications.</li>
+          <li>Provide customer support and technical troubleshooting.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-bold text-slate-900 border-b border-slate-200 pb-2 mb-3">
+          3. Security & Compliance Safeguards
+        </h2>
+        <p>
+          We employ industry-leading security practices, including TLS 1.3 encryption in transit, AES-256 encryption at rest, strict role-based access control, and 24/7 infrastructure security monitoring compliant with the Kenya Data Protection Act 2019 and international health IT privacy standards.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-bold text-slate-900 border-b border-slate-200 pb-2 mb-3">
+          4. Contact Our Data Protection Officer
+        </h2>
+        <p>
+          For privacy inquiries, data protection compliance requests, or regulatory questions, contact our Data Protection Officer at: <a href="mailto:privacy@afyorahms.com" class="text-indigo-600 font-semibold underline">privacy&#64;afyorahms.com</a>.
+        </p>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 text-center text-xs text-slate-500 no-print space-y-2">
+    <div class="flex justify-center space-x-6 mb-2">
+      <a routerLink="/terms" class="hover:underline text-indigo-600 font-medium">Terms of Service</a>
+      <a routerLink="/dpa" class="hover:underline text-indigo-600 font-medium">Data Processing Agreement</a>
+      <a routerLink="/privacy" class="hover:underline text-indigo-600 font-medium">Privacy Policy</a>
+    </div>
+    <p>© 2026 Afyora Technologies Ltd. All rights reserved. Healthcare operations made secure and compliant.</p>
+  </footer>
+</div>

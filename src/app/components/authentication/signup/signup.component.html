@@ -300,40 +300,73 @@
               </mat-form-field>
             </div>
 
-            <div class="flex items-start pb-2">
-              <mat-checkbox
-                id="terms"
-                formControlName="terms"
-                required
-                color="primary"
-              >
-                <span
-                  class="text-sm text-gray-600 leading-normal text-wrap break-words inline-block max-w-full"
+            <div class="space-y-3 pb-2">
+              <div class="flex items-start">
+                <mat-checkbox
+                  id="terms"
+                  formControlName="terms"
+                  required
+                  color="primary"
                 >
-                  I agree to the
-                  <a
-                    routerLink="/terms"
-                    class="text-blue-600 hover:underline"
-                    (click)="$event.stopPropagation()"
+                  <span
+                    class="text-sm text-gray-700 leading-normal text-wrap break-words inline-block max-w-full"
                   >
-                    Terms of Service
-                  </a>
-                  and
-                  <a
-                    routerLink="/privacy"
-                    class="text-blue-600 hover:underline"
-                    (click)="$event.stopPropagation()"
+                    I agree to the
+                    <a
+                      routerLink="/terms"
+                      target="_blank"
+                      class="text-blue-600 font-semibold hover:underline"
+                      (click)="$event.stopPropagation()"
+                    >
+                      Terms of Service
+                    </a>
+                    and
+                    <a
+                      routerLink="/privacy"
+                      target="_blank"
+                      class="text-blue-600 font-semibold hover:underline"
+                      (click)="$event.stopPropagation()"
+                    >
+                      Privacy Policy
+                    </a>
+                  </span>
+                </mat-checkbox>
+              </div>
+              @if (hasControlError("terms", "required")) {
+                <p class="text-xs text-red-600 ml-7 -mt-2">
+                  You must accept the Terms of Service.
+                </p>
+              }
+
+              <div class="flex items-start">
+                <mat-checkbox
+                  id="dpa"
+                  formControlName="dpa"
+                  required
+                  color="primary"
+                >
+                  <span
+                    class="text-sm text-gray-700 leading-normal text-wrap break-words inline-block max-w-full"
                   >
-                    Privacy Policy
-                  </a>
-                </span>
-              </mat-checkbox>
+                    I accept the
+                    <a
+                      routerLink="/dpa"
+                      target="_blank"
+                      class="text-blue-600 font-semibold hover:underline"
+                      (click)="$event.stopPropagation()"
+                    >
+                      Data Processing Agreement (DPA)
+                    </a>
+                    on behalf of this facility, legally confirming that our facility owns all data and Afyora HMS acts as a processor under our instruction.
+                  </span>
+                </mat-checkbox>
+              </div>
+              @if (hasControlError("dpa", "required")) {
+                <p class="text-xs text-red-600 ml-7 -mt-2">
+                  You must accept the Data Processing Agreement (DPA) on behalf of your facility.
+                </p>
+              }
             </div>
-            @if (hasControlError("terms", "required")) {
-              <p class="text-sm text-red-600 -mt-4">
-                You must accept the Terms of Service and Privacy Policy.
-              </p>
-            }
 
             <button
               mat-flat-button

@@ -90,6 +90,7 @@ export class SignupComponent {
       ],
       confirmPassword: ['', [Validators.required]],
       terms: [false, [Validators.requiredTrue]],
+      dpa: [false, [Validators.requiredTrue]],
     },
     { validators: this.passwordsMatchValidator() },
   );

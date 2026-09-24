@@ -1,0 +1,356 @@
+<div class="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
+  <!-- Top Navigation Header -->
+  <nav class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center space-x-3 shrink-0">
+        <a routerLink="/" class="flex items-center">
+          <app-logo></app-logo>
+        </a>
+        <span class="text-slate-300">|</span>
+        <span class="text-sm font-semibold text-slate-700 hidden sm:inline-block">Legal Center</span>
+      </div>
+
+      <div class="flex items-center space-x-3 shrink-0">
+        <button
+          type="button"
+          (click)="printDocument()"
+          class="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-colors cursor-pointer whitespace-nowrap"
+        >
+          <mat-icon class="text-slate-600" style="font-size: 18px; width: 18px; height: 18px;">print</mat-icon>
+          <span>Print / Save PDF</span>
+        </button>
+        <a
+          routerLink="/signup"
+          class="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors whitespace-nowrap shadow-xs"
+        >
+          <mat-icon class="text-white" style="font-size: 18px; width: 18px; height: 18px;">arrow_back</mat-icon>
+          <span>Back to Registration</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Document Header Banner -->
+  <div class="bg-indigo-900 text-white py-12 px-4 sm:px-6 lg:px-8 no-print">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="inline-flex items-center space-x-2 bg-indigo-800/80 px-3 py-1 rounded-full text-xs font-medium text-indigo-200 mb-4 border border-indigo-700">
+        <mat-icon class="text-emerald-400 text-sm" style="font-size: 16px; width: 16px; height: 16px;">verified_user</mat-icon>
+        <span>Healthcare Data Protection Standard</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">
+        Data Processing Agreement (DPA)
+      </h1>
+      <p class="text-indigo-200 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+        Standard contract governing the processing of patient records and health information on Afyora HMS.
+        Legally establishing that your healthcare facility is the <strong>Data Controller</strong> and sole owner of all data.
+      </p>
+      <div class="mt-6 flex flex-wrap justify-center gap-4 text-xs text-indigo-300">
+        <span><strong>Effective Date:</strong> {{ lastUpdated }}</span>
+        <span>•</span>
+        <span><strong>Version:</strong> {{ version }}</span>
+        <span>•</span>
+        <span><strong>Applicability:</strong> All Registered Hospitals & Clinics</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Document Body Container -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 print-container">
+    
+    <!-- Executive Summary Box -->
+    <div class="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-xl shadow-sm mb-8">
+      <div class="flex items-start">
+        <mat-icon class="text-blue-600 mr-3 mt-0.5" style="font-size: 28px; width: 28px; height: 28px;">gavel</mat-icon>
+        <div>
+          <h2 class="text-base font-bold text-blue-950 uppercase tracking-wider mb-1">
+            Core Guarantee to Every Healthcare Facility
+          </h2>
+          <p class="text-sm text-blue-900 leading-relaxed mb-3">
+            Under this legally binding Agreement, <strong>your Healthcare Facility retains 100% ownership and control over all patient records, medical charts, clinical data, and administrative information</strong> uploaded to or generated within Afyora HMS. Afyora Technologies Ltd. acts exclusively as a <strong>Data Processor</strong> under your strict written instructions and will never monetize, sell, mine, or share your data.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-medium text-blue-800">
+            <div class="bg-white/80 p-2.5 rounded-lg border border-blue-100 flex items-center space-x-2">
+              <mat-icon class="text-emerald-600 text-base" style="font-size: 18px; width: 18px; height: 18px;">check_circle</mat-icon>
+              <span>Facility = Data Controller</span>
+            </div>
+            <div class="bg-white/80 p-2.5 rounded-lg border border-blue-100 flex items-center space-x-2">
+              <mat-icon class="text-emerald-600 text-base" style="font-size: 18px; width: 18px; height: 18px;">check_circle</mat-icon>
+              <span>Afyora = Data Processor</span>
+            </div>
+            <div class="bg-white/80 p-2.5 rounded-lg border border-blue-100 flex items-center space-x-2">
+              <mat-icon class="text-emerald-600 text-base" style="font-size: 18px; width: 18px; height: 18px;">check_circle</mat-icon>
+              <span>Full Export & Erasure Rights</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Table of Contents -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-8 no-print">
+      <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">
+        Table of Contents
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-indigo-700">
+        <a href="#section-1" class="hover:underline">1. Preamble, Roles & Definitions</a>
+        <a href="#section-2" class="hover:underline">2. Data Ownership & Processing Instructions</a>
+        <a href="#section-3" class="hover:underline">3. Scope & Categories of Data</a>
+        <a href="#section-4" class="hover:underline">4. Security & Technical Safeguards</a>
+        <a href="#section-5" class="hover:underline">5. Confidentiality & Staff Obligations</a>
+        <a href="#section-6" class="hover:underline">6. Sub-processors & Infrastructure</a>
+        <a href="#section-7" class="hover:underline">7. Data Subject & Patient Rights Assistance</a>
+        <a href="#section-8" class="hover:underline">8. Incident & 48-Hour Breach Notification</a>
+        <a href="#section-9" class="hover:underline">9. Data Retrieval, Export & Deletion</a>
+        <a href="#section-10" class="hover:underline">10. Audit Rights & Compliance Certification</a>
+        <a href="#section-11" class="hover:underline">11. Governing Law & Dispute Resolution</a>
+      </div>
+    </div>
+
+    <!-- Full Document Content -->
+    <div class="bg-white p-8 sm:p-12 rounded-xl border border-slate-200 shadow-sm space-y-10 text-slate-800 leading-relaxed text-sm sm:text-base">
+
+      <!-- Preamble -->
+      <section id="section-1">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            1. Preamble, Roles & Definitions
+          </h2>
+        </div>
+        <p class="mb-4">
+          This Data Processing Agreement ("<strong>DPA</strong>") forms a legally binding contract between the registering healthcare entity ("<strong>Healthcare Facility</strong>", "<strong>Hospital</strong>", "<strong>Clinic</strong>", or "<strong>Data Controller</strong>") and <strong>Afyora Technologies Ltd.</strong> ("<strong>Afyora HMS</strong>", "<strong>Provider</strong>", or "<strong>Data Processor</strong>").
+        </p>
+        <p class="mb-4">
+          This DPA applies to the processing of all Personal Data, Protected Health Information (PHI), Electronic Health Records (EHR), financial records, and operational information provided by or generated on behalf of the Healthcare Facility through its subscription to the Afyora HMS platform.
+        </p>
+        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs sm:text-sm space-y-2">
+          <p><strong>"Data Controller"</strong> means the Healthcare Facility that determines the purposes and lawful bases for processing patient health records and facility staff data.</p>
+          <p><strong>"Data Processor"</strong> means Afyora Technologies Ltd., which processes Personal Data solely on behalf of, and under the documented instructions of, the Data Controller.</p>
+          <p><strong>"Personal Data" & "Protected Health Information (PHI)"</strong> mean any information relating to an identified or identifiable natural person (patient, guardian, employee) collected or processed within Afyora HMS.</p>
+          <p><strong>"Applicable Data Protection Law"</strong> refers to the Kenya Data Protection Act (2019), Data Protection (General) Regulations 2021, Digital Health Act 2023, HIPAA Privacy & Security Rules, GDPR principles, and relevant healthcare privacy regulations.</p>
+        </div>
+      </section>
+
+      <!-- Section 2: Data Ownership -->
+      <section id="section-2">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            2. Absolute Data Ownership & Controller Instructions
+          </h2>
+        </div>
+        <div class="space-y-4">
+          <div class="p-4 bg-emerald-50/60 border border-emerald-200 rounded-lg text-emerald-950 font-medium text-sm">
+            <span class="font-bold text-emerald-900">Section 2.1 — Exclusive Ownership:</span> The Healthcare Facility retains sole, absolute, and unalienable title, ownership, copyright, and intellectual property rights in all data uploaded, created, stored, or processed in Afyora HMS, including patient charts, diagnoses, KNHTS/ICD codes, lab results, prescriptions, invoices, and employee records ("Facility Data").
+          </div>
+          <p>
+            <strong>2.2 — Zero Provider Rights:</strong> Afyora HMS acquires no right, title, or interest in or to any Facility Data. Nothing in this DPA or the Terms of Service shall be construed as granting Afyora HMS any licence, right, or implied claim over Facility Data, except the limited right to host and process such data strictly for the performance of the services.
+          </p>
+          <p>
+            <strong>2.3 — Strict Written Instructions:</strong> Afyora HMS shall process Facility Data strictly and exclusively in accordance with the documented instructions of the Healthcare Facility (including instructions issued through system administrative settings). Afyora HMS shall never:
+          </p>
+          <ul class="list-disc pl-6 space-y-1 text-slate-700">
+            <td>Sell, rent, trade, or lease Facility Data or patient health records to any third party.</td>
+            <td>Use Facility Data for marketing, advertising, profiling, or commercial data aggregation.</td>
+            <td>Use Facility Data to train machine learning models without explicit written permission from the Healthcare Facility.</td>
+            <td>Disclose Facility Data to any external entity except as explicitly required by law or judicial order (with immediate prior notice to the Healthcare Facility where legally permissible).</td>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 3: Scope & Categories -->
+      <section id="section-3">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            3. Scope & Categories of Data Processing
+          </h2>
+        </div>
+        <p class="mb-4">
+          The subject-matter, duration, nature, and purpose of data processing under this Agreement are defined as follows:
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
+          <div class="border border-slate-200 p-4 rounded-lg bg-slate-50">
+            <h4 class="font-bold text-slate-900 mb-2">Categories of Data Subjects</h4>
+            <ul class="list-disc pl-5 space-y-1 text-slate-700">
+              <li>Patients, guardians, next-of-kin, and emergency contacts</li>
+              <li>Attending doctors, nurses, surgeons, and clinical specialists</li>
+              <li>Pharmacists, laboratory technicians, and radiologists</li>
+              <li>Facility administrators, billing clerks, and receptionists</li>
+            </ul>
+          </div>
+          <div class="border border-slate-200 p-4 rounded-lg bg-slate-50">
+            <h4 class="font-bold text-slate-900 mb-2">Categories of Data</h4>
+            <ul class="list-disc pl-5 space-y-1 text-slate-700">
+              <li>Demographics: Name, National ID/Passport, DOB, Phone, Email, Address</li>
+              <li>Clinical: Electronic Health Records, Vital signs, Medical history, KNHTS coded diagnoses, Prescriptions, Lab & Imaging results</li>
+              <li>Financial: Invoices, Insurance policy numbers, Claims, Payments</li>
+              <li>System: User activity logs, Role assignments, Audit trails</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Security Safeguards -->
+      <section id="section-4">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            4. Security Safeguards & Technical Measures
+          </h2>
+        </div>
+        <p class="mb-4">
+          Afyora HMS implements comprehensive technical and organizational measures to ensure a level of security appropriate to the sensitive medical nature of Facility Data:
+        </p>
+        <div class="space-y-3">
+          <div class="flex items-start space-x-3">
+            <mat-icon class="text-indigo-600 mt-1">lock</mat-icon>
+            <div>
+              <strong class="text-slate-900">Encryption Standards:</strong> All data transmitted over networks is encrypted using TLS 1.3 protocol. All sensitive database fields, file attachments, and backups are encrypted at rest using AES-256 standard encryption.
+            </div>
+          </div>
+          <div class="flex items-start space-x-3">
+            <mat-icon class="text-indigo-600 mt-1">admin_panel_settings</mat-icon>
+            <div>
+              <strong class="text-slate-900">Role-Based Access Control (RBAC):</strong> Access to clinical records is restricted based on user role assignments configured by the Healthcare Facility. Administrative logins require strong passwords and multi-factor authentication options.
+            </div>
+          </div>
+          <div class="flex items-start space-x-3">
+            <mat-icon class="text-indigo-600 mt-1">history</mat-icon>
+            <div>
+              <strong class="text-slate-900">Immutable Audit Trails:</strong> The system maintains an unalterable audit log recording every creation, view, update, export, or deletion of patient health records, including timestamp and user ID.
+            </div>
+          </div>
+          <div class="flex items-start space-x-3">
+            <mat-icon class="text-indigo-600 mt-1">cloud_done</mat-icon>
+            <div>
+              <strong class="text-slate-900">Backup & Resilience:</strong> Daily automated encrypted backups with multi-region redundancy, zero-data-loss database replication, and regular disaster recovery simulation testing.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Confidentiality -->
+      <section id="section-5">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            5. Confidentiality & Personnel Security
+          </h2>
+        </div>
+        <p class="mb-3">
+          Afyora HMS shall ensure that all employees, contractors, and technical staff authorized to access or assist with Facility Data are bound by strict contractual confidentiality agreements.
+        </p>
+        <p>
+          Provider staff access to production environment data is granted strictly on a "least-privilege" and "need-to-know" basis, reserved exclusively for troubleshooting authorized system issues under logged support tickets.
+        </p>
+      </section>
+
+      <!-- Section 6: Sub-processors -->
+      <section id="section-6">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            6. Sub-processors & Infrastructure Partners
+          </h2>
+        </div>
+        <p class="mb-3">
+          The Healthcare Facility grants general authorization to Afyora HMS to engage tier-1 cloud infrastructure and utility sub-processors (such as cloud hosting providers, database providers, and SMS gateway services for patient notifications).
+        </p>
+        <p class="mb-3">
+          Afyora HMS confirms that all sub-processors are bound by written agreements providing data protection standards no less restrictive than those set out in this DPA. Afyora HMS shall notify the Healthcare Facility of any intended changes or additions to sub-processors at least 14 days in advance.
+        </p>
+      </section>
+
+      <!-- Section 7: Data Subject Rights -->
+      <section id="section-7">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            7. Data Subject Rights & Patient Requests
+          </h2>
+        </div>
+        <p class="mb-3">
+          As Data Controller, the Healthcare Facility is responsible for responding to requests from patients or employees exercising their statutory rights (access, correction, erasure, portability, or restriction of processing).
+        </p>
+        <p>
+          Afyora HMS shall provide appropriate technical capabilities within the software (such as patient profile export, correction tools, and record archiving) to enable the Healthcare Facility to fulfill such data subject requests without delay.
+        </p>
+      </section>
+
+      <!-- Section 8: Data Breach Notification -->
+      <section id="section-8">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            8. Incident Management & 48-Hour Breach Notification
+          </h2>
+        </div>
+        <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg mb-4 text-amber-950 text-sm">
+          <strong>Mandatory Incident Response Protocol:</strong> In the event of any confirmed or reasonably suspected security breach, unauthorized access, or loss of Facility Data, Afyora HMS shall notify the Healthcare Facility in writing within <strong>48 hours</strong> of discovery.
+        </div>
+        <p class="mb-3">
+          The notification shall contain: (a) description of the nature of the breach; (b) categories and approximate number of data records affected; (c) measures taken or proposed to mitigate potential adverse effects; and (d) contact details of the Data Protection Officer or Lead Technical Officer.
+        </p>
+        <p>
+          Afyora HMS shall immediately initiate containment and remediation measures at its own expense and assist the Healthcare Facility in notifying relevant data protection authorities where required by law.
+        </p>
+      </section>
+
+      <!-- Section 9: Data Return, Export & Deletion -->
+      <section id="section-9">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            9. Data Return, Export & Complete Deletion
+          </h2>
+        </div>
+        <div class="space-y-4">
+          <p>
+            <strong>9.1 — Full Data Export Guarantee:</strong> Upon termination or expiration of the Healthcare Facility's subscription, Afyora HMS shall provide the Facility with a full, unencumbered export of all Electronic Health Records, patient demographics, clinical encounter notes, lab results, prescriptions, and financial ledgers in standard machine-readable formats (JSON, CSV, FHIR-compliant archives) during a <strong>60-day post-termination window</strong>.
+          </p>
+          <p>
+            <strong>9.2 — Permanent Deletion:</strong> Following the completion of data export or the expiration of the 60-day retrieval period, Afyora HMS shall permanently delete, sanitize, and overwrite all copies of Facility Data residing in production databases and backup systems in accordance with NIST SP 800-88 standards.
+          </p>
+          <p>
+            <strong>9.3 — Certificate of Destruction:</strong> Upon written request from the Healthcare Facility, Afyora HMS shall issue a signed Certificate of Data Destruction confirming that all active and backup copies of Facility Data have been irreversibly purged.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 10: Audit Rights -->
+      <section id="section-10">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            10. Audit Rights & Compliance Verification
+          </h2>
+        </div>
+        <p class="mb-3">
+          Upon reasonable written request, Afyora HMS shall make available to the Healthcare Facility all information necessary to demonstrate compliance with this DPA, including executive summaries of third-party security audits, ISO/SOC certifications, or vulnerability penetration testing reports.
+        </p>
+      </section>
+
+      <!-- Section 11: Governing Law -->
+      <section id="section-11">
+        <div class="border-b border-slate-200 pb-3 mb-4">
+          <h2 class="text-xl font-bold text-slate-900">
+            11. Governing Law & Dispute Resolution
+          </h2>
+        </div>
+        <p class="mb-3">
+          This DPA shall be governed by and construed in accordance with the laws of the Republic of Kenya. Any dispute arising out of or in connection with this DPA shall be submitted to the jurisdiction of the competent courts and data protection regulatory authorities in Kenya.
+        </p>
+      </section>
+
+      <!-- Signoff / Acceptance statement -->
+      <div class="bg-slate-100 p-6 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-700 space-y-2">
+        <div class="font-bold text-slate-900 text-base mb-1">Electronic Execution & Legal Acceptance</div>
+        <p>
+          By creating an account on Afyora HMS and selecting <em>"I accept the Data Processing Agreement (DPA)"</em> during signup, the registering individual certifies that they are an authorized officer or administrator of the Healthcare Facility and accept all terms of this DPA on behalf of the Facility.
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 text-center text-xs text-slate-500 no-print space-y-2">
+    <div class="flex justify-center space-x-6 mb-2">
+      <a routerLink="/terms" class="hover:underline text-indigo-600 font-medium">Terms of Service</a>
+      <a routerLink="/dpa" class="hover:underline text-indigo-600 font-medium">Data Processing Agreement</a>
+      <a routerLink="/privacy" class="hover:underline text-indigo-600 font-medium">Privacy Policy</a>
+    </div>
+    <p>© 2026 Afyora Technologies Ltd. All rights reserved. Healthcare operations made secure and compliant.</p>
+  </footer>
+</div>
