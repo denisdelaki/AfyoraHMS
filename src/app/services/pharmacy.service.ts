@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, map, tap, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { apiUrl } from '../core/api.config';
-import { ApiResponse, CreateDrugPurchaseOrderRequest, CreateDrugRequest, Drug, DrugCategory, DrugPurchaseOrder, Prescription } from '../models';
+import { ApiResponse, CreateDrugPurchaseOrderRequest, CreateDrugRequest, Drug, DrugCategory, DrugPurchaseOrder, KnhtsConceptSearchResult, Prescription } from '../models';
 import { DHAPrescription } from '../models/dha-connect.models';
 import { DataSyncService } from './data-sync.service';
 import { DhaAfyaConnectService } from './dha-afyaconnect.service';
@@ -258,5 +259,36 @@ export class PharmacyService {
     return this.http.get<{ vendor_email: string; cc_emails: string[] }>(
       `${this.baseUrl}/purchase-orders/${poId}/recipients/?facilityId=${encodeURIComponent(facilityId)}/`,
     );
+  }
+
+  searchDrugTerminology(searchTerm: string): Observable<KnhtsConceptSearchResult[]> {
+    const normalized = (searchTerm || '').trim();
+    if (!normalized) {
+      return of([]);
+    }
+    return this.http
+      .get<any>(`${this.baseUrl}/drugs/terminology-search/?search=${encodeURIComponent(normalized)}`)
+      .pipe(
+        map((response: any) => {
+          const items: any[] =
+            response?.items ?? response?.results ?? response?.data ??
+            (Array.isArray(response) ? response : []);
+
+          return items.map((item: any): KnhtsConceptSearchResult => ({
+            coding: item.coding ?? [
+              {
+                system: item.system || 'KNHTS',
+                code: item.code || item.conceptCode || '',
+                display: item.display || item.name || item.text || '',
+              },
+            ],
+            text: item.text || item.display || item.name || '',
+            display: item.display || item.name || item.text || '',
+            system: item.system || item.coding?.[0]?.system || 'KNHTS',
+            code: item.code || item.conceptCode || item.coding?.[0]?.code || '',
+          }));
+        }),
+        catchError(() => of([])),
+      );
   }
 }

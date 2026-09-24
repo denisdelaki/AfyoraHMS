@@ -11,6 +11,8 @@ export type DrugCategory = {
 export type Drug = {
   id: string;
   name: string;
+  code?: string;
+  system?: string;
   category?: string;
   categoryId?: number;
   categoryName?: string;

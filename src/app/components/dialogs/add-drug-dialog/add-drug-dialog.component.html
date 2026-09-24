@@ -2,11 +2,13 @@
 <mat-dialog-content>
   <form [formGroup]="drugForm" class="space-y-3 pt-1">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Drug Name</mat-label>
-        <input matInput formControlName="name" placeholder="Enter drug name" />
-        <mat-error>Drug name is required</mat-error>
-      </mat-form-field>
+      <app-knhts-concept-search
+        label="Drug Name (KNHTS Coded)"
+        placeholder="Search KNHTS drugs (e.g. Paracetamol)..."
+        [required]="true"
+        [searchFn]="drugSearchFn"
+        (conceptSelected)="onConceptSelected($event)"
+      ></app-knhts-concept-search>
 
       <mat-form-field appearance="fill" class="w-full">
         <mat-label>Category</mat-label>

@@ -97,7 +97,19 @@
           @for (drug of filteredDrugs; track drug.id) {
           <tr class="border-b last:border-0 hover:bg-gray-50">
             <td class="font-medium">{{ drug.id }}</td>
-            <td class="font-medium text-gray-900">{{ drug.name }}</td>
+            <td class="font-medium text-gray-900">
+              <div>{{ drug.name }}</div>
+              @if (drug.code) {
+                <div class="text-xs text-blue-600 font-mono flex items-center gap-1 mt-0.5">
+                  <span class="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold">{{ drug.system || 'KNHTS' }}</span>
+                  <span>{{ drug.code }}</span>
+                </div>
+              } @else if (drug.system === 'uncoded') {
+                <div class="text-xs text-amber-600 font-mono flex items-center gap-1 mt-0.5">
+                  <span class="bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold">Uncoded</span>
+                </div>
+              }
+            </td>
             <td>{{ drug.categoryName || "-" }}</td>
             <td>
               <div class="flex items-center gap-2">
