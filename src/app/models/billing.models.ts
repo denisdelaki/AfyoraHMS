@@ -105,18 +105,35 @@ export type PatientRadiologyChargesData = {
   items: RadiologyChargeItem[];
 };
 
+export type MpesaEnvironment = 'sandbox' | 'production';
+
+export type MpesaTransactionType =
+  | 'CustomerPayBillOnline'
+  | 'CustomerBuyGoodsOnline';
+
+/** Shape returned by GET /billing/mpesa-config/. Secrets are never returned by the API. */
 export type MpesaConfig = {
   id?: number;
   facilityId?: number;
   shortcode: string;
-  passkey: string;
   consumer_key: string;
-  consumer_secret: string;
-  environment: 'sandbox' | 'production';
-  transaction_type: 'CustomerPayBillOnline' | 'CustomerBuyGoodsOnline';
-
+  environment: MpesaEnvironment;
+  transaction_type: MpesaTransactionType;
   account_reference_prefix: string;
   is_active: boolean;
+};
+
+export type MpesaConfigPayload = {
+  shortcode: string;
+  consumer_key: string;
+  environment: MpesaEnvironment;
+  transaction_type: MpesaTransactionType;
+  account_reference_prefix: string;
+  is_active: boolean;
+  /** Only sent when the user supplies a new value. */
+  passkey?: string;
+  /** Only sent when the user supplies a new value. */
+  consumer_secret?: string;
 };
 
 export type MpesaSTKPushPayload = {
@@ -145,6 +162,3 @@ export type MpesaSTKPushResponse = {
   merchantRequestId: string;
   transaction: MpesaTransaction;
 };
-
-
-

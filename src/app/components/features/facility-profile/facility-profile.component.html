@@ -201,7 +201,7 @@
         M-Pesa Billing Setup
         <span
           class="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full uppercase"
-          *ngIf="mpesaConfig().shortcode"
+          *ngIf="mpesaConfigured()"
           >Configured</span
         >
       </button>
@@ -803,14 +803,10 @@
               >
               <span
                 class="px-2.5 py-1 bg-blue-100 text-blue-800 font-bold text-xs rounded-lg uppercase"
-                [class.bg-purple-100]="
-                  mpesaConfig().environment === 'production'
-                "
-                [class.text-purple-800]="
-                  mpesaConfig().environment === 'production'
-                "
+                [class.bg-purple-100]="mpesaForm.environment === 'production'"
+                [class.text-purple-800]="mpesaForm.environment === 'production'"
               >
-                {{ mpesaConfig().environment }} Mode
+                {{ mpesaForm.environment }} Mode
               </span>
             </div>
             <h2 class="text-xl font-bold text-slate-800">
@@ -823,9 +819,10 @@
             </p>
           </div>
           <button
-            class="inline-flex items-center justify-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer disabled:opacity-50"
-            (click)="saveMpesaSettings()"
-            [disabled]="savingMpesa()"
+            type="submit"
+            form="mpesaConfigForm"
+            class="inline-flex items-center justify-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="savingMpesa() || loadingMpesa()"
           >
             <lucide-icon
               *ngIf="!savingMpesa()"
@@ -843,129 +840,331 @@
           </button>
         </div>
 
-        <form class="space-y-6" (ngSubmit)="saveMpesaSettings()">
+        <form
+          id="mpesaConfigForm"
+          class="space-y-6"
+          novalidate
+          (ngSubmit)="saveMpesaSettings()"
+        >
+          <!-- Enable toggle -->
+          <label
+            class="flex items-start gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              class="mt-0.5 w-4 h-4 accent-emerald-600"
+              [(ngModel)]="mpesaForm.is_active"
+              name="is_active"
+            />
+            <span>
+              <span class="block text-sm font-semibold text-slate-800"
+                >Enable M-Pesa STK Push for this facility</span
+              >
+              <span class="block text-xs text-slate-500 mt-0.5">
+                When enabled, credentials issued to your own Paybill or Till are
+                required.
+              </span>
+            </span>
+          </label>
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Business Shortcode / Till Number -->
+            <!-- Paybill/Till Number -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2">
-                Business Shortcode / Paybill / Till Number
+              <label
+                for="mpesaShortcode"
+                class="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                Paybill/Till Number
                 <span class="text-rose-500">*</span>
               </label>
               <input
+                id="mpesaShortcode"
                 type="text"
-                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                [(ngModel)]="mpesaConfig().shortcode"
+                inputmode="numeric"
+                autocomplete="off"
+                class="w-full px-4 py-2.5 bg-white border rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                [class.border-slate-300]="!mpesaError('shortcode')"
+                [class.border-rose-400]="!!mpesaError('shortcode')"
+                [(ngModel)]="mpesaForm.shortcode"
                 name="shortcode"
-                placeholder="e.g. 174379 (Sandbox) or 600000"
-                required
+                placeholder="Your facility Paybill or Till number"
               />
-              <p class="text-xs text-slate-500 mt-1">
-                The Paybill number or Buy Goods Till number registered with
-                Safaricom.
+              <p
+                *ngIf="mpesaError('shortcode')"
+                class="text-xs text-rose-600 mt-1 font-medium"
+              >
+                {{ mpesaError("shortcode") }}
+              </p>
+              <p
+                *ngIf="!mpesaError('shortcode')"
+                class="text-xs text-slate-500 mt-1"
+              >
+                The Paybill number or Buy Goods Till number issued to your
+                facility by Safaricom.
               </p>
             </div>
 
-            <!-- Transaction Type -->
+            <!-- Transaction Type (segmented control) -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2"
-                >Transaction Type</label
+              <span class="block text-sm font-semibold text-slate-700 mb-2"
+                >Transaction Type</span
               >
-              <select
-                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                [(ngModel)]="mpesaConfig().transaction_type"
-                name="transaction_type"
+              <div
+                role="radiogroup"
+                aria-label="Transaction Type"
+                class="grid grid-cols-2 gap-1 p-1 bg-slate-100 border border-slate-200 rounded-xl"
               >
-                <option value="CustomerPayBillOnline">
-                  Customer PayBill Online
-                </option>
-                <option value="CustomerBuyGoodsOnline">
-                  Buy Goods Till Number
-                </option>
-              </select>
-
-              <p class="text-xs text-slate-500 mt-1">
-                Select PayBill or Buy Goods depending on your Safaricom account
-                setup.
+                <label
+                  class="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-colors"
+                  [class.bg-white]="
+                    mpesaForm.transaction_type === 'CustomerPayBillOnline'
+                  "
+                  [class.text-emerald-700]="
+                    mpesaForm.transaction_type === 'CustomerPayBillOnline'
+                  "
+                  [class.shadow-sm]="
+                    mpesaForm.transaction_type === 'CustomerPayBillOnline'
+                  "
+                  [class.text-slate-500]="
+                    mpesaForm.transaction_type !== 'CustomerPayBillOnline'
+                  "
+                >
+                  <input
+                    type="radio"
+                    class="sr-only"
+                    name="transaction_type"
+                    value="CustomerPayBillOnline"
+                    [(ngModel)]="mpesaForm.transaction_type"
+                  />
+                  Paybill
+                </label>
+                <label
+                  class="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer transition-colors"
+                  [class.bg-white]="
+                    mpesaForm.transaction_type === 'CustomerBuyGoodsOnline'
+                  "
+                  [class.text-emerald-700]="
+                    mpesaForm.transaction_type === 'CustomerBuyGoodsOnline'
+                  "
+                  [class.shadow-sm]="
+                    mpesaForm.transaction_type === 'CustomerBuyGoodsOnline'
+                  "
+                  [class.text-slate-500]="
+                    mpesaForm.transaction_type !== 'CustomerBuyGoodsOnline'
+                  "
+                >
+                  <input
+                    type="radio"
+                    class="sr-only"
+                    name="transaction_type"
+                    value="CustomerBuyGoodsOnline"
+                    [(ngModel)]="mpesaForm.transaction_type"
+                  />
+                  Till/Buy Goods
+                </label>
+              </div>
+              <p
+                *ngIf="mpesaError('transaction_type')"
+                class="text-xs text-rose-600 mt-1 font-medium"
+              >
+                {{ mpesaError("transaction_type") }}
               </p>
             </div>
 
-            <!-- Passkey -->
-            <div class="md:col-span-2">
-              <label class="block text-sm font-semibold text-slate-700 mb-2">
-                Lipa Na M-Pesa Online Passkey
+            <!-- Daraja Consumer Key -->
+            <div>
+              <label
+                for="mpesaConsumerKey"
+                class="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                Daraja Consumer Key
                 <span class="text-rose-500">*</span>
               </label>
               <input
+                id="mpesaConsumerKey"
                 type="text"
-                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-xs"
-                [(ngModel)]="mpesaConfig().passkey"
-                name="passkey"
-                placeholder="Lipa Na M-Pesa Online Passkey provided by Safaricom"
-                required
+                autocomplete="off"
+                class="w-full px-4 py-2.5 bg-white border rounded-xl text-slate-900 text-sm font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                [class.border-slate-300]="!mpesaError('consumer_key')"
+                [class.border-rose-400]="!!mpesaError('consumer_key')"
+                [(ngModel)]="mpesaForm.consumer_key"
+                name="consumer_key"
+                placeholder="Consumer Key from the Daraja developer portal"
               />
-              <p class="text-xs text-slate-500 mt-1">
-                The security passkey generated from the Safaricom Developer
-                Portal or Daraja Portal.
+              <p
+                *ngIf="mpesaError('consumer_key')"
+                class="text-xs text-rose-600 mt-1 font-medium"
+              >
+                {{ mpesaError("consumer_key") }}
               </p>
             </div>
 
-            <!-- Consumer Key -->
+            <!-- Daraja Consumer Secret -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2"
-                >Daraja App Consumer Key</label
+              <label
+                for="mpesaConsumerSecret"
+                class="block text-sm font-semibold text-slate-700 mb-2"
               >
-              <input
-                type="text"
-                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-xs"
-                [(ngModel)]="mpesaConfig().consumer_key"
-                name="consumer_key"
-                placeholder="Consumer Key from Daraja Developer Portal"
-              />
+                Daraja Consumer Secret
+                <span class="text-rose-500" *ngIf="!mpesaSecretsOnFile()"
+                  >*</span
+                >
+              </label>
+              <div class="relative">
+                <input
+                  id="mpesaConsumerSecret"
+                  [type]="showConsumerSecret() ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  spellcheck="false"
+                  class="w-full pl-4 pr-11 py-2.5 bg-white border rounded-xl text-slate-900 text-sm font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                  [class.border-slate-300]="!mpesaError('consumer_secret')"
+                  [class.border-rose-400]="!!mpesaError('consumer_secret')"
+                  [(ngModel)]="mpesaForm.consumer_secret"
+                  name="consumer_secret"
+                  [placeholder]="
+                    mpesaSecretsOnFile()
+                      ? 'Leave blank to keep the stored secret'
+                      : 'Consumer Secret from the Daraja developer portal'
+                  "
+                />
+                <button
+                  type="button"
+                  class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                  [attr.aria-label]="
+                    showConsumerSecret()
+                      ? 'Hide Daraja Consumer Secret'
+                      : 'Show Daraja Consumer Secret'
+                  "
+                  (click)="showConsumerSecret.set(!showConsumerSecret())"
+                >
+                  <lucide-icon
+                    [img]="showConsumerSecret() ? EyeOff : Eye"
+                    class="w-4 h-4"
+                  ></lucide-icon>
+                </button>
+              </div>
+              <p
+                *ngIf="mpesaError('consumer_secret')"
+                class="text-xs text-rose-600 mt-1 font-medium"
+              >
+                {{ mpesaError("consumer_secret") }}
+              </p>
             </div>
 
-            <!-- Consumer Secret -->
-            <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2"
-                >Daraja App Consumer Secret</label
+            <!-- Lipa na M-Pesa Passkey -->
+            <div class="md:col-span-2">
+              <label
+                for="mpesaPasskey"
+                class="block text-sm font-semibold text-slate-700 mb-2"
               >
-              <input
-                type="password"
-                class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 font-mono text-xs"
-                [(ngModel)]="mpesaConfig().consumer_secret"
-                name="consumer_secret"
-                placeholder="Consumer Secret from Daraja Developer Portal"
-              />
+                Lipa na M-Pesa Passkey
+                <span class="text-rose-500" *ngIf="!mpesaSecretsOnFile()"
+                  >*</span
+                >
+              </label>
+              <div class="relative">
+                <input
+                  id="mpesaPasskey"
+                  [type]="showPasskey() ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  spellcheck="false"
+                  class="w-full pl-4 pr-11 py-2.5 bg-white border rounded-xl text-slate-900 text-sm font-mono text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+                  [class.border-slate-300]="!mpesaError('passkey')"
+                  [class.border-rose-400]="!!mpesaError('passkey')"
+                  [(ngModel)]="mpesaForm.passkey"
+                  name="passkey"
+                  [placeholder]="
+                    mpesaSecretsOnFile()
+                      ? 'Leave blank to keep the stored passkey'
+                      : 'Lipa na M-Pesa online passkey from Safaricom'
+                  "
+                />
+                <button
+                  type="button"
+                  class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                  [attr.aria-label]="
+                    showPasskey()
+                      ? 'Hide Lipa na M-Pesa Passkey'
+                      : 'Show Lipa na M-Pesa Passkey'
+                  "
+                  (click)="showPasskey.set(!showPasskey())"
+                >
+                  <lucide-icon
+                    [img]="showPasskey() ? EyeOff : Eye"
+                    class="w-4 h-4"
+                  ></lucide-icon>
+                </button>
+              </div>
+              <p
+                *ngIf="mpesaError('passkey')"
+                class="text-xs text-rose-600 mt-1 font-medium"
+              >
+                {{ mpesaError("passkey") }}
+              </p>
             </div>
 
-            <!-- Environment Mode -->
+            <!-- Environment -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2"
+              <label
+                for="mpesaEnvironment"
+                class="block text-sm font-semibold text-slate-700 mb-2"
                 >Gateway Environment</label
               >
               <select
+                id="mpesaEnvironment"
                 class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                [(ngModel)]="mpesaConfig().environment"
+                [(ngModel)]="mpesaForm.environment"
                 name="environment"
               >
                 <option value="sandbox">Sandbox (Testing / Development)</option>
                 <option value="production">Production (Live Payments)</option>
               </select>
+              <p
+                *ngIf="mpesaError('environment')"
+                class="text-xs text-rose-600 mt-1 font-medium"
+              >
+                {{ mpesaError("environment") }}
+              </p>
             </div>
 
             <!-- Account Reference Prefix -->
             <div>
-              <label class="block text-sm font-semibold text-slate-700 mb-2"
+              <label
+                for="mpesaAccountRef"
+                class="block text-sm font-semibold text-slate-700 mb-2"
                 >Account Reference Prefix</label
               >
               <input
+                id="mpesaAccountRef"
                 type="text"
+                autocomplete="off"
                 class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-                [(ngModel)]="mpesaConfig().account_reference_prefix"
+                [(ngModel)]="mpesaForm.account_reference_prefix"
                 name="account_reference_prefix"
-                placeholder="e.g. AfyoraHMS"
+                placeholder="Shown on the patient's M-Pesa prompt"
               />
+              <p
+                *ngIf="mpesaError('account_reference_prefix')"
+                class="text-xs text-rose-600 mt-1 font-medium"
+              >
+                {{ mpesaError("account_reference_prefix") }}
+              </p>
             </div>
           </div>
+
+          <p
+            class="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3"
+          >
+            <lucide-icon
+              [img]="Lock"
+              class="w-4 h-4 text-slate-400 shrink-0 mt-0.5"
+            ></lucide-icon>
+            <span>
+              Secrets are sent directly to the server and never stored in this
+              browser. Existing passkeys and consumer secrets are not returned
+              by the API — leave those fields blank to keep them unchanged.
+            </span>
+          </p>
         </form>
       </div>
     </div>

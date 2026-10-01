@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   LucideAngularModule,
@@ -26,17 +27,38 @@ import {
   CheckCircle2,
   X,
   FileBadge2,
+  Eye,
+  EyeOff,
+  Lock,
 } from 'lucide-angular';
 import { FacilityService } from '../../../services/facility.service';
 import { BillingService } from '../../../services/billing.service';
 import { KnhtsService } from '../../../services/knhts.service';
+import { ToastService } from '../../../core/toast.service';
 import {
   FacilityProfile,
   FacilityUpdateRequest,
   SubscribePayload,
   SubscriptionPaymentRecord,
 } from '../../../models/facility.model';
-import { MpesaConfig } from '../../../models/billing.models';
+import {
+  MpesaConfig,
+  MpesaConfigPayload,
+  MpesaEnvironment,
+  MpesaTransactionType,
+} from '../../../models/billing.models';
+
+/** Form model: secrets live here only while the user is typing them. */
+export interface MpesaConfigForm {
+  shortcode: string;
+  consumer_key: string;
+  passkey: string;
+  consumer_secret: string;
+  environment: MpesaEnvironment;
+  transaction_type: MpesaTransactionType;
+  account_reference_prefix: string;
+  is_active: boolean;
+}
 
 export interface PackageTier {
   id: 'basic' | 'professional' | 'enterprise';
@@ -59,6 +81,7 @@ export interface PackageTier {
 export class FacilityProfileComponent implements OnInit {
   private readonly facilityService = inject(FacilityService);
   private readonly billingService = inject(BillingService);
+  private readonly toast = inject(ToastService);
 
   // Lucide Icons
   readonly Building2 = Building2;
@@ -84,6 +107,9 @@ export class FacilityProfileComponent implements OnInit {
   readonly CheckCircle2 = CheckCircle2;
   readonly X = X;
   readonly FileBadge2 = FileBadge2;
+  readonly Eye = Eye;
+  readonly EyeOff = EyeOff;
+  readonly Lock = Lock;
 
   // Active Tab
   activeTab = signal<
@@ -98,17 +124,20 @@ export class FacilityProfileComponent implements OnInit {
   errorMessage = signal<string | null>(null);
 
   // M-Pesa Config Signals
+  loadingMpesa = signal<boolean>(false);
   savingMpesa = signal<boolean>(false);
-  mpesaConfig = signal<MpesaConfig>({
-    shortcode: '',
-    passkey: '',
-    consumer_key: '',
-    consumer_secret: '',
-    environment: 'sandbox',
-    transaction_type: 'CustomerPayBillOnline',
-    account_reference_prefix: 'AfyoraHMS',
-    is_active: true,
-  });
+  /** Non-secret configuration as last returned by the API. */
+  mpesaConfig = signal<MpesaConfig | null>(null);
+  mpesaFieldErrors = signal<Record<string, string>>({});
+  showPasskey = signal<boolean>(false);
+  showConsumerSecret = signal<boolean>(false);
+
+  readonly mpesaConfigured = computed(() => !!this.mpesaConfig()?.shortcode);
+
+  /** Secrets are already stored server-side, so they become optional on edit. */
+  readonly mpesaSecretsOnFile = computed(() => !!this.mpesaConfig()?.id);
+
+  mpesaForm: MpesaConfigForm = this.emptyMpesaForm();
 
   // Facility & Payment Data
   facility = signal<FacilityProfile | null>(null);
@@ -226,46 +255,159 @@ export class FacilityProfileComponent implements OnInit {
     });
   }
 
+  private emptyMpesaForm(): MpesaConfigForm {
+    return {
+      shortcode: '',
+      consumer_key: '',
+      passkey: '',
+      consumer_secret: '',
+      environment: 'sandbox',
+      transaction_type: 'CustomerPayBillOnline',
+      account_reference_prefix: '',
+      is_active: true,
+    };
+  }
+
   loadMpesaConfig(facilityId: number | string): void {
+    this.loadingMpesa.set(true);
     this.billingService.getMpesaConfig(facilityId).subscribe({
       next: (res) => {
-        if (res.data) {
-          this.mpesaConfig.set(res.data);
-        }
+        const config = (res?.data ??
+          res?.results ??
+          null) as MpesaConfig | null;
+        this.mpesaConfig.set(config?.shortcode ? config : null);
+        this.applyMpesaConfigToForm(config);
+        this.loadingMpesa.set(false);
       },
-      error: (err) => {
-        console.error('Failed to load M-Pesa config:', err);
+      error: (err: HttpErrorResponse) => {
+        this.loadingMpesa.set(false);
+        // 404 simply means this facility has not configured M-Pesa yet.
+        if (err.status === 404) {
+          this.mpesaConfig.set(null);
+          return;
+        }
+        this.toast.handleHttpError(err);
       },
     });
   }
 
+  /** Secret fields are always left empty — the API never returns them. */
+  private applyMpesaConfigToForm(config: MpesaConfig | null): void {
+    const base = this.emptyMpesaForm();
+    this.mpesaForm = config
+      ? {
+          ...base,
+          shortcode: config.shortcode ?? '',
+          consumer_key: config.consumer_key ?? '',
+          environment: config.environment ?? 'sandbox',
+          transaction_type: config.transaction_type ?? 'CustomerPayBillOnline',
+          account_reference_prefix: config.account_reference_prefix ?? '',
+          is_active: config.is_active ?? true,
+        }
+      : base;
+    this.showPasskey.set(false);
+    this.showConsumerSecret.set(false);
+  }
+
+  buildMpesaPayload(): MpesaConfigPayload {
+    const form = this.mpesaForm;
+    const payload: MpesaConfigPayload = {
+      shortcode: form.shortcode.trim(),
+      consumer_key: form.consumer_key.trim(),
+      environment: form.environment,
+      transaction_type: form.transaction_type,
+      account_reference_prefix: form.account_reference_prefix.trim(),
+      is_active: form.is_active,
+    };
+    if (form.passkey.trim()) {
+      payload.passkey = form.passkey.trim();
+    }
+    if (form.consumer_secret.trim()) {
+      payload.consumer_secret = form.consumer_secret.trim();
+    }
+    return payload;
+  }
+
+  validateMpesaForm(): Record<string, string> {
+    const errors: Record<string, string> = {};
+    const form = this.mpesaForm;
+    const secretsOnFile = this.mpesaSecretsOnFile();
+
+    if (!form.is_active) {
+      return errors;
+    }
+
+    if (!form.shortcode.trim()) {
+      errors['shortcode'] = 'Paybill/Till Number is required.';
+    }
+    if (!form.consumer_key.trim()) {
+      errors['consumer_key'] = 'Daraja Consumer Key is required.';
+    }
+    if (!secretsOnFile && !form.passkey.trim()) {
+      errors['passkey'] = 'Lipa na M-Pesa Passkey is required.';
+    }
+    if (!secretsOnFile && !form.consumer_secret.trim()) {
+      errors['consumer_secret'] = 'Daraja Consumer Secret is required.';
+    }
+    return errors;
+  }
+
   saveMpesaSettings(): void {
     const fac = this.facility();
-    if (!fac?.id) return;
+    if (!fac?.id || this.savingMpesa()) return;
+
+    const errors = this.validateMpesaForm();
+    this.mpesaFieldErrors.set(errors);
+    if (Object.keys(errors).length) {
+      this.toast.showWarning(
+        'Please complete the highlighted M-Pesa fields before saving.',
+      );
+      return;
+    }
 
     this.savingMpesa.set(true);
-    this.successMessage.set(null);
     this.errorMessage.set(null);
 
-    this.billingService.saveMpesaConfig(fac.id, this.mpesaConfig()).subscribe({
-      next: (res) => {
-        if (res.data) {
-          this.mpesaConfig.set(res.data);
-        }
-        this.savingMpesa.set(false);
-        this.successMessage.set(
-          'M-Pesa payment configuration updated successfully!',
-        );
-        setTimeout(() => this.successMessage.set(null), 4000);
-      },
-      error: (err) => {
-        console.error('Failed to save M-Pesa config:', err);
-        this.savingMpesa.set(false);
-        this.errorMessage.set(
-          err?.error?.error || 'Failed to save M-Pesa configuration.',
-        );
-      },
-    });
+    this.billingService
+      .saveMpesaConfig(fac.id, this.buildMpesaPayload())
+      .subscribe({
+        next: () => {
+          this.savingMpesa.set(false);
+          this.mpesaForm.passkey = '';
+          this.mpesaForm.consumer_secret = '';
+          this.toast.showSuccess('M-Pesa payment configuration saved.');
+          this.loadMpesaConfig(fac.id);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.savingMpesa.set(false);
+          if (err.status === 400) {
+            this.mpesaFieldErrors.set(this.extractMpesaFieldErrors(err));
+          }
+          this.toast.handleHttpError(err);
+        },
+      });
+  }
+
+  private extractMpesaFieldErrors(
+    err: HttpErrorResponse,
+  ): Record<string, string> {
+    const body = err.error?.details ?? err.error?.errors ?? err.error;
+    const errors: Record<string, string> = {};
+    if (!body || typeof body !== 'object') return errors;
+
+    for (const [field, value] of Object.entries(body)) {
+      if (field === 'detail' || field === 'message') continue;
+      if (Array.isArray(value)) {
+        errors[field] = value.map((v) => String(v)).join(' ');
+      } else if (typeof value === 'string') {
+        errors[field] = value;
+      }
+    }
+    return errors;
+  }
+
+  mpesaError(field: string): string | null {
+    return this.mpesaFieldErrors()[field] ?? null;
   }
 
   populateProfileForm(data: FacilityProfile): void {
