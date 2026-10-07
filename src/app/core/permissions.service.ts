@@ -9,6 +9,7 @@ export const ALL_MODULES = [
   'appointments',
   'visit_queue',
   'ehr',
+  'clinical_ai',
   'pharmacy',
   'laboratory',
   'radiology',
@@ -20,7 +21,7 @@ export const ALL_MODULES = [
   'roles',
 ] as const;
 
-export type ModuleKey = typeof ALL_MODULES[number];
+export type ModuleKey = (typeof ALL_MODULES)[number];
 
 export interface ModuleActionPermissions {
   create: boolean;
@@ -39,7 +40,9 @@ const USER_STORAGE_KEY = 'afyora.user';
 @Injectable({ providedIn: 'root' })
 export class PermissionsService {
   // Reactive permissions signal — components can use this directly
-  private readonly _permissions = signal<PermissionsMap>(this._loadPermissions());
+  private readonly _permissions = signal<PermissionsMap>(
+    this._loadPermissions(),
+  );
 
   // Reactive role signal — updated alongside permissions so computed()s stay in sync
   private readonly _role = signal<string | null>(this._readRoleFromStorage());
@@ -61,7 +64,10 @@ export class PermissionsService {
    * Check whether the current user has access to a specific module and action.
    * facility_admin always returns true.
    */
-  hasPermission(module: ModuleKey, action?: 'create' | 'read' | 'update' | 'delete'): boolean {
+  hasPermission(
+    module: ModuleKey,
+    action?: 'create' | 'read' | 'update' | 'delete',
+  ): boolean {
     if (this.isFacilityAdmin()) return true;
     const modulePerm = this._permissions()?.[module];
     if (modulePerm === undefined || modulePerm === null) return false;
@@ -70,7 +76,12 @@ export class PermissionsService {
     }
     if (typeof modulePerm === 'object') {
       if (!action) {
-        return !!(modulePerm.read || modulePerm.create || modulePerm.update || modulePerm.delete);
+        return !!(
+          modulePerm.read ||
+          modulePerm.create ||
+          modulePerm.update ||
+          modulePerm.delete
+        );
       }
       return !!modulePerm[action];
     }
@@ -86,7 +97,12 @@ export class PermissionsService {
     }
     const modulePerm = this._permissions()?.[module];
     if (typeof modulePerm === 'boolean') {
-      return { create: modulePerm, read: modulePerm, update: modulePerm, delete: modulePerm };
+      return {
+        create: modulePerm,
+        read: modulePerm,
+        update: modulePerm,
+        delete: modulePerm,
+      };
     }
     if (typeof modulePerm === 'object' && modulePerm) {
       return {
@@ -104,7 +120,7 @@ export class PermissionsService {
    */
   allowedModules(): ModuleKey[] {
     if (this.isFacilityAdmin()) return [...ALL_MODULES];
-    return ALL_MODULES.filter(m => this.hasPermission(m));
+    return ALL_MODULES.filter((m) => this.hasPermission(m));
   }
 
   /**
@@ -113,7 +129,10 @@ export class PermissionsService {
    */
   setPermissions(permissions: PermissionsMap): void {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(permissions));
+      localStorage.setItem(
+        PERMISSIONS_STORAGE_KEY,
+        JSON.stringify(permissions),
+      );
     }
     this._permissions.set(permissions);
   }
@@ -181,7 +200,10 @@ export class PermissionsService {
 
   private _emptyPermissions(): PermissionsMap {
     return Object.fromEntries(
-      ALL_MODULES.map(m => [m, { create: false, read: false, update: false, delete: false }])
+      ALL_MODULES.map((m) => [
+        m,
+        { create: false, read: false, update: false, delete: false },
+      ]),
     ) as PermissionsMap;
   }
 

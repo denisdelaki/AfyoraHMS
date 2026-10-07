@@ -1,0 +1,1005 @@
+<div class="min-h-screen bg-slate-50/80 p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+  <!-- Top Header Navigation & Title -->
+  <div
+    class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow-xs border border-slate-200/80"
+  >
+    <div class="flex items-center gap-3">
+      <button
+        *ngIf="isStandalonePage || !isDialog"
+        (click)="cancel()"
+        class="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+        title="Go Back"
+      >
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <div class="flex items-center gap-2">
+          <span
+            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800"
+          >
+            <mat-icon class="text-sm">health_and_safety</mat-icon> Clinical
+            Consultation
+          </span>
+          <span
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+          >
+            <mat-icon class="text-xs">auto_awesome</mat-icon> AI Assisted
+          </span>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-800 tracking-tight mt-1">
+          {{ title }}
+        </h1>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Context Banner -->
+  <div
+    class="bg-gradient-to-r from-teal-900 via-emerald-900 to-slate-900 rounded-2xl p-5 text-white shadow-md"
+  >
+    <div
+      class="flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+    >
+      <div class="flex items-start gap-4">
+        <div
+          class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center text-xl font-bold text-teal-300 border border-white/20"
+        >
+          {{
+            selectedPatient
+              ? selectedPatient.firstName.charAt(0) +
+                selectedPatient.lastName.charAt(0)
+              : "P"
+          }}
+        </div>
+        <div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <label
+              *ngIf="!selectedPatient"
+              class="text-xs font-medium text-teal-200"
+              >Select Patient:</label
+            >
+            <select
+              *ngIf="patients.length > 0 && !selectedPatient"
+              (change)="onPatientChange($event)"
+              class="bg-white/10 text-white rounded-lg px-3 py-1.5 text-sm font-medium border border-white/20 focus:outline-none focus:ring-2 focus:ring-teal-400"
+            >
+              <option value="" disabled selected>-- Select a Patient --</option>
+              <option
+                *ngFor="let p of patients"
+                [value]="p.id"
+                class="text-slate-900"
+              >
+                {{ p.firstName }} {{ p.lastName }} (Age: {{ p.age }}, ID:
+                {{ p.nationalId || p.id }})
+              </option>
+            </select>
+
+            <h2
+              *ngIf="selectedPatient"
+              class="text-xl font-bold tracking-tight"
+            >
+              {{ selectedPatient.firstName }} {{ selectedPatient.lastName }}
+            </h2>
+            <span
+              *ngIf="selectedPatient"
+              class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/20 border border-teal-400/30 text-teal-200"
+            >
+              Age {{ selectedPatient.age }} · {{ selectedPatient.gender }}
+            </span>
+            <span
+              *ngIf="selectedPatient"
+              class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/10 text-slate-300"
+            >
+              ID: {{ selectedPatient.nationalId || selectedPatient.id }}
+            </span>
+          </div>
+          <p class="text-xs text-teal-200/80 mt-1">
+            SHA Consent Token:
+            <code
+              class="bg-black/20 px-1.5 py-0.5 rounded font-mono text-teal-300"
+              >{{ dhaConsentToken }}</code
+            >
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keep diagnosis and visit details ahead of AI review in the consultation flow. -->
+  <div class="flex flex-col gap-6">
+    <!-- Visit Record & Consultation Form -->
+    <div class="w-full space-y-6">
+      <div
+        class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200/80 space-y-5"
+      >
+        <div
+          class="flex items-center justify-between border-b border-slate-100 pb-3"
+        >
+          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <mat-icon class="text-emerald-600">edit_note</mat-icon> Consultation
+            Details & Notes
+          </h2>
+          <span class="text-xs text-slate-400 font-medium"
+            >Standard Clinical Record</span
+          >
+        </div>
+
+        <form [formGroup]="visitForm" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Date -->
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Visit Date</mat-label>
+              <input matInput type="date" formControlName="date" />
+            </mat-form-field>
+
+            <!-- Doctor Select -->
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Consulting Doctor</mat-label>
+              <mat-select formControlName="doctor">
+                <mat-option *ngFor="let doc of doctors" [value]="doc.id">
+                  {{ doc.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Patient Vitals Entry Section -->
+          <div
+            formGroupName="vitals"
+            class="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 space-y-3"
+          >
+            <div
+              class="flex items-center justify-between border-b border-emerald-200/60 pb-2"
+            >
+              <span
+                class="text-sm font-bold text-slate-800 flex items-center gap-1.5"
+              >
+                <mat-icon class="text-emerald-600 text-base"
+                  >monitor_heart</mat-icon
+                >
+                Patient Vital Signs & Triage
+              </span>
+              <span
+                *ngIf="calculatedBmi"
+                [class]="
+                  'px-2.5 py-0.5 rounded-full text-xs font-bold ' +
+                  bmiBadgeClass
+                "
+              >
+                Auto BMI: {{ calculatedBmi }} ({{ bmiCategory }})
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Systolic BP (mmHg)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="systolicBp"
+                  placeholder="120"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Diastolic BP (mmHg)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="diastolicBp"
+                  placeholder="80"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Temperature (°C)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  step="0.1"
+                  formControlName="temperatureC"
+                  placeholder="37.5"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Heart Rate (BPM)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="heartRateBpm"
+                  placeholder="72"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>SpO2 Percent (%)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="spo2Percent"
+                  placeholder="98"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Resp Rate (/min)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  formControlName="respiratoryRate"
+                  placeholder="16"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Blood Glucose (mmol/L)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  step="0.1"
+                  formControlName="bloodGlucoseMmol"
+                  placeholder="5.4"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Pain Score (0-10)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  max="10"
+                  formControlName="painScore"
+                  placeholder="2"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Height (cm)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  step="0.1"
+                  formControlName="heightCm"
+                  placeholder="175"
+                />
+              </mat-form-field>
+
+              <mat-form-field appearance="fill" class="w-full">
+                <mat-label>Weight (kg)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  step="0.1"
+                  formControlName="weightKg"
+                  placeholder="70"
+                />
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Vitals Notes & Triage Comments</mat-label>
+              <input
+                matInput
+                formControlName="notes"
+                placeholder="e.g. Patient resting comfortably, vitals taken at triage"
+              />
+            </mat-form-field>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                mat-flat-button
+                type="button"
+                color="primary"
+                [disabled]="savingVitals || !selectedPatient"
+                (click)="saveVitals()"
+              >
+                <mat-icon>save</mat-icon>
+                {{ savingVitals ? "Saving Vitals..." : "Save Vitals" }}
+              </button>
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="loadingVitals || savingVitals || !selectedPatient"
+                (click)="refreshPatientVitals()"
+              >
+                <mat-icon>refresh</mat-icon>
+                {{ loadingVitals ? "Fetching Vitals..." : "Fetch Vitals" }}
+              </button>
+              <button
+                *ngIf="latestVitals"
+                mat-stroked-button
+                type="button"
+                [disabled]="loadingVitals || savingVitals"
+                (click)="useLatestVitals()"
+              >
+                <mat-icon>download</mat-icon> Use Saved Vitals
+              </button>
+            </div>
+            <div *ngIf="latestVitals">
+              <app-vitals-summary-card
+                [vitals]="latestVitals"
+              ></app-vitals-summary-card>
+            </div>
+            <p
+              *ngIf="vitalsLoadError"
+              role="alert"
+              class="text-sm text-red-700"
+            >
+              {{ vitalsLoadError }}
+            </p>
+            <p
+              *ngIf="
+                selectedPatient &&
+                !loadingVitals &&
+                !latestVitals &&
+                !vitalsLoadError
+              "
+              class="text-sm text-slate-500"
+            >
+              No saved vitals{{
+                ticketId
+                  ? " for visit ticket " + ticketId
+                  : " for this patient"
+              }}.
+            </p>
+          </div>
+
+          <!-- Clinical Diagnosis Search -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">
+              Clinical Diagnosis (DHA & KNHTS Standard)
+            </label>
+            <app-knhts-concept-search
+              (conceptSelected)="onConceptSelected($event)"
+              [initialConcept]="initialConcept"
+              [required]="true"
+              label="Search or enter Diagnosis"
+            ></app-knhts-concept-search>
+            <div
+              *ngIf="selectedConcept"
+              class="mt-1 flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200"
+            >
+              <mat-icon class="text-sm">check_circle</mat-icon>
+              <span
+                >Selected:
+                <strong>{{
+                  selectedConcept.display || selectedConcept.text
+                }}</strong>
+                (Code: {{ selectedConcept.code }})</span
+              >
+            </div>
+          </div>
+
+          <!-- What Happened / Consultation Notes -->
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label
+              >Consultation Notes / Chief Complaint / What Happened</mat-label
+            >
+            <textarea
+              matInput
+              rows="4"
+              formControlName="whatHappened"
+              placeholder="Document patient complaints, examination findings, and clinical notes..."
+            ></textarea>
+            <mat-hint
+              >This clinical summary will be processed by Clinical AI when
+              requested.</mat-hint
+            >
+          </mat-form-field>
+
+          <!-- DHA AfyaConnect ePrescription Integration Box -->
+          <div
+            class="rounded-xl border border-teal-200 bg-gradient-to-br from-teal-50/80 to-emerald-50/50 p-4 space-y-3"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span
+                  class="inline-flex items-center rounded-md bg-teal-600 px-2 py-0.5 text-xs font-bold text-white shadow-xs"
+                >
+                  DHA AfyaConnect
+                </span>
+                <span class="text-sm font-semibold text-slate-800"
+                  >ePrescription API Integration</span
+                >
+              </div>
+              <button
+                mat-flat-button
+                type="button"
+                color="primary"
+                [disabled]="dhaVerifying"
+                (click)="checkDhaPrescription()"
+                class="!text-xs !py-1 !rounded-lg"
+              >
+                <mat-icon class="mr-1 text-sm">verified</mat-icon>
+                {{
+                  dhaVerifying
+                    ? "Verifying with DHA..."
+                    : "Verify ePrescription API"
+                }}
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1"
+                  >Consent Token</label
+                >
+                <input
+                  type="text"
+                  [(ngModel)]="dhaConsentToken"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="TOK-SHA-9912048"
+                  class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1"
+                  >Intervention Code</label
+                >
+                <input
+                  type="text"
+                  [(ngModel)]="dhaInterventionCode"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="INT-PHARM-01"
+                  class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1"
+                  >Doctor Reg Number</label
+                >
+                <input
+                  type="text"
+                  [(ngModel)]="dhaDoctorRegNumber"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="KMPDC-REG-01"
+                  class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs bg-white focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div
+              *ngIf="dhaVerificationResult"
+              class="flex items-center gap-2 rounded-lg bg-emerald-100 p-2.5 text-xs text-emerald-800 border border-emerald-300"
+            >
+              <mat-icon class="text-emerald-600 text-sm">check_circle</mat-icon>
+              <div>
+                <span class="font-bold">DHA ePrescription Issued:</span> Code
+                <code
+                  class="bg-emerald-200 px-1 py-0.5 rounded font-mono font-bold"
+                  >{{ dhaVerificationResult.code }}</code
+                >
+                | Status:
+                <span class="font-semibold">{{
+                  dhaVerificationResult.status || "Active"
+                }}</span>
+              </div>
+            </div>
+
+            <div
+              *ngIf="dhaVerificationError"
+              class="flex items-center gap-2 rounded-lg bg-rose-100 p-2.5 text-xs text-rose-800 border border-rose-300"
+            >
+              <mat-icon class="text-rose-600 text-sm">error</mat-icon>
+              <div>
+                <span class="font-bold">DHA Verification Error:</span>
+                {{ dhaVerificationError }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Prescriptions Section -->
+          <div formArrayName="prescriptions" class="space-y-4 pt-2">
+            <div class="flex items-center justify-between">
+              <h3
+                class="text-sm font-bold text-slate-800 flex items-center gap-1.5"
+              >
+                <mat-icon class="text-emerald-600 text-base"
+                  >medication</mat-icon
+                >
+                Prescriptions
+              </h3>
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="addPrescription()"
+                class="!rounded-lg !text-xs"
+              >
+                <mat-icon class="text-sm">add</mat-icon> Add Prescription
+              </button>
+            </div>
+
+            <div
+              *ngFor="
+                let prescription of prescriptions.controls;
+                let pi = index
+              "
+              [formGroupName]="pi"
+              class="rounded-xl border border-slate-200 p-4 bg-slate-50/50 space-y-3"
+            >
+              <div class="flex items-center justify-between">
+                <span
+                  class="text-xs font-bold text-slate-700 uppercase tracking-wide"
+                >
+                  Prescription {{ pi + 1 }}
+                </span>
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="warn"
+                  (click)="removePrescription(pi)"
+                  title="Remove prescription"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>Prescription Date</mat-label>
+                  <input matInput type="date" formControlName="date" />
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="w-full">
+                  <mat-label>Status</mat-label>
+                  <mat-select formControlName="status">
+                    <mat-option value="Pending">Pending</mat-option>
+                    <mat-option value="Dispensed">Dispensed</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <!-- Drugs List -->
+              <div formArrayName="drugs" class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-600"
+                    >Prescribed Drugs</span
+                  >
+                  <button
+                    mat-button
+                    type="button"
+                    (click)="addDrug(pi)"
+                    class="!text-xs"
+                  >
+                    <mat-icon class="text-sm">add</mat-icon> Add Drug
+                  </button>
+                </div>
+
+                <div
+                  *ngFor="let drug of drugsArray(pi).controls; let di = index"
+                  [formGroupName]="di"
+                  class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-start bg-white p-2.5 rounded-lg border border-slate-200"
+                >
+                  <mat-form-field
+                    appearance="fill"
+                    class="sm:col-span-5 w-full"
+                  >
+                    <mat-label>Drug Name</mat-label>
+                    <mat-select
+                      formControlName="name"
+                      (selectionChange)="onDrugSelectionChange(pi, di)"
+                    >
+                      <mat-option *ngFor="let d of drugs" [value]="d.name">
+                        {{ d.name }} (In stock: {{ d.stock }})
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field
+                    appearance="fill"
+                    class="sm:col-span-4 w-full"
+                  >
+                    <mat-label>Dosage</mat-label>
+                    <input
+                      matInput
+                      formControlName="dosage"
+                      placeholder="e.g. 500mg BD x 5 days"
+                    />
+                  </mat-form-field>
+
+                  <div class="sm:col-span-3 flex items-center gap-1">
+                    <mat-form-field appearance="fill" class="w-full">
+                      <mat-label>Qty</mat-label>
+                      <input
+                        matInput
+                        type="number"
+                        min="1"
+                        formControlName="quantity"
+                      />
+                    </mat-form-field>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      color="warn"
+                      (click)="removeDrug(pi, di)"
+                      title="Remove drug"
+                    >
+                      <mat-icon class="text-sm">remove_circle_outline</mat-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <p
+                  *ngIf="drugsArray(pi).length === 0"
+                  class="text-xs text-slate-400 italic"
+                >
+                  No drugs added yet. Click "Add Drug" above or use AI
+                  suggestions.
+                </p>
+              </div>
+            </div>
+
+            <p
+              *ngIf="prescriptions.length === 0"
+              class="text-xs text-slate-400 italic"
+            >
+              No prescriptions added. Click "Add Prescription" to add manually
+              or use AI recommendations.
+            </p>
+          </div>
+
+          <!-- Billing & Queue Forwarding -->
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100"
+          >
+            <mat-form-field appearance="fill" class="w-full">
+              <mat-label>Amount Billed (KES)</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                step="0.01"
+                readonly
+                formControlName="amountBilled"
+                placeholder="0.00"
+              />
+            </mat-form-field>
+
+            <mat-form-field
+              *ngIf="nextDestinations.length"
+              appearance="fill"
+              class="w-full"
+            >
+              <mat-label>Forward Patient To</mat-label>
+              <mat-select formControlName="nextDestination">
+                <mat-option
+                  *ngFor="let dest of nextDestinations"
+                  [value]="dest"
+                >
+                  {{ dest }}
+                </mat-option>
+              </mat-select>
+              <mat-hint
+                >Visit queue ticket will forward automatically upon
+                save.</mat-hint
+              >
+            </mat-form-field>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Clinical AI Co-Pilot follows the patient diagnosis and visit details. -->
+    <div class="w-full space-y-6">
+      <div
+        class="rounded-2xl border border-[#c9d8ff] bg-[#e9f0ff] p-5 text-slate-800 shadow-sm space-y-5"
+      >
+        <!-- AI Co-Pilot Header -->
+        <div
+          class="flex items-center justify-between border-b border-blue-200 pb-3"
+        >
+          <div class="flex items-center gap-2">
+            <span
+              class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#2458e8] border border-blue-200"
+            >
+              <mat-icon class="text-lg">psychology</mat-icon>
+            </span>
+            <div>
+              <h2 class="text-base font-bold text-slate-800 tracking-wide">
+                Clinical AI Co-Pilot
+              </h2>
+              <p class="text-xs text-[#2458e8]">
+                Decision Support & Diagnostics
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            [disabled]="aiAnalyzing || !selectedPatient"
+            (click)="runClinicalAI()"
+            class="px-3 py-1.5 rounded-lg bg-[#2458e8] hover:bg-[#1d46bd] text-white font-semibold text-xs transition-colors disabled:opacity-40"
+          >
+            {{ aiAnalyzing ? "Analyzing..." : "Run Analysis" }}
+          </button>
+        </div>
+
+        <!-- Initial Empty / Loading State -->
+        <div
+          *ngIf="aiAnalyzing"
+          class="flex flex-col items-center justify-center py-8 text-center space-y-3"
+        >
+          <div
+            class="w-10 h-10 border-4 border-[#2458e8] border-t-transparent rounded-full animate-spin"
+          ></div>
+          <p class="text-sm font-semibold text-[#2458e8]">
+            Analyzing patient history & symptoms...
+          </p>
+          <p class="text-xs text-slate-600 max-w-xs">
+            Comparing clinical parameters against medical knowledge base and DHA
+            guidelines.
+          </p>
+        </div>
+
+        <div
+          *ngIf="!aiAnalyzing && !aiResponse && !aiError"
+          class="py-6 text-center space-y-3"
+        >
+          <div
+            class="w-12 h-12 rounded-full bg-white border border-blue-200 flex items-center justify-center mx-auto text-[#2458e8]"
+          >
+            <mat-icon class="text-2xl">auto_awesome</mat-icon>
+          </div>
+          <p class="text-sm font-semibold text-slate-800">
+            Clinical AI ready for consultation
+          </p>
+          <p class="text-xs text-slate-600 max-w-sm mx-auto">
+            Click <strong>"Run Clinical AI Assist"</strong> to analyze patient
+            vitals, history, labs, and consultation notes for instant
+            differential diagnoses, safety alerts, and treatment suggestions.
+          </p>
+
+          <!-- Clinical Context Info if loaded -->
+          <div
+            *ngIf="patientContext"
+            class="mt-4 p-3 rounded-xl bg-white border border-blue-100 text-left text-xs space-y-1"
+          >
+            <p class="font-bold text-[#2458e8] flex items-center gap-1">
+              <mat-icon class="text-xs">folder_shared</mat-icon> Loaded Clinical
+              History:
+            </p>
+            <p class="text-slate-600">
+              Lab Tests: {{ patientContext.laboratoryResults?.length || 0 }} ·
+              Imaging Reports:
+              {{ patientContext.imagingResults?.length || 0 }} · Active
+              Conditions:
+              {{ patientContext.medicalHistory?.conditions?.length || 0 }}
+            </p>
+          </div>
+        </div>
+
+        <div
+          *ngIf="aiError"
+          class="p-3.5 rounded-xl bg-rose-500/20 border border-rose-400/30 text-rose-200 text-xs space-y-1"
+        >
+          <p class="font-bold flex items-center gap-1">
+            <mat-icon class="text-sm">warning</mat-icon> Clinical AI Error
+          </p>
+          <p>{{ aiError }}</p>
+        </div>
+
+        <!-- AI Output Results when available -->
+        <div *ngIf="aiResponse && !aiAnalyzing" class="space-y-4">
+          <!-- Summary Banner -->
+          <div
+            class="p-3.5 rounded-xl bg-white border border-blue-100 text-xs space-y-1.5"
+          >
+            <div class="flex items-center justify-between">
+              <span
+                class="font-bold text-[#2458e8] uppercase tracking-wider text-[10px]"
+                >Clinical Summary</span
+              >
+              <span
+                [class]="
+                  'px-2 py-0.5 rounded text-[10px] font-bold border ' +
+                  confidenceClass(aiResponse.confidenceLevel)
+                "
+              >
+                Confidence: {{ aiResponse.confidenceLevel }}
+              </span>
+            </div>
+            <p class="text-slate-700 leading-relaxed">
+              {{ aiResponse.clinicalSummary }}
+            </p>
+          </div>
+
+          <!-- Red Flags & Safety Warnings -->
+          <div *ngIf="aiResponse.redFlags.length" class="space-y-2">
+            <span
+              class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1"
+            >
+              <mat-icon class="text-sm text-rose-400">warning</mat-icon> Red
+              Flags & Clinical Alerts
+            </span>
+            <div
+              *ngFor="let flag of aiResponse.redFlags"
+              [class]="
+                'p-3 rounded-xl text-xs space-y-1 ' +
+                redFlagClass(flag.severity)
+              "
+            >
+              <div class="flex items-center justify-between font-bold">
+                <span>{{ flag.title }}</span>
+                <span class="uppercase text-[10px]">{{ flag.severity }}</span>
+              </div>
+              <p class="leading-relaxed">{{ flag.detail }}</p>
+            </div>
+          </div>
+
+          <!-- Differential Diagnoses -->
+          <div
+            *ngIf="aiResponse.differentialDiagnoses.length"
+            class="space-y-2"
+          >
+            <span
+              class="text-xs font-bold text-[#2458e8] uppercase tracking-wider flex items-center gap-1"
+            >
+              <mat-icon class="text-sm">analytics</mat-icon> AI Differential
+              Considerations
+            </span>
+
+            <div
+              *ngFor="let diag of aiResponse.differentialDiagnoses"
+              class="p-3 rounded-xl bg-white border border-blue-100 text-xs space-y-2"
+            >
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-800 text-sm">{{
+                  diag.name
+                }}</span>
+                <button
+                  type="button"
+                  (click)="applyAiDiagnosis(diag.name)"
+                  class="px-2.5 py-1 rounded-lg bg-[#2458e8] hover:bg-[#1d46bd] text-white font-bold text-[11px] transition-colors flex items-center gap-1"
+                >
+                  <mat-icon class="text-xs">add_task</mat-icon> Use Diagnosis
+                </button>
+              </div>
+
+              <div
+                *ngIf="diag.supportingFindings.length"
+                class="text-slate-700"
+              >
+                <span class="text-[10px] font-semibold text-slate-500"
+                  >Supporting:
+                </span>
+                <span>{{ diag.supportingFindings.join(", ") }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommended Medications / Treatment -->
+          <div
+            *ngIf="aiResponse.treatmentRecommendations.length"
+            class="space-y-2"
+          >
+            <span
+              class="text-xs font-bold text-[#2458e8] uppercase tracking-wider flex items-center gap-1"
+            >
+              <mat-icon class="text-sm">medication_liquid</mat-icon> Recommended
+              Medications
+            </span>
+
+            <div
+              *ngFor="let tr of aiResponse.treatmentRecommendations"
+              class="space-y-2"
+            >
+              <div
+                *ngFor="let med of tr.medicationSuggestions"
+                class="p-3 rounded-xl bg-white border border-blue-100 text-xs space-y-2"
+              >
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="font-bold text-[#2458e8] text-sm">{{
+                      med.genericName
+                    }}</span>
+                    <span *ngIf="med.suggestedDose" class="text-slate-500 ml-1"
+                      >({{ med.suggestedDose }})</span
+                    >
+                  </div>
+                  <button
+                    type="button"
+                    (click)="applyAiMedication(med)"
+                    class="px-2.5 py-1 rounded-lg bg-[#2458e8] hover:bg-[#1d46bd] text-white font-bold text-[11px] transition-colors flex items-center gap-1"
+                  >
+                    <mat-icon class="text-xs">add</mat-icon> Add to Prescription
+                  </button>
+                </div>
+                <p
+                  *ngIf="med.instructions"
+                  class="text-slate-600 text-[11px] italic"
+                >
+                  Instructions: {{ med.instructions }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommended Investigations -->
+          <div
+            *ngIf="aiResponse.recommendedInvestigations.length"
+            class="space-y-2"
+          >
+            <span
+              class="text-xs font-bold text-[#2458e8] uppercase tracking-wider flex items-center gap-1"
+            >
+              <mat-icon class="text-sm">science</mat-icon> Recommended Lab &
+              Imaging Tests
+            </span>
+            <ul class="space-y-1 text-xs text-slate-700 pl-4 list-disc">
+              <li *ngFor="let inv of aiResponse.recommendedInvestigations">
+                <strong>{{ inv.name }}</strong> -
+                <span class="text-slate-600">{{ inv.rationale }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Interactive Q&A Chat Assistant -->
+          <div class="pt-3 border-t border-blue-200 space-y-2">
+            <span
+              class="text-xs font-bold text-[#2458e8] uppercase tracking-wider flex items-center gap-1"
+            >
+              <mat-icon class="text-sm">forum</mat-icon> Ask Clinical Assistant
+            </span>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                [(ngModel)]="aiChatQuestion"
+                [ngModelOptions]="{ standalone: true }"
+                placeholder="Ask follow-up questions about this patient..."
+                class="w-full bg-white border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#2458e8] focus:outline-none"
+              />
+              <button
+                type="button"
+                [disabled]="askingAiQuestion || !aiChatQuestion.trim()"
+                (click)="askAiQuestion()"
+                class="px-3 py-2 bg-[#2458e8] hover:bg-[#1d46bd] text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
+              >
+                Ask
+              </button>
+            </div>
+
+            <div
+              *ngIf="aiChatResponse"
+              class="p-3 rounded-xl bg-white border border-blue-200 text-xs space-y-1"
+            >
+              <p class="font-bold text-[#2458e8]">AI Response:</p>
+              <p class="text-slate-700 leading-relaxed">
+                {{ aiChatResponse.answer }}
+              </p>
+              <p
+                *ngIf="aiChatResponse.disclaimer"
+                class="border-t border-blue-100 pt-2 text-[10px] text-slate-500"
+              >
+                {{ aiChatResponse.disclaimer }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer
+    class="sticky bottom-0 z-20 -mx-4 md:-mx-6 flex justify-end gap-3 border-t border-slate-200 bg-white/95 px-4 py-4 shadow-[0_-8px_20px_rgba(15,23,42,0.08)] backdrop-blur md:px-6"
+  >
+    <button
+      mat-stroked-button
+      (click)="cancel()"
+      type="button"
+      class="!rounded-xl"
+    >
+      Close
+    </button>
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="save()"
+      type="button"
+      class="!rounded-xl !bg-[#2458e8] hover:!bg-[#1d46bd]"
+    >
+      <mat-icon class="mr-1">save</mat-icon>
+      {{ submitLabel }}
+    </button>
+  </footer>
+</div>

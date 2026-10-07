@@ -58,6 +58,33 @@ export type RegisterPatientRequest = {
 
 export type UpdatePatientRequest = Partial<RegisterPatientRequest>;
 
+export type PatientVitals = {
+  id?: number | string;
+  facilityId?: number | string;
+  patientId?: string;
+  ticketId?: string | number;
+  capturedBy?: {
+    id: number | string;
+    username: string;
+    fullName: string;
+    role: string;
+  };
+  capturedByName?: string;
+  temperatureC?: number | string;
+  systolicBp?: number;
+  diastolicBp?: number;
+  heartRateBpm?: number;
+  respiratoryRate?: number;
+  spo2Percent?: number;
+  bloodGlucoseMmol?: number | string;
+  heightCm?: number | string;
+  weightKg?: number | string;
+  bmi?: number | string;
+  painScore?: number;
+  notes?: string;
+  recordedAt?: string;
+};
+
 export type VisitHistory = {
   id?: string;
   date: string;
@@ -69,4 +96,5 @@ export type VisitHistory = {
   prescriptions: Prescription[];
   amountBilled: number | string;
   whatHappened: string;
+  vitals?: PatientVitals;
 };

@@ -46,7 +46,10 @@ export class CdsService {
 
     // Rule 2: Vital Signs Hypertensive Crisis / High BP Warning
     if (params.vitals) {
-      const { bloodPressureSystolic: sbp, bloodPressureDiastolic: dbp } = params.vitals;
+      const sbp = Number(params.vitals.bloodPressureSystolic ?? params.vitals.systolicBp ?? 0);
+      const dbp = Number(params.vitals.bloodPressureDiastolic ?? params.vitals.diastolicBp ?? 0);
+      const temp = Number(params.vitals.temperatureC ?? 0);
+
       if (sbp >= 180 || dbp >= 120) {
         alerts.push({
           id: `CDS-VIT-CRIT`,
@@ -69,13 +72,13 @@ export class CdsService {
         });
       }
 
-      if (params.vitals.temperatureC >= 38.5) {
+      if (temp >= 38.5) {
         alerts.push({
           id: `CDS-VIT-FEVER`,
           type: 'HIGH_VITALS',
           severity: 'Warning',
           title: 'High Pyrexia / Fever Alert',
-          message: `Recorded Temperature: ${params.vitals.temperatureC}°C.`,
+          message: `Recorded Temperature: ${temp}°C.`,
           recommendation: 'Screen for acute systemic infection or malaria (mRDT / Blood smear).',
           source: 'Kenya Integrated Management of Newborn & Childhood Illnesses (IMNCI)',
         });

@@ -20,6 +20,12 @@ export const permissionGuard: CanActivateFn = (
   const requiredPermission = route.data?.['permission'] as
     | ModuleKey
     | undefined;
+  const requiredAction = route.data?.['permissionAction'] as
+    | 'create'
+    | 'read'
+    | 'update'
+    | 'delete'
+    | undefined;
   const adminOnly = route.data?.['adminOnly'] === true;
 
   if (adminOnly && !permissionsService.isFacilityAdmin()) {
@@ -32,7 +38,7 @@ export const permissionGuard: CanActivateFn = (
   // No permission specified — allow (auth guard handles login check)
   if (!requiredPermission) return true;
 
-  if (permissionsService.hasPermission(requiredPermission)) {
+  if (permissionsService.hasPermission(requiredPermission, requiredAction)) {
     return true;
   }
 

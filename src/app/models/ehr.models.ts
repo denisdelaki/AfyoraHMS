@@ -1,4 +1,5 @@
 import { Prescription } from './pharmacy.models';
+import { PatientVitals } from './patients.models';
 
 export type EhrPatient = {
   id: string;
@@ -81,21 +82,28 @@ export type CpoeOrder = {
   categoryDetails?: any;
 };
 
-export type VitalSignsRecord = {
-  id: string;
-  patientId: string;
-  date: string;
-  temperatureC: number;
-  bloodPressureSystolic: number;
-  bloodPressureDiastolic: number;
-  pulseRateBpm: number;
-  respiratoryRate: number;
-  oxygenSaturationSpO2: number;
-  heightCm: number;
-  weightKg: number;
-  bmi: number;
-  bmiCategory: 'Underweight' | 'Normal' | 'Overweight' | 'Obese';
-  recordedBy: string;
+export type VitalSignsRecord = PatientVitals & {
+  id?: string | number;
+  patientId?: string;
+  date?: string;
+  temperatureC?: number | string;
+  systolicBp?: number;
+  diastolicBp?: number;
+  bloodPressureSystolic?: number;
+  bloodPressureDiastolic?: number;
+  heartRateBpm?: number;
+  pulseRateBpm?: number;
+  respiratoryRate?: number;
+  spo2Percent?: number;
+  oxygenSaturationSpO2?: number;
+  bloodGlucoseMmol?: number | string;
+  heightCm?: number | string;
+  weightKg?: number | string;
+  bmi?: number | string;
+  bmiCategory?: 'Underweight' | 'Normal' | 'Overweight' | 'Obese';
+  painScore?: number;
+  notes?: string;
+  recordedBy?: string;
 };
 
 export type GrowthChartData = {

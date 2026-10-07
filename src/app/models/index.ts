@@ -14,3 +14,4 @@ export * from './visit-ticket.models';
 export * from './facility.model';
 export * from './knhts.models';
 export * from './interoperability.models';
+export * from './clinical-ai.models';

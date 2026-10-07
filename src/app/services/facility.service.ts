@@ -88,4 +88,15 @@ export class FacilityService {
         }),
       );
   }
+
+  /** Search registered health facilities from Kenya Master Health Facility Registry (KMHFR) API */
+  searchKmhfrFacilities(query: string, page = 1, pageSize = 10): Observable<any> {
+    return this.http.get<any>(apiUrl('/facilities/search/'), {
+      params: {
+        q: query,
+        page: page.toString(),
+        page_size: pageSize.toString(),
+      },
+    });
+  }
 }

@@ -171,6 +171,10 @@
               }
             </div>
 
+            <div *ngIf="visit.vitals" class="my-2">
+              <app-vitals-summary-card [vitals]="visit.vitals"></app-vitals-summary-card>
+            </div>
+
             <p class="text-sm mb-1">
               <span class="font-medium">Amount Billed:</span>
               {{ visit.amountBilled }}
@@ -200,6 +204,37 @@
             </div>
           </mat-card>
         }
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Vitals & Triage">
+      <div class="py-4 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <mat-icon class="text-emerald-600">monitor_heart</mat-icon>
+            Direct Patient Vitals Log
+          </h3>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            (click)="openVitalsEntryDialog()"
+            class="!bg-emerald-600 hover:!bg-emerald-700"
+          >
+            <mat-icon>add</mat-icon>
+            Record Patient Vitals
+          </button>
+        </div>
+
+        <div *ngIf="vitalsHistory.length === 0" class="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+          No vitals captured directly yet. Click "Record Patient Vitals" to log temperature, blood pressure, SpO2, BMI, etc.
+        </div>
+
+        <div *ngIf="vitalsHistory.length > 0" class="space-y-3">
+          <div *ngFor="let v of vitalsHistory">
+            <app-vitals-summary-card [vitals]="v"></app-vitals-summary-card>
+          </div>
+        </div>
       </div>
     </mat-tab>
   </mat-tab-group>

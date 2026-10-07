@@ -185,6 +185,11 @@
               </div>
             </div>
 
+            <!-- Render Vitals Summary Card if vitals exist -->
+            <div *ngIf="record.vitals" class="my-2">
+              <app-vitals-summary-card [vitals]="record.vitals"></app-vitals-summary-card>
+            </div>
+
             <div
               class="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-3"
             >
@@ -362,35 +367,31 @@
 
       <!-- TAB 5: VITALS & PEDIATRIC GROWTH CHARTS -->
       <mat-tab label="Vitals & Growth Charts">
-        <div class="py-4 space-y-6" *ngIf="patientVitals">
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-              <div class="text-xs text-slate-500">Blood Pressure</div>
-              <div class="text-xl font-bold text-slate-900 mt-1">
-                {{ patientVitals.bloodPressureSystolic }}/{{
-                  patientVitals.bloodPressureDiastolic
-                }}
-                mmHg
-              </div>
+        <div class="py-4 space-y-6">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <mat-icon class="text-emerald-600">monitor_heart</mat-icon>
+              Patient Vital Signs & Triage Records
+            </h3>
+            <button
+              mat-flat-button
+              color="primary"
+              (click)="openVitalsEntryModal()"
+              class="!rounded-lg !bg-emerald-600 hover:!bg-emerald-700"
+            >
+              <mat-icon>add</mat-icon> Capture Patient Vitals
+            </button>
+          </div>
+
+          <!-- Direct Patient Vitals History List -->
+          <div *ngIf="vitalsHistory.length > 0" class="space-y-3">
+            <div *ngFor="let v of vitalsHistory">
+              <app-vitals-summary-card [vitals]="v"></app-vitals-summary-card>
             </div>
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-              <div class="text-xs text-slate-500">Temperature</div>
-              <div class="text-xl font-bold text-slate-900 mt-1">
-                {{ patientVitals.temperatureC }}°C
-              </div>
-            </div>
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-              <div class="text-xs text-slate-500">Pulse Rate</div>
-              <div class="text-xl font-bold text-slate-900 mt-1">
-                {{ patientVitals.pulseRateBpm }} bpm
-              </div>
-            </div>
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-              <div class="text-xs text-slate-500">BMI / Category</div>
-              <div class="text-xl font-bold text-slate-900 mt-1">
-                {{ patientVitals.bmi }} ({{ patientVitals.bmiCategory }})
-              </div>
-            </div>
+          </div>
+
+          <div *ngIf="vitalsHistory.length === 0 && patientVitals">
+            <app-vitals-summary-card [vitals]="patientVitals"></app-vitals-summary-card>
           </div>
 
           <!-- Pediatric Growth Chart Section -->

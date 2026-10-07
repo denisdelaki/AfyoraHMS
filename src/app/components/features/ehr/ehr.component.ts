@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin, map } from 'rxjs';
 import {
   CreateEhrRecordPayload,
@@ -27,6 +28,7 @@ import {
   EhrRecord,
   GrowthChartData,
   MchEncounterData,
+  PatientVitals,
   ProblemItem,
   RadiologyImage,
   VitalSignsRecord,
@@ -45,6 +47,8 @@ import {
   HieService,
 } from '../../../services';
 import { FhirBundleSummary } from '../../../models/interoperability.models';
+import { VitalsSummaryCardComponent } from '../../shared/vitals-summary-card/vitals-summary-card.component';
+import { VitalsEntryDialogComponent } from '../../dialogs/vitals-entry-dialog/vitals-entry-dialog.component';
 
 @Component({
   selector: 'app-ehr',
@@ -61,11 +65,13 @@ import { FhirBundleSummary } from '../../../models/interoperability.models';
     MatTabsModule,
     MatSnackBarModule,
     MatSelectModule,
+    VitalsSummaryCardComponent,
   ],
   templateUrl: './ehr.component.html',
   styleUrl: './ehr.component.css',
 })
 export class EhrComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly ehrService = inject(EhrService);
   private readonly patientService = inject(PatientsService);
@@ -185,7 +191,12 @@ export class EhrComponent implements OnInit {
         }));
 
         if (this.patients.length > 0) {
-          this.selectPatient(this.patients[0]);
+          const requestedPatientId =
+            this.route.snapshot.queryParamMap.get('patientId');
+          const requestedPatient = requestedPatientId
+            ? this.patients.find((patient) => patient.id === requestedPatientId)
+            : this.patients[0];
+          if (requestedPatient) this.selectPatient(requestedPatient);
           this.patients.forEach((patient) => {
             this.loadPatientsVisitHistory(patient.id);
           });
@@ -210,6 +221,7 @@ export class EhrComponent implements OnInit {
             diagnosisSystem: record.diagnosisSystem || 'ICD-10-WHO',
             prescriptions: record.prescriptions ?? [],
             labResults: [],
+            vitals: record.vitals,
             notes: record.whatHappened,
           }));
           this.visitHistoryMap.set(patientId, records);
@@ -256,27 +268,13 @@ export class EhrComponent implements OnInit {
     });
   }
 
+  vitalsHistory: PatientVitals[] = [];
+
   private loadPatientClinicalDetails(patient: EhrPatient): void {
     this.loadPatientProblems(patient.id);
     this.loadPatientAllergies(patient.id);
     this.loadPatientCpoeOrders(patient.id);
-
-    this.patientVitals = {
-      id: 'VIT-01',
-      patientId: patient.id,
-      date: new Date().toISOString().split('T')[0],
-      temperatureC: 37.2,
-      bloodPressureSystolic: 138,
-      bloodPressureDiastolic: 88,
-      pulseRateBpm: 76,
-      respiratoryRate: 18,
-      oxygenSaturationSpO2: 98,
-      heightCm: 172,
-      weightKg: 74,
-      bmi: 25.0,
-      bmiCategory: 'Overweight',
-      recordedBy: 'Nurse Mary Wambui',
-    };
+    this.loadPatientVitals(patient.id);
 
     if (patient.age < 12) {
       this.patientGrowthChart = {
@@ -506,6 +504,47 @@ export class EhrComponent implements OnInit {
     });
   }
 
+  openVitalsEntryModal(): void {
+    if (!this.selectedPatient) return;
+    const dialogRef = this.dialog.open(VitalsEntryDialogComponent, {
+      width: '90vw',
+      maxWidth: '650px',
+      data: {
+        patientId: this.selectedPatient.id,
+        patientName: this.selectedPatient.name,
+        facilityId: this.facilityId,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((res) => {
+      if (res) {
+        this.loadPatientVitals(this.selectedPatient!.id);
+      }
+    });
+  }
+
+  private loadPatientVitals(patientId: string): void {
+    if (!patientId || !this.facilityId) return;
+    this.patientService.getPatientVitals(this.facilityId, patientId).subscribe({
+      next: (vitalsList) => {
+        this.vitalsHistory = vitalsList;
+        if (vitalsList.length > 0) {
+          const latest = vitalsList[0];
+          this.patientVitals = {
+            ...latest,
+            bloodPressureSystolic: latest.systolicBp,
+            bloodPressureDiastolic: latest.diastolicBp,
+            pulseRateBpm: latest.heartRateBpm,
+            oxygenSaturationSpO2: latest.spo2Percent,
+            recordedBy: latest.capturedByName || 'Nurse',
+          };
+          this.runCdsEvaluation();
+        }
+      },
+      error: () => {},
+    });
+  }
+
   openNewRecordDialog(): void {
     if (!this.selectedPatient) return;
     const dialogRef = this.dialog.open(EhrRecordDialogComponent, {
@@ -529,6 +568,7 @@ export class EhrComponent implements OnInit {
           diagnosisText: result.diagnosisText || result.diagnosis,
           prescriptions: [],
           labResults: [],
+          vitals: result.vitals,
           notes: result.doctorNotes,
         };
         this.ehrRecords.unshift(newRec);

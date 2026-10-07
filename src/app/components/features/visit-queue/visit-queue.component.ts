@@ -250,11 +250,14 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
     const user = this.getStoredUser();
     const doctorId = String(user?.id || this.currentUser);
     const dialogRef = this.dialog.open(AddVisitRecordDialogComponent, {
-      width: '90vw',
-      maxWidth: '640px',
-      maxHeight: '90vh',
+      width: '96vw',
+      maxWidth: '1280px',
+      height: '92vh',
       data: {
         mode: 'create',
+        patientId: ticket.patientId,
+        ticketId: ticket.id,
+        patientName: ticket.patientName,
         doctors: [{ id: doctorId, name: this.currentUser }],
         initialValue: { doctor: doctorId },
         nextDestinations: this.destinations.filter(

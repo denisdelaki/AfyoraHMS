@@ -2,9 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, computed } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../services';
-import { PermissionsService } from '../../../core/permissions.service';
+import {
+  ModuleKey,
+  PermissionsService,
+} from '../../../core/permissions.service';
 import {
   BarChart3,
+  Brain,
   Building2,
   CreditCard,
   FileText,
@@ -21,7 +25,6 @@ import {
   ShieldCheck,
   Ticket,
   LogOut,
-
   UserCog,
   Users,
   X,
@@ -31,7 +34,8 @@ type NavigationItem = {
   name: string;
   href: string;
   icon: LucideIconData;
-  permission?: string;
+  permission?: ModuleKey;
+  permissionAction?: 'create' | 'read' | 'update' | 'delete';
   adminOnly?: boolean;
 };
 
@@ -158,7 +162,10 @@ export class SideBarComponent implements OnInit {
       if (item.adminOnly) return isAdmin;
       if (!item.permission) return true;
       if (isAdmin) return true;
-      return this.permissionsService.hasPermission(item.permission as any);
+      return this.permissionsService.hasPermission(
+        item.permission,
+        item.permissionAction,
+      );
     });
   });
 

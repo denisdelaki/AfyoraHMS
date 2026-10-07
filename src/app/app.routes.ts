@@ -197,6 +197,22 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'visit-record',
+        canActivate: [permissionGuard],
+        data: {
+          permission: 'visit_queue',
+          seo: { title: 'Doctor Consultation & Clinical AI Assist' },
+        },
+        loadComponent: () =>
+          import('./components/features/add-visit-record/add-visit-record.component').then(
+            (m) => m.AddVisitRecordComponent,
+          ),
+      },
+      {
+        path: 'clinical-ai',
+        redirectTo: 'visit-record',
+      },
+      {
         path: 'billing',
         canActivate: [permissionGuard],
         data: { permission: 'billing' },
@@ -312,7 +328,6 @@ export const routes: Routes = [
             (m) => m.FacilityProfileComponent,
           ),
       },
-
     ],
   },
 ];

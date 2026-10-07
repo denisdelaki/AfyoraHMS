@@ -109,7 +109,29 @@
 
           <!-- Basic Information -->
           @if (facilityType) {
+            <!-- KMHFR Search & Verification Header Bar -->
+            <div class="p-3 mb-2 bg-gradient-to-r from-blue-50 via-indigo-50 to-emerald-50 rounded-lg border border-blue-100 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-blue-600">verified</mat-icon>
+                <div>
+                  <span class="text-xs font-semibold text-gray-900 block">
+                    Kenya Master Health Facility Registry (KMHFR) Integration
+                  </span>
+                  <span class="text-xs text-gray-600 block">
+                    Type your facility name below to search and auto-verify your MFL registry record.
+                  </span>
+                </div>
+              </div>
+              @if (isKmhfrVerified) {
+                <span class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-100/90 border border-emerald-300 px-2.5 py-1 rounded-full shadow-sm">
+                  <mat-icon class="text-emerald-600 text-sm" style="width:14px;height:14px;font-size:14px;">check_circle</mat-icon>
+                  KMHFR Verified
+                </span>
+              }
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Facility Name with KMHFR Autocomplete -->
               <mat-form-field appearance="fill" class="w-full">
                 <mat-label
                   >{{
@@ -119,10 +141,48 @@
                 >
                 <input
                   matInput
-                  [placeholder]="'Enter ' + facilityType + ' name'"
+                  [placeholder]="'Search KMHFR or type ' + facilityType + ' name...'"
                   formControlName="facilityName"
+                  [matAutocomplete]="kmhfrAuto"
+                  (input)="onFacilityNameInput($event)"
                   required
                 />
+                <mat-icon matSuffix class="text-gray-400" *ngIf="!isSearchingKmhfr">search</mat-icon>
+                <mat-spinner matSuffix *ngIf="isSearchingKmhfr" diameter="20" class="mr-2"></mat-spinner>
+
+                <mat-autocomplete
+                  #kmhfrAuto="matAutocomplete"
+                  [displayWith]="displayKmhfrFacility"
+                  (optionSelected)="onSelectKmhfrFacility($event)"
+                >
+                  <mat-option *ngFor="let facility of kmhfrFacilities" [value]="facility" class="py-2">
+                    <div class="flex flex-col py-1">
+                      <div class="flex items-center justify-between">
+                        <span class="font-medium text-gray-900 text-sm">
+                          {{ facility.official_name || facility.name }}
+                        </span>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-800 ml-2">
+                          MFL Code: {{ facility.code || facility.registration_number || facility.id }}
+                        </span>
+                      </div>
+                      <div class="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                        <span *ngIf="facility.county_name || facility.county">
+                          📍 {{ facility.county_name || facility.county }}
+                        </span>
+                        <span *ngIf="facility.facility_type_name || facility.facility_type">
+                          • {{ facility.facility_type_name || facility.facility_type }}
+                        </span>
+                        <span *ngIf="facility.keph_level_name">
+                          • {{ facility.keph_level_name }}
+                        </span>
+                      </div>
+                    </div>
+                  </mat-option>
+                  <mat-option *ngIf="!isSearchingKmhfr && kmhfrFacilities.length === 0 && (signupForm.get('facilityName')?.value?.length ?? 0) >= 2" disabled>
+                    <span class="text-xs text-gray-500">No facility matching query found in KMHFR. You can enter details manually.</span>
+                  </mat-option>
+                </mat-autocomplete>
+
                 @if (hasControlError("facilityName", "required")) {
                   <mat-error>Facility name is required.</mat-error>
                 }
@@ -133,14 +193,16 @@
                 }
               </mat-form-field>
 
+              <!-- Registration Number / MFL Code Field -->
               <mat-form-field appearance="fill" class="w-full">
-                <mat-label>Registration Number</mat-label>
+                <mat-label>Registration Number (MFL Code)</mat-label>
                 <input
                   matInput
-                  placeholder="License/Registration number"
+                  placeholder="License / MFL registration number"
                   formControlName="registrationNumber"
                   required
                 />
+                <mat-icon matSuffix *ngIf="isKmhfrVerified" class="text-emerald-600" title="Verified by KMHFR">check_circle</mat-icon>
                 @if (hasControlError("registrationNumber", "required")) {
                   <mat-error>Registration number is required.</mat-error>
                 }
@@ -152,6 +214,41 @@
                 }
               </mat-form-field>
             </div>
+
+            <!-- Verified KMHFR Badge Details Card -->
+            @if (isKmhfrVerified && selectedKmhfrFacility) {
+              <div class="p-3 -mt-2 mb-4 bg-emerald-50/80 border border-emerald-200 rounded-lg flex items-start justify-between">
+                <div class="flex items-start gap-2">
+                  <mat-icon class="text-emerald-600 mt-0.5">verified</mat-icon>
+                  <div>
+                    <p class="text-xs font-semibold text-emerald-950">
+                      KMHFR Verified Facility Record Selected
+                    </p>
+                    <p class="text-xs text-emerald-800 mt-0.5">
+                      <strong>Facility:</strong> {{ selectedKmhfrFacility.official_name || selectedKmhfrFacility.name }} &bull;
+                      <strong>MFL Code:</strong> {{ selectedKmhfrFacility.code || selectedKmhfrFacility.registration_number }} &bull;
+                      <strong>County:</strong> {{ selectedKmhfrFacility.county_name || selectedKmhfrFacility.county || 'Kenya' }}
+                      <span *ngIf="selectedKmhfrFacility.keph_level_name">&bull; <strong>Level:</strong> {{ selectedKmhfrFacility.keph_level_name }}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  (click)="clearKmhfrVerification()"
+                  class="text-xs text-gray-500 hover:text-red-600 font-medium p-1"
+                  title="Clear KMHFR selection"
+                >
+                  <mat-icon style="width:16px;height:16px;font-size:16px;">close</mat-icon>
+                </button>
+              </div>
+            }
+
+            @if (kmhfrSearchError) {
+              <div class="p-2.5 -mt-2 mb-4 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-center gap-1.5">
+                <mat-icon class="text-amber-600 text-sm" style="width:16px;height:16px;font-size:16px;">warning</mat-icon>
+                <span>{{ kmhfrSearchError }}</span>
+              </div>
+            }
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <mat-form-field appearance="fill" class="w-full">

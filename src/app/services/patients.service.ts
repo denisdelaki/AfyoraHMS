@@ -6,6 +6,7 @@ import {
   ApiResponse,
   Appointment,
   Patient,
+  PatientVitals,
   RegisterPatientRequest,
   UpdatePatientRequest,
   VisitHistory,
@@ -26,6 +27,7 @@ type VisitRecordPayload = {
   }[];
   amountBilled: number | string;
   whatHappened: string;
+  vitals?: PatientVitals;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -135,6 +137,75 @@ export class PatientsService {
     return this.http.delete<ApiResponse<null>>(
       `${this.baseUrl}/${encodeURIComponent(patientId)}/visit-history/${encodeURIComponent(visitId)}/${query}/`,
     );
+  }
+
+  // --- Patient Vitals API Endpoints ---
+  createPatientVitals(vitals: PatientVitals): Observable<PatientVitals> {
+    const patientId = vitals.patientId;
+    const url = patientId
+      ? `${this.baseUrl}/${encodeURIComponent(patientId)}/vitals/`
+      : `${this.baseUrl}/vitals/`;
+    return this.http.post<any>(url, vitals).pipe(
+      map((res) => res.results || res.data || res),
+      tap(() => {
+        if (vitals.facilityId) {
+          this.dataSync.invalidate(
+            `vitals:${vitals.facilityId}:${vitals.patientId}`,
+          );
+        }
+      }),
+    );
+  }
+
+  getPatientVitals(
+    facilityId: string | number,
+    patientId: string,
+    ticketId?: string,
+    force = false,
+  ): Observable<PatientVitals[]> {
+    const ticketQuery = ticketId
+      ? `&ticketId=${encodeURIComponent(ticketId)}`
+      : '';
+    const cacheKey = `vitals:${facilityId}:${patientId}${ticketId ? ':ticket:' + ticketId : ''}`;
+    return this.dataSync.query(
+      cacheKey,
+      () =>
+        this.http
+          .get<any>(
+            `${this.baseUrl}/vitals/?facilityId=${encodeURIComponent(facilityId)}&patientId=${encodeURIComponent(patientId)}${ticketQuery}`,
+          )
+          .pipe(
+            map(
+              (response) =>
+                response?.results ||
+                response?.data ||
+                (Array.isArray(response) ? response : []),
+            ),
+          ),
+      { force },
+    );
+  }
+
+  updatePatientVitals(
+    vitalsId: string | number,
+    facilityId: string | number,
+    payload: Partial<PatientVitals>,
+  ): Observable<PatientVitals> {
+    return this.http
+      .patch<any>(
+        `${this.baseUrl}/vitals/${encodeURIComponent(vitalsId)}/?facilityId=${encodeURIComponent(facilityId)}`,
+        { ...payload, facilityId },
+      )
+      .pipe(
+        map((res) => res.results || res.data || res),
+        tap(() => {
+          if (payload.patientId) {
+            this.dataSync.invalidate(
+              `vitals:${facilityId}:${payload.patientId}`,
+            );
+          }
+        }),
+      );
   }
 
   private buildFacilityQuery(facilityId?: string | number): string {

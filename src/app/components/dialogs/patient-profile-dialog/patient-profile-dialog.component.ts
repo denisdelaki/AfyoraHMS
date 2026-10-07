@@ -31,9 +31,12 @@ import { DepartmentService } from '../../../services/department.service';
 import { EmployeeService } from '../../../services/employee.service';
 import { PatientsService } from '../../../services/patients.service';
 import { Prescription } from '../../../models/pharmacy.models';
-import { forkJoin } from 'rxjs';
 import { Employee } from '../../../models/employee.model';
+import { PatientVitals } from '../../../models/patients.models';
 import { PharmacyService } from '../../../services/pharmacy.service';
+import { VitalsSummaryCardComponent } from '../../shared/vitals-summary-card/vitals-summary-card.component';
+import { VitalsEntryDialogComponent } from '../vitals-entry-dialog/vitals-entry-dialog.component';
+import { forkJoin } from 'rxjs';
 
 type PatientAppointment = Appointment & { id?: string };
 
@@ -54,6 +57,7 @@ interface PatientProfileDialogData {
     MatIconModule,
     MatSnackBarModule,
     MatTabsModule,
+    VitalsSummaryCardComponent,
   ],
   templateUrl: './patient-profile-dialog.component.html',
   styleUrl: './patient-profile-dialog.component.css',
@@ -130,13 +134,47 @@ export class PatientProfileDialogComponent implements OnInit {
         this.departmentNames = new Map();
       },
     });
+
+    this.loadVitalsHistory();
+  }
+
+  vitalsHistory: PatientVitals[] = [];
+
+  loadVitalsHistory(): void {
+    if (!this.data?.patient?.id || !this.facilityId) return;
+    this.patientsService
+      .getPatientVitals(this.facilityId, this.data.patient.id)
+      .subscribe({
+        next: (vitals) => {
+          this.vitalsHistory = vitals;
+        },
+        error: () => { },
+      });
+  }
+
+  openVitalsEntryDialog(): void {
+    const dialogRef = this.dialog.open(VitalsEntryDialogComponent, {
+      width: '90vw',
+      maxWidth: '650px',
+      data: {
+        patientId: this.data.patient.id,
+        patientName: `${this.data.patient.firstName || ''} ${this.data.patient.lastName || ''}`.trim(),
+        facilityId: this.facilityId,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((res) => {
+      if (res) {
+        this.loadVitalsHistory();
+      }
+    });
   }
 
   openAddVisitRecordDialog(): void {
     const dialogRef = this.dialog.open(AddVisitRecordDialogComponent, {
-      width: '90vw',
-      maxWidth: '640px',
-      maxHeight: '90vh',
+      width: '96vw',
+      maxWidth: '1280px',
+      height: '92vh',
       data: {
         mode: 'create',
         doctors: this.doctors,
@@ -158,9 +196,9 @@ export class PatientProfileDialogComponent implements OnInit {
 
   openEditVisitRecordDialog(visitRecord: VisitHistory): void {
     const dialogRef = this.dialog.open(AddVisitRecordDialogComponent, {
-      width: '90vw',
-      maxWidth: '640px',
-      maxHeight: '90vh',
+      width: '96vw',
+      maxWidth: '1280px',
+      height: '92vh',
       data: {
         mode: 'edit',
         doctors: this.doctors,
@@ -249,7 +287,7 @@ export class PatientProfileDialogComponent implements OnInit {
                 verticalPosition: 'top',
               });
             },
-            error: (error) => {
+            error: (error: any) => {
               this.snackBar.open(
                 'Visit record deleted, but some prescriptions could not be deleted.',
                 'Close',
@@ -537,18 +575,18 @@ export class PatientProfileDialogComponent implements OnInit {
     const rawPrescriptions = record['prescriptions'];
     const prescriptions: Prescription[] = Array.isArray(rawPrescriptions)
       ? rawPrescriptions.map((p) => ({
-          id: (p as Prescription).id ?? '',
-          patientId: (p as Prescription).patientId ?? '',
-          doctorId: (p as Prescription).doctorId ?? '',
-          drugs: (p.drugs ?? []).map((d) => ({
-            id: (d as { id?: string }).id ?? '',
-            name: d.name,
-            quantity: d.quantity,
-            dosage: d.dosage,
-          })),
-          status: p.status,
-          date: p.date,
-        }))
+        id: (p as Prescription).id ?? '',
+        patientId: (p as Prescription).patientId ?? '',
+        doctorId: (p as Prescription).doctorId ?? '',
+        drugs: (p.drugs ?? []).map((d) => ({
+          id: (d as { id?: string }).id ?? '',
+          name: d.name,
+          quantity: d.quantity,
+          dosage: d.dosage,
+        })),
+        status: p.status,
+        date: p.date,
+      }))
       : [];
     return {
       id: record['id'] as string | undefined,
@@ -562,6 +600,7 @@ export class PatientProfileDialogComponent implements OnInit {
         (record['whatHappened'] as string) ||
         (record['happened'] as string) ||
         '',
+      vitals: record['vitals'] as PatientVitals | undefined,
     };
   }
 

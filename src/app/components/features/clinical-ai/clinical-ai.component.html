@@ -1,0 +1,1167 @@
+<main class="clinical-shell" aria-labelledby="page-title">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Clinical workspace</p>
+      <h1 id="page-title">Clinical decision support</h1>
+      <p class="heading-copy">
+        Review patient context and decision support for the active encounter.
+      </p>
+    </div>
+    <a class="text-link" routerLink="/ehr">Open EHR</a>
+  </header>
+
+  <p *ngIf="errorMessage" class="status-banner status-error" role="alert">
+    {{ errorMessage }}
+  </p>
+  <p *ngIf="actionMessage" class="status-banner status-success" role="status">
+    {{ actionMessage }}
+  </p>
+
+  <section class="patient-toolbar" aria-label="Patient and encounter selection">
+    <label class="field patient-select">
+      <span>Patient</span>
+      <select
+        aria-label="Select patient"
+        [ngModel]="selectedPatient?.id ?? ''"
+        (ngModelChange)="selectPatientById($event)"
+        [disabled]="loadingPatients || patients.length === 0"
+      >
+        <option value="" disabled>
+          {{ loadingPatients ? "Loading patients..." : "Select a patient" }}
+        </option>
+        <option *ngFor="let patient of patients" [value]="patient.id">
+          {{ patient.firstName }} {{ patient.lastName }} · {{ patient.id }}
+        </option>
+      </select>
+    </label>
+    <label class="field encounter-field">
+      <span>Active consultation ID</span>
+      <input
+        name="consultationId"
+        [(ngModel)]="consultationId"
+        autocomplete="off"
+        placeholder="Required for analysis"
+        [attr.aria-describedby]="
+          patientContext?.consultationId ? 'encounter-help' : null
+        "
+      />
+      <small id="encounter-help" *ngIf="patientContext?.consultationId"
+        >Loaded from the authorized clinical context.</small
+      >
+      <small *ngIf="!patientContext?.consultationId"
+        >Use the ID from the active encounter. The backend must verify
+        access.</small
+      >
+    </label>
+    <button
+      class="btn btn-primary primary-button analyze-button"
+      type="button"
+      (click)="openAnalysisConfirmation()"
+      [disabled]="!canRequestAnalysis || !canAnalyze"
+    >
+      Analyze with Clinical AI
+    </button>
+  </section>
+
+  <p *ngIf="!canRequestAnalysis" class="permission-note" role="status">
+    Your role can review this workspace but does not have permission to request
+    AI analysis.
+  </p>
+  <div
+    *ngIf="loadingContext"
+    class="loading-banner"
+    role="status"
+    aria-live="polite"
+  >
+    Loading authorized patient context...
+  </div>
+
+  <ng-container *ngIf="selectedPatient as patient">
+    <div class="workspace-grid">
+      <section
+        class="clinical-column"
+        aria-label="Patient clinical information"
+      >
+        <article class="card panel patient-summary">
+          <div class="patient-title-row">
+            <div>
+              <p class="eyebrow">Patient summary</p>
+              <h2>{{ patient.firstName }} {{ patient.lastName }}</h2>
+              <p class="muted">
+                MRN {{ patient.id }} <span aria-hidden="true">·</span>
+                {{ patientContext?.demographics?.age ?? patient.age }} years
+                <span aria-hidden="true">·</span>
+                {{ patientContext?.demographics?.sex ?? patient.gender }}
+              </p>
+            </div>
+            <span class="context-badge" *ngIf="consultationId"
+              >Encounter linked</span
+            >
+          </div>
+          <div class="summary-grid">
+            <div>
+              <span>Facility</span
+              ><strong>{{ facilityId || "Unavailable" }}</strong>
+            </div>
+            <div>
+              <span>Allergies</span
+              ><strong>{{
+                patientContext?.allergies?.join(", ") || "None returned"
+              }}</strong>
+            </div>
+            <div>
+              <span>Known conditions</span
+              ><strong>{{
+                patientContext?.medicalHistory?.conditions?.join(", ") ||
+                  "None returned"
+              }}</strong>
+            </div>
+            <div>
+              <span>Pregnancy status</span
+              ><strong>{{
+                patientContext?.pregnancyStatus || "Not available"
+              }}</strong>
+            </div>
+            <ng-container *ngIf="patientContext as context">
+              <ng-container *ngIf="context.demographics as demographics">
+                <div *ngIf="demographics.bloodGroup">
+                  <span>Blood group</span
+                  ><strong>{{ demographics.bloodGroup }}</strong>
+                </div>
+              </ng-container>
+            </ng-container>
+          </div>
+          <ng-container
+            *ngIf="patientContext?.currentMedications as currentMedications"
+          >
+            <div class="current-meds" *ngIf="currentMedications.length">
+              <span>Current medications</span>
+              <p *ngFor="let medication of currentMedications">
+                {{ medication.name
+                }}<span *ngIf="medication.dose"> · {{ medication.dose }}</span
+                ><span *ngIf="medication.frequency">
+                  · {{ medication.frequency }}</span
+                >
+              </p>
+            </div>
+          </ng-container>
+        </article>
+
+        <article class="card panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Current presentation</p>
+              <h2>Consultation context</h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label class="field full-width"
+              ><span>Chief complaint</span
+              ><input [(ngModel)]="chiefComplaint" name="chiefComplaint"
+            /></label>
+            <label class="field"
+              ><span>Symptoms, comma separated</span
+              ><input [(ngModel)]="symptomsText" name="symptoms"
+            /></label>
+            <label class="field"
+              ><span>Duration</span
+              ><input [(ngModel)]="symptomDuration" name="duration"
+            /></label>
+            <label class="field full-width"
+              ><span>Relevant clinical notes</span
+              ><textarea
+                [(ngModel)]="relevantClinicalNotes"
+                name="clinicalNotes"
+                rows="3"
+              ></textarea>
+            </label>
+          </div>
+        </article>
+
+        <article class="card panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Latest available</p>
+              <h2>Vitals</h2>
+            </div>
+            <button
+              *ngIf="editableVitals"
+              type="button"
+              class="btn btn-link text-button"
+              (click)="editVitals = !editVitals"
+            >
+              {{ editVitals ? "Done editing" : "Edit for analysis" }}
+            </button>
+          </div>
+          <ng-container *ngIf="editableVitals as vitals; else noVitals">
+            <p class="muted" *ngIf="vitals.recordedAt">
+              Recorded {{ vitals.recordedAt | date: "medium" }}
+            </p>
+            <p *ngIf="editVitals" class="history-footnote">
+              Changes are included in this analysis request only and are not
+              saved to the patient record.
+            </p>
+            <div *ngIf="editVitals" class="form-grid vitals-edit-grid">
+              <label class="field"
+                ><span>Temperature °C</span
+                ><input
+                  type="number"
+                  name="temperatureC"
+                  [(ngModel)]="vitals.temperatureC"
+              /></label>
+              <label class="field"
+                ><span>Heart rate /min</span
+                ><input
+                  type="number"
+                  name="heartRateBpm"
+                  [(ngModel)]="vitals.heartRateBpm"
+              /></label>
+              <label class="field"
+                ><span>Systolic BP</span
+                ><input
+                  type="number"
+                  name="bloodPressureSystolic"
+                  [(ngModel)]="vitals.bloodPressureSystolic"
+              /></label>
+              <label class="field"
+                ><span>Diastolic BP</span
+                ><input
+                  type="number"
+                  name="bloodPressureDiastolic"
+                  [(ngModel)]="vitals.bloodPressureDiastolic"
+              /></label>
+              <label class="field"
+                ><span>Respiratory rate /min</span
+                ><input
+                  type="number"
+                  name="respiratoryRate"
+                  [(ngModel)]="vitals.respiratoryRate"
+              /></label>
+              <label class="field"
+                ><span>Oxygen saturation %</span
+                ><input
+                  type="number"
+                  name="oxygenSaturationPercent"
+                  [(ngModel)]="vitals.oxygenSaturationPercent"
+              /></label>
+              <label class="field"
+                ><span>Blood glucose</span
+                ><input
+                  type="number"
+                  name="bloodGlucose"
+                  [(ngModel)]="vitals.bloodGlucose"
+              /></label>
+              <label class="field"
+                ><span>Weight kg</span
+                ><input
+                  type="number"
+                  name="weightKg"
+                  [(ngModel)]="vitals.weightKg"
+              /></label>
+            </div>
+            <dl *ngIf="!editVitals" class="vitals-grid">
+              <div>
+                <dt>Temperature</dt>
+                <dd>
+                  {{ vitals.temperatureC ?? "—"
+                  }}<small *ngIf="vitals.temperatureC != null"> °C</small>
+                </dd>
+              </div>
+              <div>
+                <dt>Heart rate</dt>
+                <dd>
+                  {{ vitals.heartRateBpm ?? "—"
+                  }}<small *ngIf="vitals.heartRateBpm != null"> bpm</small>
+                </dd>
+              </div>
+              <div>
+                <dt>Blood pressure</dt>
+                <dd>
+                  {{ vitals.bloodPressureSystolic ?? "—"
+                  }}<span *ngIf="vitals.bloodPressureDiastolic != null"
+                    >/{{ vitals.bloodPressureDiastolic }}</span
+                  ><small *ngIf="vitals.bloodPressureSystolic != null">
+                    mmHg</small
+                  >
+                </dd>
+              </div>
+              <div>
+                <dt>Respiratory rate</dt>
+                <dd>
+                  {{ vitals.respiratoryRate ?? "—"
+                  }}<small *ngIf="vitals.respiratoryRate != null"> /min</small>
+                </dd>
+              </div>
+              <div>
+                <dt>Oxygen saturation</dt>
+                <dd>
+                  {{ vitals.oxygenSaturationPercent ?? "—"
+                  }}<small *ngIf="vitals.oxygenSaturationPercent != null">
+                    %</small
+                  >
+                </dd>
+              </div>
+              <div>
+                <dt>Blood glucose</dt>
+                <dd>{{ vitals.bloodGlucose ?? "—" }}</dd>
+              </div>
+              <div>
+                <dt>Weight</dt>
+                <dd>
+                  {{ vitals.weightKg ?? "—"
+                  }}<small *ngIf="vitals.weightKg != null"> kg</small>
+                </dd>
+              </div>
+            </dl>
+          </ng-container>
+          <ng-template #noVitals
+            ><p class="empty-note">
+              No verified vitals were returned for this encounter.
+            </p></ng-template
+          >
+        </article>
+
+        <article class="card panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Available results</p>
+              <h2>Laboratory</h2>
+            </div>
+            <span class="count-label"
+              >{{
+                patientContext?.laboratoryResults?.length ?? 0
+              }}
+              results</span
+            >
+          </div>
+          <ng-container
+            *ngIf="
+              patientContext?.laboratoryResults as laboratoryResults;
+              else noLabs
+            "
+          >
+            <div
+              class="table-scroll"
+              *ngIf="laboratoryResults.length; else noLabs"
+            >
+              <table>
+                <caption class="visually-hidden">
+                  Patient laboratory results
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Test</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">Reference</th>
+                    <th scope="col">Result status</th>
+                    <th scope="col">Report status</th>
+                    <th scope="col">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let result of laboratoryResults">
+                    <td>
+                      {{ result.name
+                      }}<small *ngIf="result.remarks">{{
+                        result.remarks
+                      }}</small>
+                    </td>
+                    <td>
+                      {{ result.value ?? "Not reported" }} {{ result.unit }}
+                    </td>
+                    <td>{{ result.referenceRange || "—" }}</td>
+                    <td>{{ result.status || "Not provided" }}</td>
+                    <td>{{ result.reportStatus || "Not provided" }}</td>
+                    <td>
+                      {{
+                        result.testedAt
+                          ? (result.testedAt | date: "mediumDate")
+                          : "—"
+                      }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </ng-container>
+          <ng-template #noLabs
+            ><p class="empty-note">
+              No laboratory results returned.
+            </p></ng-template
+          >
+        </article>
+
+        <article class="card panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Available results</p>
+              <h2>Imaging</h2>
+            </div>
+            <span class="count-label"
+              >{{ patientContext?.imagingResults?.length ?? 0 }} reports</span
+            >
+          </div>
+          <ng-container
+            *ngIf="
+              patientContext?.imagingResults as imagingResults;
+              else noImaging
+            "
+          >
+            <div
+              class="result-list"
+              *ngIf="imagingResults.length; else noImaging"
+            >
+              <article class="result-item" *ngFor="let image of imagingResults">
+                <div class="result-title">
+                  <strong
+                    >{{ image.modality
+                    }}<span *ngIf="image.studyName">
+                      · {{ image.studyName }}</span
+                    ><span *ngIf="image.bodyPart">
+                      · {{ image.bodyPart }}</span
+                    ></strong
+                  ><time *ngIf="image.reportDate">{{
+                    image.reportDate | date: "mediumDate"
+                  }}</time>
+                </div>
+                <p *ngIf="image.findings">
+                  <b>Findings:</b> {{ image.findings }}
+                </p>
+                <p *ngIf="image.impression">
+                  <b>Impression:</b> {{ image.impression }}
+                </p>
+                <p *ngIf="image.status">
+                  <b>Report status:</b> {{ image.status }}
+                </p>
+                <a
+                  *ngIf="image.reportUrl"
+                  class="text-link"
+                  [href]="image.reportUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >View report</a
+                >
+              </article>
+            </div>
+          </ng-container>
+          <ng-template #noImaging
+            ><p class="empty-note">No imaging reports returned.</p></ng-template
+          >
+        </article>
+
+        <article class="card panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Data-minimized context</p>
+              <h2>Relevant history</h2>
+            </div>
+          </div>
+          <p
+            *ngIf="patientContext?.medicalHistory as history"
+            class="history-summary"
+          >
+            <span *ngIf="history.conditions.length"
+              >Conditions: {{ history.conditions.join(", ") }}.</span
+            >
+            <span *ngIf="history.previousDiagnoses.length">
+              Previous diagnoses:
+              {{ history.previousDiagnoses.join(", ") }}.</span
+            >
+            <span *ngIf="history.previousConsultations.length">
+              Consultations:
+              {{ history.previousConsultations.join("; ") }}.</span
+            >
+            <span *ngIf="history.previousMedications.length">
+              Previous medications:
+              {{ history.previousMedications.join(", ") }}.</span
+            >
+            <span *ngIf="history.allergies.length">
+              Allergies: {{ history.allergies.join(", ") }}.</span
+            >
+            <span *ngIf="history.adverseDrugReactions.length">
+              Adverse reactions:
+              {{ history.adverseDrugReactions.join(", ") }}.</span
+            >
+            <span *ngIf="history.procedures.length">
+              Procedures: {{ history.procedures.join(", ") }}.</span
+            >
+            <span *ngIf="history.relevantOutcomes.length">
+              Outcomes: {{ history.relevantOutcomes.join("; ") }}.</span
+            >
+            <span
+              *ngIf="
+                !history.conditions.length &&
+                !history.previousDiagnoses.length &&
+                !history.previousConsultations.length &&
+                !history.previousMedications.length &&
+                !history.allergies.length &&
+                !history.adverseDrugReactions.length &&
+                !history.procedures.length &&
+                !history.relevantOutcomes.length
+              "
+              >No relevant history was returned.</span
+            >
+          </p>
+          <p *ngIf="!patientContext?.medicalHistory" class="empty-note">
+            Relevant history is unavailable.
+          </p>
+          <p class="history-footnote">
+            The AI receives only the authorized, data-minimized context returned
+            for this patient and encounter.
+          </p>
+          <a
+            class="text-link"
+            [routerLink]="['/ehr']"
+            [queryParams]="{ patientId: patient.id }"
+            >View full patient history in EHR</a
+          >
+        </article>
+      </section>
+
+      <aside class="assistant-column" aria-label="Clinical AI decision support">
+        <section class="card assistant-panel">
+          <header class="assistant-header">
+            <div>
+              <p class="eyebrow">Advisory only</p>
+              <h2>AFYORA Clinical AI</h2>
+            </div>
+            <span class="assistant-status">Clinician-led</span>
+          </header>
+          <div class="disclaimer" role="note">
+            <strong
+              >Clinical decision support, not an autonomous doctor.</strong
+            >
+            Verify every suggestion. You remain responsible for diagnosis,
+            treatment, and documentation. AI recommendations never create a
+            finalized prescription.
+          </div>
+          <div
+            *ngIf="partialContext"
+            class="status-banner status-warning"
+            role="status"
+          >
+            AI analysis is limited because some clinical information is
+            unavailable.
+          </div>
+          <div
+            *ngIf="lowConfidence"
+            class="status-banner status-warning"
+            role="status"
+          >
+            AI confidence is low. Consider specialist review and additional
+            investigation.
+          </div>
+
+          <div
+            *ngIf="analyzing"
+            class="analysis-loading"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="loading-mark" aria-hidden="true"></span>
+            <div>
+              <strong>Analyzing available clinical information...</strong>
+              <p>
+                Continue to use clinical judgment and respond to urgent needs.
+              </p>
+            </div>
+          </div>
+
+          <ng-container *ngIf="response as ai">
+            <section class="ai-section summary-section">
+              <div class="ai-section-heading">
+                <h3>Clinical summary</h3>
+                <span
+                  [class]="
+                    'confidence-chip ' + confidenceClass(ai.confidenceLevel)
+                  "
+                  >{{ ai.confidenceLevel }} confidence</span
+                >
+              </div>
+              <p>{{ ai.clinicalSummary }}</p>
+              <p class="uncertainty" *ngIf="ai.uncertainty">
+                Uncertainty: {{ ai.uncertainty }}
+              </p>
+            </section>
+
+            <section
+              *ngIf="ai.redFlags.length"
+              class="ai-section red-flags"
+              aria-labelledby="red-flags-title"
+            >
+              <div class="ai-section-heading">
+                <h3 id="red-flags-title">Red flags</h3>
+                <span class="alert-label">{{
+                  hasCriticalRedFlag ? "Urgent review" : "Review"
+                }}</span>
+              </div>
+              <div
+                *ngIf="hasCriticalRedFlag"
+                class="urgent-banner"
+                role="alert"
+              >
+                <strong>URGENT CLINICAL REVIEW REQUIRED</strong
+                ><span>Do not delay emergency care for AI review.</span>
+              </div>
+              <article
+                *ngFor="let flag of ai.redFlags; trackBy: trackById"
+                [class]="'red-flag ' + redFlagClass(flag.severity)"
+              >
+                <strong>{{ flag.title }}</strong
+                ><span class="severity-text">{{ flag.severity }}</span>
+                <p>{{ flag.detail }}</p>
+                <p *ngIf="flag.escalationInstructions">
+                  {{ flag.escalationInstructions }}
+                </p>
+                <a
+                  *ngIf="flag.requiresEmergencyEscalation"
+                  routerLink="/visit-queue"
+                  class="escalation-link"
+                  >Open visit queue for escalation</a
+                >
+              </article>
+            </section>
+
+            <section class="ai-section">
+              <div class="ai-section-heading">
+                <h3>Differential considerations</h3>
+              </div>
+              <article
+                class="diagnosis-card"
+                *ngFor="
+                  let diagnosis of ai.differentialDiagnoses;
+                  trackBy: trackById
+                "
+              >
+                <div class="ai-section-heading">
+                  <h4>Possible diagnosis: {{ diagnosis.name }}</h4>
+                  <span
+                    [class]="
+                      'confidence-chip ' + confidenceClass(diagnosis.confidence)
+                    "
+                    >{{ diagnosis.confidence }}</span
+                  >
+                </div>
+                <p *ngIf="diagnosis.uncertainty" class="muted">
+                  {{ diagnosis.uncertainty }}
+                </p>
+                <div
+                  class="evidence-points"
+                  *ngIf="diagnosis.supportingFindings.length"
+                >
+                  <strong>Supporting findings</strong>
+                  <ul>
+                    <li *ngFor="let finding of diagnosis.supportingFindings">
+                      {{ finding }}
+                    </li>
+                  </ul>
+                </div>
+                <div
+                  class="evidence-points"
+                  *ngIf="diagnosis.contradictingFindings.length"
+                >
+                  <strong>Findings that may argue against</strong>
+                  <ul>
+                    <li *ngFor="let finding of diagnosis.contradictingFindings">
+                      {{ finding }}
+                    </li>
+                  </ul>
+                </div>
+                <p *ngIf="diagnosis.relevantHistory.length">
+                  <strong>Relevant history:</strong>
+                  {{ diagnosis.relevantHistory.join("; ") }}
+                </p>
+                <p *ngIf="diagnosis.confirmationInvestigations.length">
+                  <strong>Consider confirming with:</strong>
+                  {{ diagnosis.confirmationInvestigations.join(", ") }}
+                </p>
+                <app-evidence-list
+                  [citations]="diagnosis.evidenceCitations"
+                ></app-evidence-list>
+              </article>
+              <p *ngIf="!ai.differentialDiagnoses.length" class="empty-note">
+                No differential considerations were returned.
+              </p>
+            </section>
+
+            <section class="ai-section">
+              <div class="ai-section-heading">
+                <h3>Recommended investigations</h3>
+              </div>
+              <article
+                class="compact-recommendation"
+                *ngFor="
+                  let investigation of ai.recommendedInvestigations;
+                  trackBy: trackById
+                "
+              >
+                <strong>{{ investigation.name }}</strong
+                ><span *ngIf="investigation.urgency" class="count-label">{{
+                  investigation.urgency
+                }}</span>
+                <p>{{ investigation.rationale }}</p>
+                <app-evidence-list
+                  [citations]="investigation.evidenceCitations"
+                ></app-evidence-list>
+              </article>
+              <p
+                *ngIf="!ai.recommendedInvestigations.length"
+                class="empty-note"
+              >
+                No additional investigations suggested.
+              </p>
+            </section>
+
+            <section class="ai-section">
+              <div class="ai-section-heading">
+                <h3>AI treatment considerations</h3>
+              </div>
+              <article
+                class="treatment-card"
+                *ngFor="
+                  let treatment of ai.treatmentRecommendations;
+                  trackBy: trackById
+                "
+              >
+                <h4>{{ treatment.title }}</h4>
+                <p>{{ treatment.rationale }}</p>
+                <app-evidence-list
+                  [citations]="treatment.evidenceCitations"
+                ></app-evidence-list>
+                <div
+                  class="medication-card"
+                  *ngFor="
+                    let medication of treatment.medicationSuggestions;
+                    trackBy: trackById
+                  "
+                >
+                  <div class="ai-section-heading">
+                    <strong>{{ medication.genericName }}</strong
+                    ><span class="verification-label"
+                      >Requires clinician verification</span
+                    >
+                  </div>
+                  <ng-container *ngIf="medication.brandNames as brandNames"
+                    ><p *ngIf="brandNames.length" class="muted">
+                      Also known as: {{ brandNames.join(", ") }}
+                    </p></ng-container
+                  >
+                  <dl class="medication-details">
+                    <div>
+                      <dt>Dose</dt>
+                      <dd>{{ medication.suggestedDose || "Not specified" }}</dd>
+                    </div>
+                    <div>
+                      <dt>Frequency</dt>
+                      <dd>{{ medication.frequency || "Not specified" }}</dd>
+                    </div>
+                    <div>
+                      <dt>Route</dt>
+                      <dd>{{ medication.route || "Not specified" }}</dd>
+                    </div>
+                    <div>
+                      <dt>Duration</dt>
+                      <dd>{{ medication.duration || "Not specified" }}</dd>
+                    </div>
+                    <div>
+                      <dt>Indication</dt>
+                      <dd>{{ medication.indication || "Not specified" }}</dd>
+                    </div>
+                  </dl>
+                  <p *ngIf="medication.contraindications.length">
+                    <strong>Contraindications:</strong>
+                    {{ medication.contraindications.join("; ") }}
+                  </p>
+                  <p *ngIf="medication.allergies.length">
+                    <strong>Allergy considerations:</strong>
+                    {{ medication.allergies.join("; ") }}
+                  </p>
+                  <p *ngIf="medication.interactions.length">
+                    <strong>Interactions:</strong>
+                    {{ medication.interactions.join("; ") }}
+                  </p>
+                  <p *ngIf="medication.sideEffects.length">
+                    <strong>Potential side effects:</strong>
+                    {{ medication.sideEffects.join("; ") }}
+                  </p>
+                  <p *ngIf="medication.monitoringRequirements.length">
+                    <strong>Monitoring:</strong>
+                    {{ medication.monitoringRequirements.join("; ") }}
+                  </p>
+                  <app-evidence-list
+                    [citations]="medication.evidenceCitations"
+                  ></app-evidence-list>
+                  <button
+                    *ngIf="canApprovePrescriptions"
+                    class="btn btn-outline-primary secondary-button"
+                    type="button"
+                    (click)="openPrescriptionReview(medication)"
+                  >
+                    Review prescription
+                  </button>
+                </div>
+              </article>
+              <p *ngIf="!ai.treatmentRecommendations.length" class="empty-note">
+                No treatment considerations were returned.
+              </p>
+            </section>
+
+            <section class="ai-section">
+              <div class="ai-section-heading"><h3>Medication safety</h3></div>
+              <article
+                class="safety-warning"
+                *ngFor="let warning of ai.medicationSafety; trackBy: trackById"
+              >
+                <div class="ai-section-heading">
+                  <strong>{{ warning.category }}</strong
+                  ><span
+                    [class]="'severity-text ' + redFlagClass(warning.severity)"
+                    >{{ warning.severity }}</span
+                  >
+                </div>
+                <p>{{ warning.message }}</p>
+                <label
+                  *ngIf="warning.acknowledgementRequired"
+                  class="acknowledge-control"
+                  ><input
+                    type="checkbox"
+                    [checked]="acknowledgedSafetyWarnings.has(warning.id)"
+                    (change)="
+                      acknowledgeSafetyWarning(
+                        warning.id,
+                        $any($event.target).checked
+                      )
+                    "
+                  />
+                  I have reviewed and acknowledged this warning</label
+                >
+              </article>
+              <p *ngIf="!ai.medicationSafety.length" class="empty-note">
+                No medication safety warnings were returned. This does not
+                confirm medication safety.
+              </p>
+            </section>
+
+            <section class="ai-section">
+              <div class="ai-section-heading">
+                <h3>Supportive care and diet</h3>
+              </div>
+              <ul class="recommendation-list">
+                <li *ngFor="let item of ai.supportiveMeasures">{{ item }}</li>
+                <li *ngFor="let item of ai.dietaryRecommendations">
+                  {{ item }}
+                </li>
+              </ul>
+              <p
+                *ngIf="
+                  !ai.supportiveMeasures.length &&
+                  !ai.dietaryRecommendations.length
+                "
+                class="empty-note"
+              >
+                No supportive care or dietary recommendations were returned.
+              </p>
+            </section>
+            <section class="ai-section">
+              <div class="ai-section-heading"><h3>Follow-up</h3></div>
+              <ul class="recommendation-list">
+                <li *ngFor="let item of ai.followUpRecommendations">
+                  {{ item }}
+                </li>
+              </ul>
+              <p *ngIf="!ai.followUpRecommendations.length" class="empty-note">
+                No follow-up recommendations were returned.
+              </p>
+            </section>
+            <section class="ai-section">
+              <div class="ai-section-heading"><h3>Patient education</h3></div>
+              <ul class="recommendation-list">
+                <li *ngFor="let item of ai.patientEducation">{{ item }}</li>
+              </ul>
+              <p *ngIf="!ai.patientEducation.length" class="empty-note">
+                No patient education content was returned.
+              </p>
+            </section>
+
+            <section class="ai-section">
+              <div class="ai-section-heading">
+                <h3>Evidence and references</h3>
+              </div>
+              <app-evidence-list
+                [citations]="ai.evidenceCitations"
+              ></app-evidence-list>
+            </section>
+
+            <section
+              class="ai-section review-section"
+              *ngIf="canReviewRecommendations"
+            >
+              <div class="ai-section-heading"><h3>Clinician review</h3></div>
+              <div
+                class="review-actions"
+                *ngFor="let diagnosis of ai.differentialDiagnoses"
+              >
+                <strong>{{ diagnosis.name }}</strong>
+                <div>
+                  <button
+                    type="button"
+                    (click)="beginReview(diagnosis.id, 'accepted')"
+                  >
+                    Accept &amp; document</button
+                  ><button
+                    type="button"
+                    (click)="beginReview(diagnosis.id, 'modified')"
+                  >
+                    Modify</button
+                  ><button
+                    type="button"
+                    (click)="beginReview(diagnosis.id, 'rejected')"
+                  >
+                    Reject</button
+                  ><button
+                    type="button"
+                    (click)="beginReview(diagnosis.id, 'saved')"
+                  >
+                    Save for later
+                  </button>
+                </div>
+              </div>
+              <div *ngIf="reviewAction" class="review-form">
+                <label class="field" *ngIf="reviewAction.action === 'rejected'"
+                  ><span>Reason for rejection</span
+                  ><textarea
+                    [(ngModel)]="feedbackReason"
+                    rows="2"
+                    required
+                  ></textarea></label
+                ><label class="field" *ngIf="reviewAction.action === 'modified'"
+                  ><span>Modified recommendation</span
+                  ><textarea
+                    [(ngModel)]="modifiedRecommendation"
+                    rows="2"
+                    required
+                  ></textarea></label
+                ><label class="field" *ngIf="reviewAction.action === 'accepted'"
+                  ><span>Clinical note (optional)</span
+                  ><textarea [(ngModel)]="feedbackReason" rows="2"></textarea>
+                </label>
+                <p class="muted" *ngIf="reviewAction.action === 'saved'">
+                  Save this recommendation for later review?
+                </p>
+                <div class="review-controls">
+                  <button
+                    type="button"
+                    class="btn btn-primary primary-button"
+                    (click)="saveReview()"
+                    [disabled]="
+                      savingReview ||
+                      (reviewAction.action === 'rejected' &&
+                        !feedbackReason.trim()) ||
+                      (reviewAction.action === 'modified' &&
+                        !modifiedRecommendation.trim())
+                    "
+                  >
+                    {{ savingReview ? "Saving..." : "Record review" }}</button
+                  ><button
+                    type="button"
+                    class="btn btn-link text-button"
+                    (click)="reviewAction = null"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section class="ai-section chat-section">
+              <div class="ai-section-heading">
+                <h3>Ask about this encounter</h3>
+              </div>
+              <p class="muted">
+                Questions stay scoped to this authorized patient and
+                consultation.
+              </p>
+              <label class="field"
+                ><span>Your question</span
+                ><textarea
+                  [(ngModel)]="chatQuestion"
+                  rows="2"
+                  placeholder="Ask about supporting or contradicting findings"
+                ></textarea></label
+              ><button
+                type="button"
+                class="btn btn-outline-primary secondary-button"
+                (click)="askQuestion()"
+                [disabled]="askingQuestion || !chatQuestion.trim()"
+              >
+                {{ askingQuestion ? "Asking..." : "Ask clinical AI" }}</button
+              ><ng-container *ngIf="chatResponse as answer"
+                ><p class="chat-answer">{{ answer.answer }}</p>
+                <p *ngIf="answer.uncertainty" class="uncertainty">
+                  {{ answer.uncertainty }}
+                </p>
+                <app-evidence-list
+                  [citations]="answer.evidenceCitations"
+                ></app-evidence-list
+              ></ng-container>
+            </section>
+
+            <section
+              class="ai-section audit-section"
+              *ngIf="ai.auditEvents?.length"
+            >
+              <div class="ai-section-heading">
+                <h3>Consultation activity</h3>
+              </div>
+              <ul>
+                <li *ngFor="let event of ai.auditEvents">
+                  <time>{{ event.occurredAt | date: "short" }}</time>
+                  {{ event.event
+                  }}<span *ngIf="event.actorDisplayName">
+                    · {{ event.actorDisplayName }}</span
+                  >
+                </li>
+              </ul>
+            </section>
+            <footer class="response-meta">
+              <span>Generated {{ ai.generatedAt | date: "medium" }}</span
+              ><span>Model {{ ai.modelVersion }}</span
+              ><span>{{ ai.disclaimer }}</span>
+            </footer>
+          </ng-container>
+
+          <div *ngIf="!response && !analyzing" class="empty-assistant">
+            <strong>Ready when you are</strong>
+            <p>
+              Review the available encounter information, confirm the active
+              consultation ID, and request decision support.
+            </p>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </ng-container>
+
+  <section *ngIf="!selectedPatient && !loadingPatients" class="empty-workspace">
+    <h2>Select a patient</h2>
+    <p>
+      Authorized patient context will load from the clinical service. No sample
+      clinical data is shown.
+    </p>
+  </section>
+
+  <dialog
+    #analysisDialog
+    class="clinical-dialog"
+    aria-labelledby="analysis-dialog-title"
+    (click)="$event.target === analysisDialog ? analysisDialog.close() : null"
+  >
+    <form method="dialog" (submit)="$event.preventDefault()">
+      <p class="eyebrow">Confirmation</p>
+      <h2 id="analysis-dialog-title">Request clinical decision support?</h2>
+      <p>
+        You are requesting clinical decision support based on this patient's
+        available information. AI output is advisory and must be independently
+        reviewed by a qualified clinician.
+      </p>
+      <div class="dialog-actions">
+        <button
+          type="button"
+          class="btn btn-link text-button"
+          (click)="analysisDialog.close()"
+        >
+          Cancel</button
+        ><button
+          type="button"
+          class="btn btn-primary primary-button"
+          (click)="confirmAnalysis()"
+        >
+          Continue to analysis
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog
+    #prescriptionDialog
+    class="clinical-dialog prescription-dialog"
+    aria-labelledby="prescription-dialog-title"
+  >
+    <form (submit)="$event.preventDefault(); approvePrescription()">
+      <p class="eyebrow">Clinician review required</p>
+      <h2 id="prescription-dialog-title">Review prescription details</h2>
+      <p class="status-banner status-warning">
+        This AI recommendation is not a prescription. Verify every field before
+        submitting. The authenticated clinician must approve the final
+        prescription.
+      </p>
+      <div class="form-grid">
+        <label class="field"
+          ><span>Drug</span
+          ><input
+            name="drug"
+            [(ngModel)]="prescriptionDraft.drug"
+            required /></label
+        ><label class="field"
+          ><span>Dose</span
+          ><input
+            name="dose"
+            [(ngModel)]="prescriptionDraft.dose"
+            required /></label
+        ><label class="field"
+          ><span>Frequency</span
+          ><input
+            name="frequency"
+            [(ngModel)]="prescriptionDraft.frequency"
+            required /></label
+        ><label class="field"
+          ><span>Route</span
+          ><input
+            name="route"
+            [(ngModel)]="prescriptionDraft.route"
+            required /></label
+        ><label class="field"
+          ><span>Duration</span
+          ><input
+            name="duration"
+            [(ngModel)]="prescriptionDraft.duration"
+            required /></label
+        ><label class="field"
+          ><span>Quantity</span
+          ><input
+            type="number"
+            min="1"
+            name="quantity"
+            [(ngModel)]="prescriptionDraft.quantity"
+            required /></label
+        ><label class="field full-width"
+          ><span>Instructions</span
+          ><textarea
+            name="instructions"
+            [(ngModel)]="prescriptionDraft.instructions"
+            rows="2"
+          ></textarea>
+        </label>
+      </div>
+      <div class="dialog-actions">
+        <button
+          type="button"
+          class="btn btn-link text-button"
+          (click)="prescriptionDialog.close()"
+        >
+          Cancel</button
+        ><button
+          type="submit"
+          class="btn btn-primary primary-button"
+          [disabled]="approvingPrescription || !canApprovePrescriptions"
+        >
+          {{
+            approvingPrescription
+              ? "Submitting..."
+              : "Confirm clinician approval"
+          }}
+        </button>
+      </div>
+    </form>
+  </dialog>
+</main>

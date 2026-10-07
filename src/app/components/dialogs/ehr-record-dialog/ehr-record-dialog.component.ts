@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   MAT_DIALOG_DATA,
@@ -7,9 +8,10 @@ import {
 } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { ClinicalConcept, EhrLabResult, Prescription } from '../../../models';
+import { ClinicalConcept, EhrLabResult, PatientVitals, Prescription } from '../../../models';
 import { KnhtsConceptSearchComponent } from '../../shared/knhts-concept-search/knhts-concept-search.component';
 
 export interface EhrDialogPatient {
@@ -19,6 +21,7 @@ export interface EhrDialogPatient {
 
 export interface EhrRecordDialogData {
   patients: EhrDialogPatient[];
+  patient?: EhrDialogPatient;
 }
 
 export interface CreateEhrRecordPayload {
@@ -35,15 +38,18 @@ export interface CreateEhrRecordPayload {
   labResults: EhrLabResult[];
   notes: string;
   clinicalConcept?: ClinicalConcept;
+  vitals?: PatientVitals;
 }
 
 @Component({
   selector: 'app-ehr-record-dialog',
   imports: [
+    CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
     MatButtonModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MatSelectModule,
     KnhtsConceptSearchComponent,
@@ -60,13 +66,31 @@ export class EhrRecordDialogComponent {
   );
 
   readonly recordForm = this.formBuilder.group({
-    patientId: ['', [Validators.required]],
+    patientId: [this.data?.patient?.id || '', [Validators.required]],
     symptoms: [''],
     treatment: [''],
     doctorNotes: [''],
+    vitals: this.formBuilder.group({
+      systolicBp: [null],
+      diastolicBp: [null],
+      heartRateBpm: [null],
+      temperatureC: [null],
+      heightCm: [null],
+      weightKg: [null],
+    }),
   });
 
   selectedConcept: ClinicalConcept | null = null;
+
+  get calculatedBmi(): string | null {
+    const v = this.recordForm.get('vitals');
+    const h = Number(v?.get('heightCm')?.value);
+    const w = Number(v?.get('weightKg')?.value);
+    if (h > 0 && w > 0) {
+      return (w / ((h / 100) * (h / 100))).toFixed(1);
+    }
+    return null;
+  }
 
   onConceptSelected(concept: ClinicalConcept | null): void {
     this.selectedConcept = concept;
@@ -88,6 +112,19 @@ export class EhrRecordDialogComponent {
     const diagnosisSystem = this.selectedConcept.coding?.[0]?.system || this.selectedConcept.system || 'KNHTS';
     const diagnosisText = this.selectedConcept.display || this.selectedConcept.text || '';
 
+    const rawVitals = value.vitals;
+    const hasVitals = rawVitals && (rawVitals.systolicBp || rawVitals.diastolicBp || rawVitals.temperatureC || rawVitals.heartRateBpm || rawVitals.heightCm || rawVitals.weightKg);
+
+    const vitalsPayload: PatientVitals | undefined = hasVitals ? {
+      systolicBp: rawVitals.systolicBp ? Number(rawVitals.systolicBp) : undefined,
+      diastolicBp: rawVitals.diastolicBp ? Number(rawVitals.diastolicBp) : undefined,
+      heartRateBpm: rawVitals.heartRateBpm ? Number(rawVitals.heartRateBpm) : undefined,
+      temperatureC: rawVitals.temperatureC ? Number(rawVitals.temperatureC) : undefined,
+      heightCm: rawVitals.heightCm ? Number(rawVitals.heightCm) : undefined,
+      weightKg: rawVitals.weightKg ? Number(rawVitals.weightKg) : undefined,
+      bmi: this.calculatedBmi ? Number(this.calculatedBmi) : undefined,
+    } : undefined;
+
     this.dialogRef.close({
       id: '',
       prescriptions: [],
@@ -102,6 +139,7 @@ export class EhrRecordDialogComponent {
       treatment: value.treatment ?? '',
       doctorNotes: value.doctorNotes ?? '',
       clinicalConcept: this.selectedConcept,
+      vitals: vitalsPayload,
     });
   }
 }

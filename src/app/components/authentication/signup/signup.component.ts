@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -16,12 +16,32 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { AuthService } from '../../../services';
-import { FacilityType, SignupRequest } from '../../../models';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatChipsModule } from '@angular/material/chips';
+
+import { AuthService, FacilityService } from '../../../services';
+import { FacilityType, SignupRequest } from '../../../models';
 import { LogoComponent } from '../../features/logo/logo.component';
+import { Subject, Subscription, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, tap, catchError } from 'rxjs/operators';
 
 type SelectedFacilityType = FacilityType | null;
+
+export interface KmhfrFacilityItem {
+  id?: string | number;
+  name?: string;
+  official_name?: string;
+  code?: string | number;
+  registration_number?: string;
+  county_name?: string;
+  county?: string;
+  facility_type_name?: string;
+  facility_type?: string;
+  owner_name?: string;
+  keph_level_name?: string;
+}
 
 @Component({
   selector: 'app-signup',
@@ -37,14 +57,18 @@ type SelectedFacilityType = FacilityType | null;
     MatIconModule,
     MatCheckboxModule,
     MatSnackBarModule,
+    MatAutocompleteModule,
+    MatProgressSpinnerModule,
+    MatChipsModule,
     LogoComponent,
   ],
   templateUrl: './signup.component.html',
   styleUrl: './signup.component.css',
 })
-export class SignupComponent {
+export class SignupComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly facilityService = inject(FacilityService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly signupDraftStorageKey = 'afyora.signupDraft';
   private readonly organizationIdStorageKey = 'afyora.organizationId';
@@ -57,6 +81,16 @@ export class SignupComponent {
   showConfirmPassword = false;
   isSubmitting = false;
   facilityType: SelectedFacilityType = null;
+
+  // KMHFR Search State
+  kmhfrFacilities: KmhfrFacilityItem[] = [];
+  isSearchingKmhfr = false;
+  kmhfrSearchError = '';
+  selectedKmhfrFacility: KmhfrFacilityItem | null = null;
+  isKmhfrVerified = false;
+  private readonly kmhfrSearchSubject = new Subject<string>();
+  private kmhfrSearchSub?: Subscription;
+
   readonly signupForm = this.fb.group(
     {
       facilityType: [null as SelectedFacilityType, [Validators.required]],
@@ -96,6 +130,104 @@ export class SignupComponent {
   );
 
   constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    // Setup debounced KMHFR facility search
+    this.kmhfrSearchSub = this.kmhfrSearchSubject
+      .pipe(
+        debounceTime(350),
+        distinctUntilChanged(),
+        tap((term) => {
+          if (term && term.trim().length >= 2) {
+            this.isSearchingKmhfr = true;
+            this.kmhfrSearchError = '';
+          } else {
+            this.isSearchingKmhfr = false;
+            this.kmhfrFacilities = [];
+          }
+        }),
+        switchMap((term) => {
+          if (!term || term.trim().length < 2) {
+            return of(null);
+          }
+          return this.facilityService.searchKmhfrFacilities(term.trim()).pipe(
+            catchError((err) => {
+              console.error('Error searching KMHFR registry:', err);
+              this.kmhfrSearchError = 'Unable to search KMHFR registry. You can enter details manually.';
+              this.isSearchingKmhfr = false;
+              return of(null);
+            })
+          );
+        })
+      )
+      .subscribe((res: any) => {
+        this.isSearchingKmhfr = false;
+        if (!res) {
+          this.kmhfrFacilities = [];
+          return;
+        }
+
+        const responseData = res?.data ?? res;
+        const results = responseData?.results ?? responseData?.data ?? (Array.isArray(responseData) ? responseData : []);
+        this.kmhfrFacilities = Array.isArray(results) ? results : [];
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.kmhfrSearchSub?.unsubscribe();
+  }
+
+  onFacilityNameInput(event: Event): void {
+    const value = (event.target as HTMLInputElement)?.value ?? '';
+
+    // If user changes name after verifying, reset verification status
+    if (this.selectedKmhfrFacility) {
+      const selectedName = this.selectedKmhfrFacility.official_name || this.selectedKmhfrFacility.name;
+      if (value !== selectedName) {
+        this.isKmhfrVerified = false;
+        this.selectedKmhfrFacility = null;
+      }
+    }
+
+    this.kmhfrSearchSubject.next(value);
+  }
+
+  onSelectKmhfrFacility(event: MatAutocompleteSelectedEvent): void {
+    const facility: KmhfrFacilityItem = event.option.value;
+    if (facility) {
+      this.selectedKmhfrFacility = facility;
+      this.isKmhfrVerified = true;
+
+      const name = facility.official_name || facility.name || '';
+      const regCode = String(facility.code || facility.registration_number || facility.id || '');
+
+      this.signupForm.patchValue({
+        facilityName: name,
+        registrationNumber: regCode,
+      });
+
+      this.snackBar.open(
+        `✓ KMHFR Facility Selected: ${name} (MFL Code: ${regCode})`,
+        'Close',
+        {
+          duration: 4000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+        }
+      );
+    }
+  }
+
+  displayKmhfrFacility(facility: any): string {
+    if (!facility) return '';
+    if (typeof facility === 'string') return facility;
+    return facility.official_name || facility.name || '';
+  }
+
+  clearKmhfrVerification(): void {
+    this.selectedKmhfrFacility = null;
+    this.isKmhfrVerified = false;
+  }
 
   setFacilityType(type: SelectedFacilityType) {
     this.facilityType = type;

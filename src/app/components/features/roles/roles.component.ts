@@ -1,34 +1,67 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Plus, Edit2, Trash2, Shield, ChevronDown, ChevronUp, X, Check, Save, Users, AlertTriangle, Eye, PlusCircle, Edit3, Trash } from 'lucide-angular';
-import { RolesService, FacilityRole, CreateRolePayload } from '../../../services/roles.service';
+import {
+  LucideAngularModule,
+  Plus,
+  Edit2,
+  Trash2,
+  Shield,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Check,
+  Save,
+  Users,
+  AlertTriangle,
+  Eye,
+  PlusCircle,
+  Edit3,
+  Trash,
+} from 'lucide-angular';
+import {
+  RolesService,
+  FacilityRole,
+  CreateRolePayload,
+} from '../../../services/roles.service';
 import { EmployeeService } from '../../../services/employee.service';
-import { ALL_MODULES, ModuleKey, ModuleActionPermissions, PermissionsMap } from '../../../core/permissions.service';
+import {
+  ALL_MODULES,
+  ModuleKey,
+  ModuleActionPermissions,
+  PermissionsMap,
+} from '../../../core/permissions.service';
 
 const MODULE_LABELS: Record<ModuleKey, string> = {
   dashboard_overview: 'Dashboard Overview',
-  patients:           'Patients',
-  appointments:       'Appointments',
-  visit_queue:        'Visit Queue',
-  ehr:                'EHR (Records)',
-  pharmacy:           'Pharmacy',
-  laboratory:         'Laboratory',
-  radiology:          'Radiology',
-  billing:            'Billing',
-  inventory:          'Inventory',
-  reports:            'Reports',
-  employees:          'Employees',
-  departments:        'Departments',
-  roles:              'Roles & Permissions',
+  patients: 'Patients',
+  appointments: 'Appointments',
+  visit_queue: 'Visit Queue',
+  ehr: 'EHR (Records)',
+  clinical_ai: 'Clinical AI',
+  pharmacy: 'Pharmacy',
+  laboratory: 'Laboratory',
+  radiology: 'Radiology',
+  billing: 'Billing',
+  inventory: 'Inventory',
+  reports: 'Reports',
+  employees: 'Employees',
+  departments: 'Departments',
+  roles: 'Roles & Permissions',
 };
 
 const MODULE_GROUPS: { label: string; modules: ModuleKey[] }[] = [
-  { label: 'Clinical',       modules: ['patients', 'appointments', 'visit_queue', 'ehr'] },
-  { label: 'Diagnostics',    modules: ['laboratory', 'radiology'] },
-  { label: 'Pharmacy',       modules: ['pharmacy', 'inventory'] },
-  { label: 'Finance',        modules: ['billing', 'reports'] },
-  { label: 'Administration', modules: ['employees', 'departments', 'dashboard_overview', 'roles'] },
+  {
+    label: 'Clinical',
+    modules: ['patients', 'appointments', 'visit_queue', 'ehr', 'clinical_ai'],
+  },
+  { label: 'Diagnostics', modules: ['laboratory', 'radiology'] },
+  { label: 'Pharmacy', modules: ['pharmacy', 'inventory'] },
+  { label: 'Finance', modules: ['billing', 'reports'] },
+  {
+    label: 'Administration',
+    modules: ['employees', 'departments', 'dashboard_overview', 'roles'],
+  },
 ];
 
 export type ActionKey = 'create' | 'read' | 'update' | 'delete';
@@ -78,7 +111,8 @@ export class RolesComponent implements OnInit {
   // Form state
   formName = '';
   formDescription = '';
-  formPermissions: Record<ModuleKey, ModuleActionPermissions> = this.emptyPermissions();
+  formPermissions: Record<ModuleKey, ModuleActionPermissions> =
+    this.emptyPermissions();
 
   // Assign role modal
   showAssignModal = signal(false);
@@ -102,15 +136,15 @@ export class RolesComponent implements OnInit {
 
   private emptyPermissions(): Record<ModuleKey, ModuleActionPermissions> {
     return Object.fromEntries(
-      ALL_MODULES.map(m => [
+      ALL_MODULES.map((m) => [
         m,
         { create: false, read: false, update: false, delete: false },
-      ])
+      ]),
     ) as Record<ModuleKey, ModuleActionPermissions>;
   }
 
   normalizePermissions(
-    raw?: PermissionsMap
+    raw?: PermissionsMap,
   ): Record<ModuleKey, ModuleActionPermissions> {
     const base = this.emptyPermissions();
     if (!raw) return base;
@@ -189,21 +223,40 @@ export class RolesComponent implements OnInit {
   }
 
   toggleAction(module: ModuleKey, action: ActionKey): void {
-    this.formPermissions[module][action] = !this.formPermissions[module][action];
+    this.formPermissions[module][action] =
+      !this.formPermissions[module][action];
   }
 
   setModulePreset(module: ModuleKey, preset: 'all' | 'read' | 'none'): void {
     if (preset === 'all') {
-      this.formPermissions[module] = { create: true, read: true, update: true, delete: true };
+      this.formPermissions[module] = {
+        create: true,
+        read: true,
+        update: true,
+        delete: true,
+      };
     } else if (preset === 'read') {
-      this.formPermissions[module] = { create: false, read: true, update: false, delete: false };
+      this.formPermissions[module] = {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      };
     } else {
-      this.formPermissions[module] = { create: false, read: false, update: false, delete: false };
+      this.formPermissions[module] = {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      };
     }
   }
 
-  toggleGroupPreset(group: { modules: ModuleKey[] }, preset: 'all' | 'read' | 'none'): void {
-    group.modules.forEach(m => this.setModulePreset(m, preset));
+  toggleGroupPreset(
+    group: { modules: ModuleKey[] },
+    preset: 'all' | 'read' | 'none',
+  ): void {
+    group.modules.forEach((m) => this.setModulePreset(m, preset));
   }
 
   isModuleActive(module: ModuleKey): boolean {
@@ -222,7 +275,7 @@ export class RolesComponent implements OnInit {
   }
 
   enabledCount(): number {
-    return ALL_MODULES.filter(m => this.isModuleActive(m)).length;
+    return ALL_MODULES.filter((m) => this.isModuleActive(m)).length;
   }
 
   saveRole(): void {
@@ -239,9 +292,10 @@ export class RolesComponent implements OnInit {
       permissions: this.formPermissions as unknown as PermissionsMap,
     };
 
-    const op$ = this.isEditing() && this.editingRoleId()
-      ? this.rolesService.updateRole(this.editingRoleId()!, payload)
-      : this.rolesService.createRole(payload);
+    const op$ =
+      this.isEditing() && this.editingRoleId()
+        ? this.rolesService.updateRole(this.editingRoleId()!, payload)
+        : this.rolesService.createRole(payload);
 
     op$.subscribe({
       next: () => {
@@ -251,7 +305,8 @@ export class RolesComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        const detail = err?.error?.name?.[0] || err?.error?.detail || 'Failed to save role.';
+        const detail =
+          err?.error?.name?.[0] || err?.error?.detail || 'Failed to save role.';
         this.error.set(detail);
       },
     });
@@ -301,18 +356,20 @@ export class RolesComponent implements OnInit {
     this.assignLoading.set(true);
     this.assignError.set('');
     this.assignSuccess.set('');
-    this.rolesService.assignRole(role.id, { employee_id: this.selectedEmployeeId }).subscribe({
-      next: () => {
-        this.assignLoading.set(false);
-        this.assignSuccess.set(`Role "${role.name}" assigned successfully.`);
-        this.selectedEmployeeId = '';
-        this.loadRoles();
-      },
-      error: (err) => {
-        this.assignLoading.set(false);
-        this.assignError.set(err?.error?.error || 'Failed to assign role.');
-      },
-    });
+    this.rolesService
+      .assignRole(role.id, { employee_id: this.selectedEmployeeId })
+      .subscribe({
+        next: () => {
+          this.assignLoading.set(false);
+          this.assignSuccess.set(`Role "${role.name}" assigned successfully.`);
+          this.selectedEmployeeId = '';
+          this.loadRoles();
+        },
+        error: (err) => {
+          this.assignLoading.set(false);
+          this.assignError.set(err?.error?.error || 'Failed to assign role.');
+        },
+      });
   }
 
   toggleExpand(roleId: number): void {
@@ -325,16 +382,20 @@ export class RolesComponent implements OnInit {
 
   enabledModules(role: FacilityRole): string[] {
     const perms = this.normalizePermissions(role.permissions);
-    return ALL_MODULES.filter(m => perms[m].read || perms[m].create || perms[m].update || perms[m].delete);
+    return ALL_MODULES.filter(
+      (m) =>
+        perms[m].read || perms[m].create || perms[m].update || perms[m].delete,
+    );
   }
 
   getModuleActionSummary(role: FacilityRole, module: ModuleKey): string {
     const perms = this.normalizePermissions(role.permissions);
     const p = perms[module];
-    if (!p || (!p.read && !p.create && !p.update && !p.delete)) return 'No Access';
+    if (!p || (!p.read && !p.create && !p.update && !p.delete))
+      return 'No Access';
     if (p.create && p.read && p.update && p.delete) return 'Full Access';
     if (p.read && !p.create && !p.update && !p.delete) return 'Fetch Only';
-    
+
     const actions: string[] = [];
     if (p.read) actions.push('Fetch');
     if (p.create) actions.push('Create');
