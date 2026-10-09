@@ -248,6 +248,19 @@ function mapClinicalAIResponse(
   return {
     aiConsultationId,
     clinicalSummary: response.clinical_summary ?? '',
+    riskLevel: response.risk_level,
+    triage: response.triage
+      ? {
+          level: response.triage.level,
+          urgentCareRecommended: response.triage.urgent_care_recommended,
+          reasons: response.triage.reasons ?? [],
+          recommendation: response.triage.recommendation,
+          requiresHumanReview: response.triage.requires_human_review,
+          ruleSet: response.triage.rule_set,
+        }
+      : undefined,
+    referralRecommendation: response.referral_recommendation,
+    requiresHumanReview: response.requires_human_review,
     differentialDiagnoses: (response.differential_diagnoses ?? []).map(
       (diagnosis, index) => ({
         id: String(

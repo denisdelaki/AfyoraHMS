@@ -189,6 +189,7 @@ export interface ClinicalConsultationRequest {
   laboratory_results: ClinicalLabResult[];
   imaging_reports: ClinicalImagingResult[];
   pregnancy_status?: string;
+  is_pregnant?: boolean;
   breastfeeding?: boolean | null;
   weight_kg?: number | null;
   renal_function?: string;
@@ -274,9 +275,28 @@ export interface ClinicalAuditEvent {
   actorDisplayName?: string;
 }
 
+export interface ClinicalTriageOutcome {
+  level?: string;
+  urgentCareRecommended?: boolean;
+  reasons: string[];
+  recommendation?: string;
+  requiresHumanReview?: boolean;
+  ruleSet?: string;
+}
+
+export interface ClinicalReferralRecommendation {
+  required?: boolean;
+  urgency?: string;
+  reason?: string;
+}
+
 export interface ClinicalAIResponse {
   aiConsultationId: string;
   clinicalSummary: string;
+  riskLevel?: string;
+  triage?: ClinicalTriageOutcome;
+  referralRecommendation?: ClinicalReferralRecommendation;
+  requiresHumanReview?: boolean;
   differentialDiagnoses: DifferentialDiagnosis[];
   redFlags: ClinicalRedFlag[];
   recommendedInvestigations: RecommendedInvestigation[];
@@ -379,6 +399,21 @@ export interface ClinicalAIWireResponse {
   id?: string | number;
   status?: string;
   clinical_summary?: string;
+  risk_level?: string;
+  triage?: {
+    level?: string;
+    urgent_care_recommended?: boolean;
+    reasons?: string[];
+    recommendation?: string;
+    requires_human_review?: boolean;
+    rule_set?: string;
+  };
+  referral_recommendation?: {
+    required?: boolean;
+    urgency?: string;
+    reason?: string;
+  };
+  requires_human_review?: boolean;
   emergency?: boolean;
   urgency?: string;
   red_flags?: (ClinicalAIWireRedFlag | string)[];

@@ -81,6 +81,7 @@ export type PatientVitals = {
   weightKg?: number | string;
   bmi?: number | string;
   painScore?: number;
+  is_pregnant?: boolean;
   notes?: string;
   recordedAt?: string;
 };

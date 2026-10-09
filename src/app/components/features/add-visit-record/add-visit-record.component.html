@@ -278,6 +278,10 @@
               </mat-form-field>
             </div>
 
+            <mat-checkbox formControlName="is_pregnant">
+              Patient is pregnant
+            </mat-checkbox>
+
             <mat-form-field appearance="fill" class="w-full">
               <mat-label>Vitals Notes & Triage Comments</mat-label>
               <input
@@ -788,19 +792,49 @@
             <div class="flex items-center justify-between">
               <span
                 class="font-bold text-[#2458e8] uppercase tracking-wider text-[10px]"
-                >Clinical Summary</span
+                >Outcome</span
               >
               <span
                 [class]="
                   'px-2 py-0.5 rounded text-[10px] font-bold border ' +
-                  confidenceClass(aiResponse.confidenceLevel)
+                  outcomeRiskClass(aiResponse.riskLevel || aiResponse.confidenceLevel)
                 "
               >
-                Confidence: {{ aiResponse.confidenceLevel }}
+                Risk: {{ aiResponse.riskLevel || aiResponse.confidenceLevel }}
               </span>
             </div>
+            <div
+              *ngIf="aiResponse.triage || aiResponse.referralRecommendation || aiResponse.requiresHumanReview"
+              class="flex flex-wrap gap-x-4 gap-y-1 text-slate-600"
+            >
+              <span *ngIf="aiResponse.triage?.level || aiResponse.referralRecommendation?.urgency">
+                Triage:
+                {{ aiResponse.triage?.level || aiResponse.referralRecommendation?.urgency }}
+              </span>
+              <span *ngIf="aiResponse.triage?.urgentCareRecommended || aiResponse.referralRecommendation?.required">
+                Urgent care recommended
+              </span>
+              <span *ngIf="aiResponse.requiresHumanReview || aiResponse.triage?.requiresHumanReview">
+                Human review required
+              </span>
+            </div>
+            <p
+              *ngIf="aiResponse.triage?.recommendation || aiResponse.referralRecommendation?.reason"
+              class="font-semibold text-rose-700"
+            >
+              {{ aiResponse.triage?.recommendation || aiResponse.referralRecommendation?.reason }}
+            </p>
+            <ul
+              *ngIf="aiResponse.triage?.reasons?.length"
+              class="list-disc pl-4 text-slate-600"
+            >
+              <li *ngFor="let reason of aiResponse.triage?.reasons ?? []">{{ reason }}</li>
+            </ul>
             <p class="text-slate-700 leading-relaxed">
               {{ aiResponse.clinicalSummary }}
+            </p>
+            <p class="border-t border-blue-100 pt-2 text-[10px] text-slate-500">
+              Confidence: {{ aiResponse.confidenceLevel }}
             </p>
           </div>
 

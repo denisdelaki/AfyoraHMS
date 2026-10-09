@@ -286,6 +286,57 @@ describe('ClinicalAIService', () => {
     );
   });
 
+  it('maps triage and referral disposition for the outcome section', () => {
+    let response: ClinicalAIResponse | undefined;
+    service
+      .analyze({
+        patient_id: 'PAT0001',
+        consultation_id: 'CONS-01',
+        chief_complaint: 'Shortness of breath',
+        symptoms: '',
+        laboratory_results: [],
+        imaging_reports: [],
+      })
+      .subscribe((result) => {
+        response = result;
+      });
+
+    httpMock.expectOne(`${apiUrl('/clinical-ai')}/consultation/`).flush({
+      clinical_summary: 'Urgent assessment is required.',
+      risk_level: 'high',
+      triage: {
+        level: 'urgent',
+        urgent_care_recommended: true,
+        reasons: ['Oxygen saturation is critically low.'],
+        recommendation: 'Urgent in-person assessment now.',
+        requires_human_review: true,
+        rule_set: 'adult-vital-screening-v1',
+      },
+      referral_recommendation: {
+        required: true,
+        urgency: 'urgent',
+        reason: 'Transfer for urgent clinical assessment.',
+      },
+      requires_human_review: true,
+    });
+
+    expect(response?.riskLevel).toBe('high');
+    expect(response?.triage).toEqual({
+      level: 'urgent',
+      urgentCareRecommended: true,
+      reasons: ['Oxygen saturation is critically low.'],
+      recommendation: 'Urgent in-person assessment now.',
+      requiresHumanReview: true,
+      ruleSet: 'adult-vital-screening-v1',
+    });
+    expect(response?.referralRecommendation).toEqual({
+      required: true,
+      urgency: 'urgent',
+      reason: 'Transfer for urgent clinical assessment.',
+    });
+    expect(response?.requiresHumanReview).toBe(true);
+  });
+
   it('preserves plain-text red flags in saved raw responses', () => {
     let response: ClinicalAIResponse | undefined;
     service.getConsultation('6', 12).subscribe((result) => {

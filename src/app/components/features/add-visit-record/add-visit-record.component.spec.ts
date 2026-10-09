@@ -15,8 +15,12 @@ import { AddVisitRecordComponent } from './add-visit-record.component';
 describe('AddVisitRecordComponent vitals', () => {
   let component: AddVisitRecordComponent;
   let patientsService: any;
+  let clinicalAIService: any;
 
   beforeEach(() => {
+    clinicalAIService = {
+      analyze: jasmine.createSpy('analyze').and.returnValue(of({})),
+    };
     patientsService = {
       createPatientVitals: jasmine
         .createSpy('createPatientVitals')
@@ -31,7 +35,7 @@ describe('AddVisitRecordComponent vitals', () => {
         { provide: PatientsService, useValue: patientsService },
         { provide: PharmacyService, useValue: {} },
         { provide: DhaAfyaConnectService, useValue: {} },
-        { provide: ClinicalAIService, useValue: {} },
+        { provide: ClinicalAIService, useValue: clinicalAIService },
         { provide: EmployeeService, useValue: {} },
         { provide: VisitQueueService, useValue: {} },
         { provide: MatSnackBar, useValue: { open: jasmine.createSpy('open') } },
@@ -58,8 +62,36 @@ describe('AddVisitRecordComponent vitals', () => {
     expect(payload.patientId).toBe('PAT001');
     expect(payload.ticketId).toBe('31');
     expect(payload.painScore).toBe(0);
+    expect(payload.is_pregnant).toBe(false);
     expect(patientsService.createPatientVisitHistory).not.toHaveBeenCalled();
     expect(component.savingVitals).toBeFalsy();
+  });
+
+  it('saves pregnancy status as true with captured vitals', () => {
+    component.visitForm.get('vitals')?.patchValue({
+      systolicBp: 120,
+      is_pregnant: true,
+    });
+
+    component.saveVitals();
+
+    const payload =
+      patientsService.createPatientVitals.calls.mostRecent().args[0];
+    expect(payload.systolicBp).toBe(120);
+    expect(payload.is_pregnant).toBe(true);
+  });
+
+  it('sends checkbox pregnancy status in the Clinical AI request', () => {
+    for (const isPregnant of [false, true]) {
+      component.visitForm.get('vitals')?.patchValue({
+        is_pregnant: isPregnant,
+      });
+
+      component.runClinicalAI();
+
+      const request = clinicalAIService.analyze.calls.mostRecent().args[0];
+      expect(request.is_pregnant).toBe(isPregnant);
+    }
   });
 
   it('does not save empty vitals or vitals without a patient', () => {

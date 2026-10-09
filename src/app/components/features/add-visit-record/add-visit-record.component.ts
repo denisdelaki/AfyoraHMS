@@ -17,6 +17,7 @@ import {
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import {
   MAT_DIALOG_DATA,
@@ -117,6 +118,7 @@ export type AddVisitRecordData = {
     FormsModule,
     MatDialogModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -213,6 +215,7 @@ export class AddVisitRecordComponent implements OnInit {
       heightCm: [null],
       weightKg: [null],
       painScore: [null],
+      is_pregnant: [false],
       notes: [''],
     }),
     prescriptions: this.formBuilder.array([]),
@@ -493,6 +496,7 @@ export class AddVisitRecordComponent implements OnInit {
       heightCm: this.latestVitals.heightCm ?? null,
       weightKg: this.latestVitals.weightKg ?? null,
       painScore: this.latestVitals.painScore ?? null,
+      is_pregnant: this.latestVitals.is_pregnant ?? false,
       notes: this.latestVitals.notes ?? '',
     });
     this.snackBar.open(
@@ -636,6 +640,7 @@ export class AddVisitRecordComponent implements OnInit {
     const notes = rawVitals?.notes?.trim();
     if (notes) payload.notes = notes;
     if (Object.keys(payload).length === 0) return undefined;
+    payload.is_pregnant = rawVitals?.is_pregnant === true;
     if (this.calculatedBmi) payload.bmi = Number(this.calculatedBmi);
     return payload;
   }
@@ -791,6 +796,7 @@ export class AddVisitRecordComponent implements OnInit {
       laboratory_results: this.patientContext?.laboratoryResults || [],
       imaging_reports: this.patientContext?.imagingResults || [],
       pregnancy_status: this.patientContext?.pregnancyStatus,
+      is_pregnant: formVitals?.is_pregnant === true,
       weight_kg:
         currentVitals?.weightKg || this.patientContext?.vitals?.weightKg,
     };
@@ -1228,6 +1234,19 @@ export class AddVisitRecordComponent implements OnInit {
       case 'High':
         return 'bg-emerald-100 text-emerald-800 border-emerald-300';
       case 'Medium':
+        return 'bg-amber-100 text-amber-800 border-amber-300';
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-300';
+    }
+  }
+
+  outcomeRiskClass(riskLevel: string): string {
+    switch (riskLevel.toLowerCase()) {
+      case 'high':
+      case 'critical':
+        return 'bg-rose-100 text-rose-800 border-rose-300';
+      case 'medium':
+      case 'moderate':
         return 'bg-amber-100 text-amber-800 border-amber-300';
       default:
         return 'bg-slate-100 text-slate-700 border-slate-300';
