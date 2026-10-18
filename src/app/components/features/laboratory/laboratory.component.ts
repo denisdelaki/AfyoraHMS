@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
-import { combineLatest, map, startWith } from 'rxjs';
+import { combineLatest, map, startWith, switchMap, throwError } from 'rxjs';
 import {
   LabRequest,
   LabResult,
@@ -18,6 +18,7 @@ import {
   SubmitLabResultPayload,
 } from '../../../models/laboratory.models';
 import { LaboratoryService } from '../../../services/laboratory.service';
+import { VisitQueueService } from '../../../services/visit-queue.service';
 import { EnterLabResultsDialogComponent } from '../../dialogs/enter-lab-results-dialog/enter-lab-results-dialog.component';
 import { ManageLabTestDialogComponent } from '../../dialogs/manage-lab-test-dialog/manage-lab-test-dialog.component';
 import { NewLabOrderDialogComponent } from '../../dialogs/new-lab-order-dialog/new-lab-order-dialog.component';
@@ -43,6 +44,7 @@ type LaboratoryTab = 'requests' | 'results' | 'catalog';
 export class LaboratoryComponent {
   private readonly dialog = inject(MatDialog);
   private readonly laboratoryService = inject(LaboratoryService);
+  private readonly visitQueueService = inject(VisitQueueService);
   private readonly snackBar = inject(MatSnackBar);
 
   readonly searchControl = new FormControl('', { nonNullable: true });
@@ -97,7 +99,13 @@ export class LaboratoryComponent {
       .afterClosed()
       .subscribe((payload) => {
         if (payload) {
-          this.laboratoryService.createOrder(payload);
+          this.laboratoryService.createOrder(payload).subscribe({
+            next: () => this.openSnackBar('Lab request created successfully.'),
+            error: (error) =>
+              this.openSnackBar(
+                this.getErrorMessage(error, 'Unable to create lab request.'),
+              ),
+          });
         }
       });
   }
@@ -127,6 +135,65 @@ export class LaboratoryComponent {
 
   requestRetest(labId: string) {
     this.laboratoryService.startTest(labId);
+  }
+
+  sendToDoctor(result: LabResult): void {
+    const facilityId = this.getFacilityId();
+    if (!facilityId) {
+      this.openSnackBar('Unable to identify the current facility.');
+      return;
+    }
+
+    this.laboratoryService
+      .getRequestForResult(result.labId, facilityId)
+      .pipe(
+        switchMap((request) => {
+          if (!request.ticketNumber) {
+            return throwError(
+              () =>
+                new Error('This lab request is not linked to a visit ticket.'),
+            );
+          }
+
+          return this.visitQueueService.refresh(facilityId).pipe(
+            switchMap((tickets) => {
+              const ticket = tickets.find(
+                (item) => item.ticketNumber === request.ticketNumber,
+              );
+              if (!ticket) {
+                return throwError(
+                  () => new Error('The visit ticket could not be found.'),
+                );
+              }
+              if (ticket.patientId !== request.patientId) {
+                return throwError(
+                  () =>
+                    new Error(
+                      'The visit ticket does not match the lab request patient.',
+                    ),
+                );
+              }
+
+              return this.visitQueueService
+                .forwardTicket(ticket.id, 'Consultation', facilityId)
+                .pipe(map(() => request));
+            }),
+          );
+        }),
+      )
+      .subscribe({
+        next: (request) =>
+          this.openSnackBar(
+            `Ticket forwarded to Consultation for the ordering clinician (${request.orderedBy}).`,
+          ),
+        error: (error) =>
+          this.openSnackBar(
+            this.getErrorMessage(
+              error,
+              'Unable to send the ticket to Consultation.',
+            ),
+          ),
+      });
   }
 
   openCreateTestDialog(): void {
@@ -242,5 +309,16 @@ export class LaboratoryComponent {
       apiError?.message ||
       fallback
     );
+  }
+
+  private getFacilityId(): string {
+    try {
+      const user = JSON.parse(
+        localStorage.getItem('afyora.user') || 'null',
+      ) as { facility?: string | number } | null;
+      return String(user?.facility || '');
+    } catch {
+      return '';
+    }
   }
 }

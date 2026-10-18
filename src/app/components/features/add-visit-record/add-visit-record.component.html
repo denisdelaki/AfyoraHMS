@@ -144,7 +144,7 @@
           </div>
 
           <!-- Patient Vitals Entry Section -->
-          <div
+          <!-- <div
             formGroupName="vitals"
             class="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 space-y-3"
           >
@@ -289,10 +289,10 @@
                 formControlName="notes"
                 placeholder="e.g. Patient resting comfortably, vitals taken at triage"
               />
-            </mat-form-field>
+            </mat-form-field> -->
 
-            <div class="flex flex-wrap items-center gap-3">
-              <button
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- <button
                 mat-flat-button
                 type="button"
                 color="primary"
@@ -301,54 +301,47 @@
               >
                 <mat-icon>save</mat-icon>
                 {{ savingVitals ? "Saving Vitals..." : "Save Vitals" }}
-              </button>
-              <button
-                mat-stroked-button
-                type="button"
-                [disabled]="loadingVitals || savingVitals || !selectedPatient"
-                (click)="refreshPatientVitals()"
-              >
-                <mat-icon>refresh</mat-icon>
-                {{ loadingVitals ? "Fetching Vitals..." : "Fetch Vitals" }}
-              </button>
-              <button
-                *ngIf="latestVitals"
-                mat-stroked-button
-                type="button"
-                [disabled]="loadingVitals || savingVitals"
-                (click)="useLatestVitals()"
-              >
-                <mat-icon>download</mat-icon> Use Saved Vitals
-              </button>
-            </div>
-            <div *ngIf="latestVitals">
-              <app-vitals-summary-card
-                [vitals]="latestVitals"
-              ></app-vitals-summary-card>
-            </div>
-            <p
-              *ngIf="vitalsLoadError"
-              role="alert"
-              class="text-sm text-red-700"
+              </button> -->
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="loadingVitals || savingVitals || !selectedPatient"
+              (click)="refreshPatientVitals()"
             >
-              {{ vitalsLoadError }}
-            </p>
-            <p
-              *ngIf="
-                selectedPatient &&
-                !loadingVitals &&
-                !latestVitals &&
-                !vitalsLoadError
-              "
-              class="text-sm text-slate-500"
+              <mat-icon>refresh</mat-icon>
+              {{ loadingVitals ? "Fetching Vitals..." : "Fetch Vitals" }}
+            </button>
+            <button
+              *ngIf="latestVitals"
+              mat-stroked-button
+              type="button"
+              [disabled]="loadingVitals || savingVitals"
+              (click)="useLatestVitals()"
             >
-              No saved vitals{{
-                ticketId
-                  ? " for visit ticket " + ticketId
-                  : " for this patient"
-              }}.
-            </p>
+              <mat-icon>download</mat-icon> Use Saved Vitals
+            </button>
           </div>
+          <div *ngIf="latestVitals">
+            <app-vitals-summary-card
+              [vitals]="latestVitals"
+            ></app-vitals-summary-card>
+          </div>
+          <p *ngIf="vitalsLoadError" role="alert" class="text-sm text-red-700">
+            {{ vitalsLoadError }}
+          </p>
+          <p
+            *ngIf="
+              selectedPatient &&
+              !loadingVitals &&
+              !latestVitals &&
+              !vitalsLoadError
+            "
+            class="text-sm text-slate-500"
+          >
+            No saved vitals{{
+              ticketId ? " for visit ticket " + ticketId : " for this patient"
+            }}.
+          </p>
 
           <!-- Clinical Diagnosis Search -->
           <div>
@@ -494,6 +487,250 @@
             </div>
           </div>
 
+          <!-- Lab and Radiology request section -->
+
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="m-0 text-sm font-semibold text-slate-800">Lab Test</h3>
+              <p class="mb-0 mt-1 text-xs text-slate-500">
+                Outpatient ticket: {{ currentTicketNumber || "Not selected" }}
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                mat-stroked-button
+                type="button"
+                (click)="requestLabTest()"
+              >
+                <mat-icon>add</mat-icon>
+                Request Lab Test
+              </button>
+              <!-- fetch lab results for this visit -->
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="loadingLabResults || !dialogData?.ticketNumber"
+                (click)="fetchLabResults()"
+              >
+                <mat-icon>refresh</mat-icon>
+                {{
+                  loadingLabResults
+                    ? "Fetching Results..."
+                    : "Fetch Lab Results"
+                }}
+              </button>
+            </div>
+          </div>
+
+          <section class="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+            <div
+              class="flex flex-wrap items-center justify-between gap-3"
+            ></div>
+
+            <p
+              *ngIf="labResultsError"
+              role="alert"
+              class="mb-0 mt-3 text-sm text-red-700"
+            >
+              {{ labResultsError }}
+            </p>
+
+            <div *ngIf="labResults.length" class="mt-4 space-y-3">
+              <article
+                *ngFor="let result of labResults"
+                class="rounded-lg border border-slate-200 p-3"
+              >
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h4 class="m-0 text-sm font-semibold text-slate-800">
+                      {{ result.test }}
+                    </h4>
+                    <p class="mb-0 mt-1 text-xs text-slate-500">
+                      Completed {{ result.completedDate }} ·
+                      {{ result.technician }}
+                    </p>
+                  </div>
+                  <span
+                    class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                    [ngClass]="
+                      result.status === 'Approved'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-amber-100 text-amber-700'
+                    "
+                  >
+                    {{ result.status }}
+                  </span>
+                </div>
+
+                <div class="mt-3 overflow-x-auto">
+                  <table class="w-full min-w-[520px] text-left text-sm">
+                    <thead>
+                      <tr
+                        class="border-b border-slate-200 text-xs text-slate-500"
+                      >
+                        <th class="py-2 pr-3">Parameter</th>
+                        <th class="py-2 pr-3">Value</th>
+                        <th class="py-2 pr-3">Unit</th>
+                        <th class="py-2 pr-3">Reference range</th>
+                        <th class="py-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        *ngFor="let parameter of result.parameters"
+                        class="border-b border-slate-100 last:border-0"
+                      >
+                        <td class="py-2 pr-3">{{ parameter.name }}</td>
+                        <td class="py-2 pr-3 font-medium">
+                          {{ parameter.value }}
+                        </td>
+                        <td class="py-2 pr-3">{{ parameter.unit || "—" }}</td>
+                        <td class="py-2 pr-3">{{ parameter.range || "—" }}</td>
+                        <td class="py-2">{{ parameter.status }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p
+                  *ngIf="result.remarks"
+                  class="mb-0 mt-2 text-sm text-slate-600"
+                >
+                  Remarks: {{ result.remarks }}
+                </p>
+              </article>
+            </div>
+
+            <p
+              *ngIf="
+                labResultsLoaded && !loadingLabResults && !labResults.length
+              "
+              class="mb-0 mt-3 text-sm text-slate-500"
+            >
+              No lab results are available for this visit yet.
+            </p>
+          </section>
+
+          <section
+            class="mt-4 border-t border-slate-200 pt-4"
+            aria-labelledby="radiology-heading"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3
+                  id="radiology-heading"
+                  class="m-0 text-sm font-semibold text-slate-800"
+                >
+                  Radiology
+                </h3>
+                <p class="mb-0 mt-1 text-xs text-slate-500">
+                  Outpatient ticket: {{ currentTicketNumber || "Not selected" }}
+                </p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="
+                    requestingRadiology ||
+                    !currentTicketNumber ||
+                    !ticketId ||
+                    !(selectedPatient || patientId)
+                  "
+                  (click)="requestRadiologyTest()"
+                >
+                  <mat-icon>add</mat-icon>
+                  {{
+                    requestingRadiology ? "Requesting..." : "Request Imaging"
+                  }}
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="
+                    loadingRadiologyResults ||
+                    !currentTicketNumber ||
+                    !(selectedPatient || patientId)
+                  "
+                  (click)="fetchRadiologyResults()"
+                >
+                  <mat-icon>refresh</mat-icon>
+                  {{
+                    loadingRadiologyResults
+                      ? "Fetching Results..."
+                      : "Fetch Radiology Results"
+                  }}
+                </button>
+              </div>
+            </div>
+            <p
+              *ngIf="radiologyResultsError"
+              role="alert"
+              class="mb-0 mt-3 text-sm text-red-700"
+            >
+              {{ radiologyResultsError }}
+            </p>
+            <div *ngIf="radiologyReports.length" class="mt-4 space-y-3">
+              <article
+                *ngFor="let report of radiologyReports"
+                class="rounded-lg border border-slate-200 p-3"
+              >
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h4 class="m-0 text-sm font-semibold text-slate-800">
+                      {{ report.type }}
+                    </h4>
+                    <p class="mb-0 mt-1 text-xs text-slate-500">
+                      {{ report.orderId }} &middot;
+                      {{ report.scanDate }} &middot; {{ report.radiologist }}
+                    </p>
+                  </div>
+                  <span
+                    class="rounded px-2 py-1 text-xs font-semibold"
+                    [ngClass]="
+                      report.status === 'Finalized'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-amber-100 text-amber-700'
+                    "
+                  >
+                    {{ report.status }}
+                  </span>
+                </div>
+                <dl
+                  class="mb-0 mt-3 space-y-2 text-sm text-slate-700 break-words"
+                >
+                  <div>
+                    <dt class="font-semibold">Findings</dt>
+                    <dd class="m-0 whitespace-pre-wrap">
+                      {{ report.findings || "Not recorded" }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="font-semibold">Impression</dt>
+                    <dd class="m-0 whitespace-pre-wrap">
+                      {{ report.impression || "Not recorded" }}
+                    </dd>
+                  </div>
+                  <div *ngIf="report.recommendations">
+                    <dt class="font-semibold">Recommendations</dt>
+                    <dd class="m-0 whitespace-pre-wrap">
+                      {{ report.recommendations }}
+                    </dd>
+                  </div>
+                </dl>
+              </article>
+            </div>
+            <p
+              *ngIf="
+                radiologyResultsLoaded &&
+                !loadingRadiologyResults &&
+                !radiologyReports.length
+              "
+              class="mb-0 mt-3 text-sm text-slate-500"
+            >
+              No radiology results are available for this visit yet.
+            </p>
+          </section>
+
           <!-- Prescriptions Section -->
           <div formArrayName="prescriptions" class="space-y-4 pt-2">
             <div class="flex items-center justify-between">
@@ -586,7 +823,7 @@
                       (selectionChange)="onDrugSelectionChange(pi, di)"
                     >
                       <mat-option *ngFor="let d of drugs" [value]="d.name">
-                        {{ d.name }} (In stock: {{ d.stock }})
+                        {{ d.name }}
                       </mat-option>
                     </mat-select>
                   </mat-form-field>
@@ -648,7 +885,7 @@
           <div
             class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-100"
           >
-            <mat-form-field appearance="fill" class="w-full">
+            <!-- <mat-form-field appearance="fill" class="w-full">
               <mat-label>Amount Billed (KES)</mat-label>
               <input
                 matInput
@@ -659,7 +896,7 @@
                 formControlName="amountBilled"
                 placeholder="0.00"
               />
-            </mat-form-field>
+            </mat-form-field> -->
 
             <mat-form-field
               *ngIf="nextDestinations.length"
@@ -797,38 +1034,70 @@
               <span
                 [class]="
                   'px-2 py-0.5 rounded text-[10px] font-bold border ' +
-                  outcomeRiskClass(aiResponse.riskLevel || aiResponse.confidenceLevel)
+                  outcomeRiskClass(
+                    aiResponse.riskLevel || aiResponse.confidenceLevel
+                  )
                 "
               >
                 Risk: {{ aiResponse.riskLevel || aiResponse.confidenceLevel }}
               </span>
             </div>
             <div
-              *ngIf="aiResponse.triage || aiResponse.referralRecommendation || aiResponse.requiresHumanReview"
+              *ngIf="
+                aiResponse.triage ||
+                aiResponse.referralRecommendation ||
+                aiResponse.requiresHumanReview
+              "
               class="flex flex-wrap gap-x-4 gap-y-1 text-slate-600"
             >
-              <span *ngIf="aiResponse.triage?.level || aiResponse.referralRecommendation?.urgency">
+              <span
+                *ngIf="
+                  aiResponse.triage?.level ||
+                  aiResponse.referralRecommendation?.urgency
+                "
+              >
                 Triage:
-                {{ aiResponse.triage?.level || aiResponse.referralRecommendation?.urgency }}
+                {{
+                  aiResponse.triage?.level ||
+                    aiResponse.referralRecommendation?.urgency
+                }}
               </span>
-              <span *ngIf="aiResponse.triage?.urgentCareRecommended || aiResponse.referralRecommendation?.required">
+              <span
+                *ngIf="
+                  aiResponse.triage?.urgentCareRecommended ||
+                  aiResponse.referralRecommendation?.required
+                "
+              >
                 Urgent care recommended
               </span>
-              <span *ngIf="aiResponse.requiresHumanReview || aiResponse.triage?.requiresHumanReview">
+              <span
+                *ngIf="
+                  aiResponse.requiresHumanReview ||
+                  aiResponse.triage?.requiresHumanReview
+                "
+              >
                 Human review required
               </span>
             </div>
             <p
-              *ngIf="aiResponse.triage?.recommendation || aiResponse.referralRecommendation?.reason"
+              *ngIf="
+                aiResponse.triage?.recommendation ||
+                aiResponse.referralRecommendation?.reason
+              "
               class="font-semibold text-rose-700"
             >
-              {{ aiResponse.triage?.recommendation || aiResponse.referralRecommendation?.reason }}
+              {{
+                aiResponse.triage?.recommendation ||
+                  aiResponse.referralRecommendation?.reason
+              }}
             </p>
             <ul
               *ngIf="aiResponse.triage?.reasons?.length"
               class="list-disc pl-4 text-slate-600"
             >
-              <li *ngFor="let reason of aiResponse.triage?.reasons ?? []">{{ reason }}</li>
+              <li *ngFor="let reason of aiResponse.triage?.reasons ?? []">
+                {{ reason }}
+              </li>
             </ul>
             <p class="text-slate-700 leading-relaxed">
               {{ aiResponse.clinicalSummary }}

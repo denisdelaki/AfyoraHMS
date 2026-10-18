@@ -26,6 +26,7 @@ export interface LabRequest {
   id: string;
   patient: string;
   patientId: string;
+  ticketNumber?: string;
   test: string;
   orderedBy: string;
   orderDate: string;
@@ -44,6 +45,7 @@ export interface LabResultParameter {
 
 export interface LabResult {
   labId: string;
+  ticketNumber?: string;
   patient: string;
   test: string;
   parameters: LabResultParameter[];
@@ -60,6 +62,7 @@ export interface CreateLabOrderPayload {
   orderedBy: string;
   testId: string;
   priority: LabPriority;
+  ticketNumber?: string;
   notes?: string;
 }
 

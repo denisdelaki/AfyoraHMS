@@ -324,7 +324,12 @@ export class HomeComponent implements OnInit {
   actions: DashboardAction[] = [];
   pharmacyPrescriptions: Prescription[] = [];
   pharmacyDrugs: Drug[] = [];
-  teamOnDuty: Array<{ id: string; name: string; role: string; status: string }> = [];
+  teamOnDuty: Array<{
+    id: string;
+    name: string;
+    role: string;
+    status: string;
+  }> = [];
   upcomingAppointments: Array<{
     time: string;
     patient: string;
@@ -367,7 +372,7 @@ export class HomeComponent implements OnInit {
     this.role = this.normalizeRole(user.role);
 
     // Check if we were redirected here because of a permission block
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       this.blockedModule = params['blocked'] ?? '';
     });
 
@@ -381,16 +386,36 @@ export class HomeComponent implements OnInit {
       label: this.roleLabel(this.role),
       summary: isFacilityAdmin
         ? 'You have a complete view of facility operations.'
-        : (roleDefaults.summary || 'Here is the work and activities assigned to your role.'),
-      showFacilityOverview: isFacilityAdmin || (!!roleDefaults.showFacilityOverview && p.hasPermission('dashboard_overview')),
-      showAppointments: isFacilityAdmin || (!!roleDefaults.showAppointments && p.hasPermission('appointments')),
-      showLabs: isFacilityAdmin || (!!roleDefaults.showLabs && p.hasPermission('laboratory')),
-      showPharmacy: isFacilityAdmin || (!!roleDefaults.showPharmacy && p.hasPermission('pharmacy')),
-      showRadiology: isFacilityAdmin || (!!roleDefaults.showRadiology && p.hasPermission('radiology')),
-      showTeam: isFacilityAdmin || (!!roleDefaults.showTeam && p.hasPermission('employees')),
-      showBilling: isFacilityAdmin || (!!roleDefaults.showBilling && p.hasPermission('billing')),
-      showEmployees: isFacilityAdmin || (!!roleDefaults.showEmployees && p.hasPermission('employees')),
-      showPatientSummary: isFacilityAdmin || (!!roleDefaults.showPatientSummary && p.hasPermission('patients')),
+        : roleDefaults.summary ||
+          'Here is the work and activities assigned to your role.',
+      showFacilityOverview:
+        isFacilityAdmin ||
+        (!!roleDefaults.showFacilityOverview &&
+          p.hasPermission('dashboard_overview')),
+      showAppointments:
+        isFacilityAdmin ||
+        (!!roleDefaults.showAppointments && p.hasPermission('appointments')),
+      showLabs:
+        isFacilityAdmin ||
+        (!!roleDefaults.showLabs && p.hasPermission('laboratory')),
+      showPharmacy:
+        isFacilityAdmin ||
+        (!!roleDefaults.showPharmacy && p.hasPermission('pharmacy')),
+      showRadiology:
+        isFacilityAdmin ||
+        (!!roleDefaults.showRadiology && p.hasPermission('radiology')),
+      showTeam:
+        isFacilityAdmin ||
+        (!!roleDefaults.showTeam && p.hasPermission('employees')),
+      showBilling:
+        isFacilityAdmin ||
+        (!!roleDefaults.showBilling && p.hasPermission('billing')),
+      showEmployees:
+        isFacilityAdmin ||
+        (!!roleDefaults.showEmployees && p.hasPermission('employees')),
+      showPatientSummary:
+        isFacilityAdmin ||
+        (!!roleDefaults.showPatientSummary && p.hasPermission('patients')),
     };
 
     this.actions = this.getActions(this.role);
@@ -401,10 +426,11 @@ export class HomeComponent implements OnInit {
       user,
     );
     if (this.profile.showFacilityOverview)
-      // // this.dashboardService
-      // //   .getOverview()
-      //   .subscribe({ next: ({ data }) => this.applyOverview(data) });
-      if (this.profile.showPatientSummary) this.loadPatientSummary();
+      if (this.profile.showPatientSummary)
+        // // this.dashboardService
+        // //   .getOverview()
+        //   .subscribe({ next: ({ data }) => this.applyOverview(data) });
+        this.loadPatientSummary();
     if (this.profile.showPharmacy) this.loadPharmacyQueue();
     if (this.profile.showRadiology) this.loadRadiologyQueue();
     if (this.profile.showBilling) this.loadBillingQueue();
@@ -447,7 +473,19 @@ export class HomeComponent implements OnInit {
   private loadEmployeeDependentData(user: StoredUser): void {
     this.loadShiftAndTeam(user);
     // Check appointments for any role that can have scheduled appointments
-    if (this.profile.showAppointments || ['doctor', 'physician', 'nurse', 'lab_technician', 'laboratory_technician', 'radiologist', 'radiology_technician', 'staff'].includes(this.role)) {
+    if (
+      this.profile.showAppointments ||
+      [
+        'doctor',
+        'physician',
+        'nurse',
+        'lab_technician',
+        'laboratory_technician',
+        'radiologist',
+        'radiology_technician',
+        'staff',
+      ].includes(this.role)
+    ) {
       this.loadAppointments(user);
     }
     if (this.profile.showLabs) this.loadLabQueue(user);
@@ -489,6 +527,7 @@ export class HomeComponent implements OnInit {
           (invoice) =>
             invoice.status === 'Pending' || invoice.status === 'Overdue',
         );
+        console.log('Outstanding invoices:', outstanding);
         this.workQueueTitle = 'Outstanding invoices';
         this.workQueueLink = '/billing';
         this.workItems = outstanding.slice(0, 5).map((invoice) => ({
@@ -514,7 +553,10 @@ export class HomeComponent implements OnInit {
           ),
           this.stat(
             'Outstanding Amount',
-            outstanding.reduce((sum, invoice) => sum + invoice.total, 0),
+            outstanding.reduce(
+              (sum, invoice) => sum + Number(invoice.total || 0),
+              0,
+            ),
             'Requires follow-up',
             'bg-red-500',
             DollarSign,
@@ -601,13 +643,13 @@ export class HomeComponent implements OnInit {
           'radiologist',
         ].includes(this.role)
           ? appointments.filter(
-            (appointment) =>
-              (!!currentUserId &&
-                String(appointment.doctor) === currentUserId) ||
-              appointment.doctor
-                ?.toLowerCase()
-                .includes(currentUserName.toLowerCase()),
-          )
+              (appointment) =>
+                (!!currentUserId &&
+                  String(appointment.doctor) === currentUserId) ||
+                appointment.doctor
+                  ?.toLowerCase()
+                  .includes(currentUserName.toLowerCase()),
+            )
           : appointments;
 
         this.upcomingAppointments = relevant
@@ -659,18 +701,25 @@ export class HomeComponent implements OnInit {
           employee.name?.toLowerCase() === this.userName.toLowerCase(),
       );
       const currentUserId = String(currentUser?.id ?? this.userId);
-      const isDoctor = this.role.includes('doctor') || this.role === 'physician';
+      const isDoctor =
+        this.role.includes('doctor') || this.role === 'physician';
 
       // Doctors see tests they ordered; Lab technicians & others see the laboratory queue tests
       const relevant = isDoctor
         ? requests.filter(
-          (request) =>
-            (!!currentUserId && String(request.orderedBy) === currentUserId) ||
-            (!!request.orderedBy && request.orderedBy.toLowerCase().includes(this.userName.toLowerCase()))
-        )
+            (request) =>
+              (!!currentUserId &&
+                String(request.orderedBy) === currentUserId) ||
+              (!!request.orderedBy &&
+                request.orderedBy
+                  .toLowerCase()
+                  .includes(this.userName.toLowerCase())),
+          )
         : requests;
 
-      this.workQueueTitle = isDoctor ? 'My lab orders' : 'Laboratory work queue';
+      this.workQueueTitle = isDoctor
+        ? 'My lab orders'
+        : 'Laboratory work queue';
       this.workQueueLink = '/laboratory';
       this.workItems = relevant
         .filter(

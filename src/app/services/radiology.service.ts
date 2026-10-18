@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map, of, from } from 'rxjs';
+import { EMPTY, Observable, catchError, expand, forkJoin, map, of, from, reduce, switchMap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import { ApiResponse } from '../models/api.models';
 import {
@@ -124,6 +124,50 @@ export class RadiologyService {
   }
 
   // ---------- Reports ----------
+  getReportsForTicket(
+    ticketNumber: string,
+    facilityId: string | number,
+    patientId: string,
+  ): Observable<RadiologyReport[]> {
+    const params = new URLSearchParams({ facilityId: String(facilityId), patientId });
+    return this.getAllPages(`${this.baseUrl}/requests/?${params}`).pipe(
+      map((orders) => orders.filter((order) =>
+        order.ticketNumber === ticketNumber && order.patientId === patientId,
+      )),
+      switchMap((orders) => orders.length ? forkJoin(orders.map((order) => {
+        const reportParams = new URLSearchParams({
+          facilityId: String(facilityId), orderId: String(order.id),
+        });
+        return this.getAllPages(`${this.baseUrl}/reports/?${reportParams}`).pipe(
+          map((reports) => reports.filter((report) => report.orderRequestId === order.id)),
+        );
+      })) : of([])),
+      map((collections) => collections.flat().map((report) => ({
+        orderId: report.orderRequestId,
+        patient: report.patient || '',
+        patientId: report.patientId,
+        type: report.studyName || '',
+        scanDate: report.scanDate || '',
+        radiologist: report.radiologist || '',
+        findings: report.findings || '',
+        impression: report.impression || '',
+        recommendations: report.recommendations || '',
+        status: report.status || 'Finalized',
+      }))),
+    );
+  }
+
+  private getAllPages(url: string): Observable<any[]> {
+    return this.http.get<ApiResponse<any[]> | any[]>(url).pipe(
+      expand((response) => {
+        const next = (response as { next?: string | null }).next;
+        return next ? this.http.get<ApiResponse<any[]> | any[]>(next) : EMPTY;
+      }),
+      map((response) => this.extractCollection(response)),
+      reduce((items, page) => items.concat(page), [] as any[]),
+    );
+  }
+
   getReports(facilityId: string | number): Observable<RadiologyReport[]> {
     return this.http.get<ApiResponse<any[]> | any[]>(`${this.baseUrl}/reports/?facilityId=${facilityId}`).pipe(
       map((response) => this.extractCollection(response)),
@@ -202,6 +246,7 @@ export class RadiologyService {
     const body = {
       patientId: payload.patientId.trim(),
       patient: payload.patient.trim(),
+      ...(payload.ticketNumber ? { ticketNumber: payload.ticketNumber.trim() } : {}),
       studyId: payload.imagingTypeId,
       orderedBy: payload.orderedBy.trim(),
       priority: payload.priority,

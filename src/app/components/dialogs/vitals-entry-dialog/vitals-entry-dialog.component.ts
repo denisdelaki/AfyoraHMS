@@ -1,7 +1,17 @@
 import { Component, Inject, OnInit, inject } from '@angular/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,8 +20,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { PatientVitals } from '../../../models/patients.models';
 import { PatientsService } from '../../../services/patients.service';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 export interface VitalsEntryDialogData {
+  ticketNumber?: string;
   patientId: string;
   patientName?: string;
   facilityId?: string | number;
@@ -20,6 +32,8 @@ export interface VitalsEntryDialogData {
 
 @Component({
   selector: 'app-vitals-entry-dialog',
+  templateUrl: './vitals-entry-dialog.component.html',
+  styleUrls: ['./vitals-entry-dialog.component.css'],
   standalone: true,
   imports: [
     CommonModule,
@@ -31,158 +45,26 @@ export interface VitalsEntryDialogData {
     MatInputModule,
     MatSelectModule,
     MatSnackBarModule,
+    MatCheckboxModule,
+    MatInputModule,
+    MatDatepickerModule,
   ],
-  template: `
-    <div class="p-6 space-y-5 max-w-2xl mx-auto">
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold">
-            <mat-icon>monitor_heart</mat-icon>
-          </div>
-          <div>
-            <h2 class="text-lg font-bold text-slate-800 tracking-tight">
-              Patient Vitals Entry & Triage
-            </h2>
-            <p *ngIf="data.patientName" class="text-xs text-slate-500">
-              Patient: <span class="font-bold text-slate-700">{{ data.patientName }}</span> (ID: {{ data.patientId }})
-            </p>
-          </div>
-        </div>
-        <button mat-icon-button type="button" (click)="onCancel()" class="text-slate-400 hover:text-slate-600">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-
-      <!-- Vitals Form -->
-      <form [formGroup]="vitalsForm" (ngSubmit)="onSave()" class="space-y-4">
-        <!-- Captured By Staff Name -->
-        <mat-form-field appearance="fill" class="w-full">
-          <mat-label>Captured By (Clinician / Nurse Name)</mat-label>
-          <input matInput formControlName="capturedByName" placeholder="e.g. Nurse Jane Wanjiku" />
-        </mat-form-field>
-
-        <!-- Vital Signs Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          <!-- Systolic BP -->
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Systolic BP (mmHg)</mat-label>
-            <input matInput type="number" formControlName="systolicBp" placeholder="120" />
-            <mat-hint>Normal: 90 - 120</mat-hint>
-          </mat-form-field>
-
-          <!-- Diastolic BP -->
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Diastolic BP (mmHg)</mat-label>
-            <input matInput type="number" formControlName="diastolicBp" placeholder="80" />
-            <mat-hint>Normal: 60 - 80</mat-hint>
-          </mat-form-field>
-
-          <!-- Temperature -->
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Temperature (°C)</mat-label>
-            <input matInput type="number" step="0.1" formControlName="temperatureC" placeholder="37.5" />
-            <mat-hint>Normal: 36.5 - 37.5°C</mat-hint>
-          </mat-form-field>
-
-          <!-- Pulse / Heart Rate -->
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Heart Rate (BPM)</mat-label>
-            <input matInput type="number" formControlName="heartRateBpm" placeholder="72" />
-            <mat-hint>Normal: 60 - 100 bpm</mat-hint>
-          </mat-form-field>
-
-          <!-- SpO2 -->
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>SpO2 Percent (%)</mat-label>
-            <input matInput type="number" formControlName="spo2Percent" placeholder="98" />
-            <mat-hint>Normal: 95 - 100%</mat-hint>
-          </mat-form-field>
-
-          <!-- Respiratory Rate -->
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Resp Rate (/min)</mat-label>
-            <input matInput type="number" formControlName="respiratoryRate" placeholder="16" />
-            <mat-hint>Normal: 12 - 20 /min</mat-hint>
-          </mat-form-field>
-
-          <!-- Blood Glucose -->
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Blood Glucose (mmol/L)</mat-label>
-            <input matInput type="number" step="0.1" formControlName="bloodGlucoseMmol" placeholder="5.4" />
-            <mat-hint>Fasting: 4.0 - 7.0 mmol/L</mat-hint>
-          </mat-form-field>
-
-          <!-- Height (cm) -->
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Height (cm)</mat-label>
-            <input matInput type="number" step="0.1" formControlName="heightCm" placeholder="175" />
-          </mat-form-field>
-
-          <!-- Weight (kg) -->
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Weight (kg)</mat-label>
-            <input matInput type="number" step="0.1" formControlName="weightKg" placeholder="70" />
-          </mat-form-field>
-        </div>
-
-        <!-- Dynamic BMI Calculation Badge -->
-        <div *ngIf="calculatedBmi" class="p-3.5 rounded-xl border border-teal-200 bg-teal-50/70 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <mat-icon class="text-teal-700">fitness_center</mat-icon>
-            <div>
-              <span class="text-xs font-bold text-slate-800">Auto-Calculated BMI</span>
-              <p class="text-xs text-slate-600">Based on height {{ vitalsForm.get('heightCm')?.value }} cm and weight {{ vitalsForm.get('weightKg')?.value }} kg</p>
-            </div>
-          </div>
-          <span [class]="'px-3 py-1 rounded-full text-xs font-bold shadow-xs ' + bmiBadgeClass">
-            BMI: {{ calculatedBmi }} ({{ bmiCategory }})
-          </span>
-        </div>
-
-        <!-- Pain Score (0-10) -->
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">
-            Pain Score (0 = No Pain, 10 = Severe Pain)
-          </label>
-          <div class="flex items-center gap-2">
-            <input type="range" min="0" max="10" formControlName="painScore" class="w-full accent-emerald-600" />
-            <span class="w-10 text-center font-bold text-sm bg-slate-100 py-1 rounded border border-slate-300">
-              {{ vitalsForm.get('painScore')?.value || 0 }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Clinical Notes / Observations -->
-        <mat-form-field appearance="fill" class="w-full">
-          <mat-label>Vitals Notes & Triage Observations</mat-label>
-          <textarea matInput rows="2" formControlName="notes" placeholder="Patient resting comfortably, no acute distress..."></textarea>
-        </mat-form-field>
-
-        <!-- Form Actions -->
-        <div class="flex justify-end gap-3 pt-3 border-t border-slate-200">
-          <button mat-stroked-button type="button" (click)="onCancel()" class="!rounded-xl">
-            Cancel
-          </button>
-          <button mat-flat-button color="primary" type="submit" [disabled]="saving" class="!rounded-xl !bg-emerald-600 hover:!bg-emerald-700">
-            <mat-icon class="mr-1">save</mat-icon>
-            {{ saving ? 'Saving Vitals...' : 'Save Patient Vitals' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  `,
   styles: [],
 })
 export class VitalsEntryDialogComponent implements OnInit {
+  readonly today = new Date();
   data = inject<VitalsEntryDialogData>(MAT_DIALOG_DATA);
   private readonly formBuilder = inject(FormBuilder);
-  private readonly dialogRef = inject(MatDialogRef<VitalsEntryDialogComponent, PatientVitals | undefined>);
+  private readonly dialogRef = inject(
+    MatDialogRef<VitalsEntryDialogComponent, PatientVitals | undefined>,
+  );
   private readonly patientsService = inject(PatientsService);
   private readonly snackBar = inject(MatSnackBar);
 
   saving = false;
   facilityId: string | number = '';
+  ticketNumber: string = '';
+  pregnancyMonths: number[] = Array.from({ length: 9 }, (_, i) => i + 1);
 
   readonly vitalsForm: FormGroup = this.formBuilder.group({
     capturedByName: ['Nurse Jane Wanjiku'],
@@ -197,11 +79,18 @@ export class VitalsEntryDialogComponent implements OnInit {
     weightKg: [null, [Validators.min(1), Validators.max(500)]],
     painScore: [0, [Validators.min(0), Validators.max(10)]],
     notes: [''],
+    allergies: [''],
+    lastMenstrualPeriod: [null],
+    is_pregnant: [false],
+    pregnancy_months: [{ value: null, disabled: true }],
   });
 
   ngOnInit(): void {
-    const currentUser = JSON.parse(localStorage.getItem('afyora.user') || 'null');
+    const currentUser = JSON.parse(
+      localStorage.getItem('afyora.user') || 'null',
+    );
     this.facilityId = this.data.facilityId || currentUser?.facility || '';
+    this.ticketNumber = this.data.ticketNumber || '';
     if (currentUser?.fullName || currentUser?.username) {
       this.vitalsForm.patchValue({
         capturedByName: currentUser.fullName || currentUser.username,
@@ -211,6 +100,32 @@ export class VitalsEntryDialogComponent implements OnInit {
     if (this.data.initialValue) {
       this.vitalsForm.patchValue(this.data.initialValue);
     }
+
+    const isPregnantControl = this.vitalsForm.get('is_pregnant');
+    const pregnancyMonthsControl = this.vitalsForm.get('pregnancy_months');
+
+    isPregnantControl?.valueChanges.subscribe((isPregnant) => {
+      if (isPregnant) {
+        pregnancyMonthsControl?.enable();
+        pregnancyMonthsControl?.setValidators(Validators.required);
+      } else {
+        pregnancyMonthsControl?.reset(null);
+        pregnancyMonthsControl?.clearValidators();
+        pregnancyMonthsControl?.disable();
+      }
+
+      pregnancyMonthsControl?.updateValueAndValidity();
+    });
+
+    // Apply the correct initial state when the form loads
+    if (isPregnantControl?.value) {
+      pregnancyMonthsControl?.enable();
+      pregnancyMonthsControl?.setValidators(Validators.required);
+    } else {
+      pregnancyMonthsControl?.disable();
+    }
+
+    pregnancyMonthsControl?.updateValueAndValidity();
   }
 
   get calculatedBmi(): string | null {
@@ -235,9 +150,12 @@ export class VitalsEntryDialogComponent implements OnInit {
 
   get bmiBadgeClass(): string {
     const cat = this.bmiCategory;
-    if (cat === 'Underweight') return 'bg-amber-100 text-amber-800 border border-amber-300';
-    if (cat === 'Normal') return 'bg-emerald-100 text-emerald-800 border border-emerald-300';
-    if (cat === 'Overweight') return 'bg-orange-100 text-orange-800 border border-orange-300';
+    if (cat === 'Underweight')
+      return 'bg-amber-100 text-amber-800 border border-amber-300';
+    if (cat === 'Normal')
+      return 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+    if (cat === 'Overweight')
+      return 'bg-orange-100 text-orange-800 border border-orange-300';
     return 'bg-rose-100 text-rose-800 border border-rose-300';
   }
 
@@ -254,33 +172,51 @@ export class VitalsEntryDialogComponent implements OnInit {
     const val = this.vitalsForm.getRawValue();
     const payload: PatientVitals = {
       facilityId: this.facilityId,
+      ticketNumber: this.ticketNumber,
       patientId: this.data.patientId,
       capturedByName: (val.capturedByName || '').trim(),
       temperatureC: val.temperatureC ? Number(val.temperatureC) : undefined,
       systolicBp: val.systolicBp ? Number(val.systolicBp) : undefined,
       diastolicBp: val.diastolicBp ? Number(val.diastolicBp) : undefined,
       heartRateBpm: val.heartRateBpm ? Number(val.heartRateBpm) : undefined,
-      respiratoryRate: val.respiratoryRate ? Number(val.respiratoryRate) : undefined,
+      respiratoryRate: val.respiratoryRate
+        ? Number(val.respiratoryRate)
+        : undefined,
       spo2Percent: val.spo2Percent ? Number(val.spo2Percent) : undefined,
-      bloodGlucoseMmol: val.bloodGlucoseMmol ? Number(val.bloodGlucoseMmol) : undefined,
+      bloodGlucoseMmol: val.bloodGlucoseMmol
+        ? Number(val.bloodGlucoseMmol)
+        : undefined,
       heightCm: val.heightCm ? Number(val.heightCm) : undefined,
       weightKg: val.weightKg ? Number(val.weightKg) : undefined,
       bmi: this.calculatedBmi ? Number(this.calculatedBmi) : undefined,
       painScore: val.painScore !== null ? Number(val.painScore) : undefined,
       notes: (val.notes || '').trim(),
+      allergies: (val.allergies || '').trim(),
+      lastMenstrualPeriod: val.lastMenstrualPeriod
+        ? new Date(val.lastMenstrualPeriod)
+        : undefined,
+      is_pregnant:
+        val.is_pregnant !== null ? Boolean(val.is_pregnant) : undefined,
+      pregnancy_months: val.pregnancy_months
+        ? Number(val.pregnancy_months)
+        : undefined,
     };
 
     this.saving = true;
     this.patientsService.createPatientVitals(payload).subscribe({
       next: (created) => {
         this.saving = false;
-        this.snackBar.open('✓ Patient vitals recorded successfully!', 'Close', { duration: 3500 });
+        this.snackBar.open('✓ Patient vitals recorded successfully!', 'Close', {
+          duration: 3500,
+        });
         this.dialogRef.close(created || payload);
       },
       error: () => {
         this.saving = false;
         // Local fallback
-        this.snackBar.open('✓ Patient vitals captured locally!', 'Close', { duration: 3500 });
+        this.snackBar.open('✓ Patient vitals captured locally!', 'Close', {
+          duration: 3500,
+        });
         this.dialogRef.close(payload);
       },
     });

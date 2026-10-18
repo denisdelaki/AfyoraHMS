@@ -18,7 +18,7 @@ import {
 } from '../components/dialogs/session-timeout-dialog/session-timeout-dialog.component';
 
 const ACCESS_TOKEN_KEY = 'afyora.accessToken';
-const IDLE_TIMEOUT_MS = 1 * 60 * 1000;
+// const IDLE_TIMEOUT_MS = 1 * 60 * 1000;
 const DIALOG_COUNTDOWN_SECONDS = 30;
 
 @Injectable({ providedIn: 'root' })
@@ -101,9 +101,9 @@ export class SessionTimeoutService implements OnDestroy {
       return;
     }
 
-    this.idleTimerId = setTimeout(() => {
-      this.openSessionTimeoutDialog();
-    }, IDLE_TIMEOUT_MS);
+    // this.idleTimerId = setTimeout(() => {
+    //   this.openSessionTimeoutDialog();
+    // }, IDLE_TIMEOUT_MS);
   }
 
   private clearIdleTimer(): void {

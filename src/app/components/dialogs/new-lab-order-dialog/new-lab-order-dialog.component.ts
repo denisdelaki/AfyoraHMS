@@ -25,6 +25,10 @@ import { EmployeeService } from '../../../services/employee.service';
 
 interface NewLabOrderDialogData {
   tests: LabTest[];
+  patientId?: string;
+  patientName?: string;
+  ticketNumber?: string;
+  orderedBy?: string;
 }
 
 @Component({
@@ -69,6 +73,14 @@ export class NewLabOrderDialogComponent implements OnInit {
       JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
     this.fetchPatients(facilityId);
     this.fetchEmployees(facilityId);
+    if (this.data.patientId) {
+      this.form.controls.patient.setValue(this.data.patientId);
+      this.form.controls.patient.disable();
+      this.form.controls.patientId.setValue(this.data.patientId);
+    }
+    if (this.data.orderedBy) {
+      this.form.controls.orderedBy.setValue(this.data.orderedBy);
+    }
     this.form.controls.patient.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((selectedPatientId) => {
@@ -83,6 +95,15 @@ export class NewLabOrderDialogComponent implements OnInit {
           id: patient.id,
           name: patient.firstName + ' ' + patient.lastName,
         }));
+        if (
+          this.data.patientId &&
+          !this.patients.some((patient) => patient.id === this.data.patientId)
+        ) {
+          this.patients.push({
+            id: this.data.patientId,
+            name: this.data.patientName || this.data.patientId,
+          });
+        }
       },
     });
   }
@@ -90,8 +111,10 @@ export class NewLabOrderDialogComponent implements OnInit {
   private fetchEmployees(facilityId: string): void {
     this.employeeService.fetchEmployees(facilityId).subscribe({
       next: (employees) => {
-        this.doctors = employees.filter(
-          (emp) => emp.role.toLowerCase() === 'doctor',
+        this.doctors = employees.filter((emp) =>
+          ['doctor', 'physician', 'consultant', 'nurse'].includes(
+            emp.role?.toLowerCase() || '',
+          ),
         );
       },
       error: () => {
@@ -110,6 +133,9 @@ export class NewLabOrderDialogComponent implements OnInit {
       return;
     }
 
-    this.dialogRef.close(this.form.getRawValue() as CreateLabOrderPayload);
+    this.dialogRef.close({
+      ...this.form.getRawValue(),
+      ticketNumber: this.data.ticketNumber,
+    } as CreateLabOrderPayload);
   }
 }

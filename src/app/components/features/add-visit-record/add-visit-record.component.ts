@@ -21,6 +21,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import {
   MAT_DIALOG_DATA,
+  MatDialog,
   MatDialogModule,
   MatDialogRef,
 } from '@angular/material/dialog';
@@ -31,7 +32,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { finalize, timeout } from 'rxjs';
+import { finalize, take, timeout } from 'rxjs';
 import {
   ClinicalConcept,
   Drug,
@@ -50,12 +51,18 @@ import {
 import { DHAPrescription } from '../../../models/dha-connect.models';
 import { Employee } from '../../../models/employee.model';
 import { Patient, PatientVitals } from '../../../models/patients.models';
+import { LabResult } from '../../../models/laboratory.models';
 import { ClinicalAIService } from '../../../services/clinical-ai.service';
 import { DhaAfyaConnectService } from '../../../services/dha-afyaconnect.service';
 import { EmployeeService } from '../../../services/employee.service';
 import { PatientsService } from '../../../services/patients.service';
 import { PharmacyService } from '../../../services/pharmacy.service';
 import { VisitQueueService } from '../../../services/visit-queue.service';
+import { LaboratoryService } from '../../../services/laboratory.service';
+import { RadiologyService } from '../../../services/radiology.service';
+import { RadiologyReport } from '../../../models/radiology.models';
+import { NewRadiologyOrderDialogComponent } from '../../dialogs/new-radiology-order-dialog/new-radiology-order-dialog.component';
+import { NewLabOrderDialogComponent } from '../../dialogs/new-lab-order-dialog/new-lab-order-dialog.component';
 import { KnhtsConceptSearchComponent } from '../../shared/knhts-concept-search/knhts-concept-search.component';
 import { VitalsSummaryCardComponent } from '../../shared/vitals-summary-card/vitals-summary-card.component';
 import { ClinicalEvidenceListComponent } from '../clinical-ai/clinical-evidence-list.component';
@@ -104,6 +111,7 @@ export type AddVisitRecordData = {
   nextDestinations?: QueueDestination[];
   patientId?: string;
   ticketId?: string;
+  ticketNumber?: string;
   patientName?: string;
   patientNationalId?: string;
   consentToken?: string;
@@ -134,7 +142,7 @@ export type AddVisitRecordData = {
   styleUrl: './add-visit-record.component.css',
 })
 export class AddVisitRecordComponent implements OnInit {
-  private readonly dialogData = inject<AddVisitRecordData>(MAT_DIALOG_DATA, {
+  public readonly dialogData = inject<AddVisitRecordData>(MAT_DIALOG_DATA, {
     optional: true,
   });
   private readonly dialogRef = inject(
@@ -144,6 +152,9 @@ export class AddVisitRecordComponent implements OnInit {
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly pharmacyService = inject(PharmacyService);
+  private readonly laboratoryService = inject(LaboratoryService);
+  private readonly radiologyService = inject(RadiologyService);
+  private readonly dialog = inject(MatDialog);
   private readonly dhaService = inject(DhaAfyaConnectService);
   private readonly patientsService = inject(PatientsService);
   private readonly clinicalAI = inject(ClinicalAIService);
@@ -156,6 +167,7 @@ export class AddVisitRecordComponent implements OnInit {
 
   @Input() inputPatientId?: string;
   @Input() inputTicketId?: string;
+  @Input() inputTicketNumber?: string;
   @Input() isStandalonePage = false;
   @Output() saved = new EventEmitter<VisitRecordFormValue>();
   @Output() cancelled = new EventEmitter<void>();
@@ -197,6 +209,16 @@ export class AddVisitRecordComponent implements OnInit {
   loadingVitals = false;
   savingVitals = false;
   vitalsLoadError = '';
+  labResults: LabResult[] = [];
+  loadingLabResults = false;
+  labResultsLoaded = false;
+  labResultsError = '';
+  radiologyReports: RadiologyReport[] = [];
+  loadingRadiologyResults = false;
+  radiologyResultsLoaded = false;
+  radiologyResultsError = '';
+  requestingRadiology = false;
+  private resolvedTicketNumber = '';
 
   selectedConcept: ClinicalConcept | null = null;
   initialConcept: ClinicalConcept | undefined = undefined;
@@ -292,6 +314,20 @@ export class AddVisitRecordComponent implements OnInit {
       this.isStandalonePage = true;
     }
 
+    if (!this.currentTicketNumber && this.ticketId && this.facilityId) {
+      this.queueService.refresh(this.facilityId).pipe(take(1)).subscribe({
+        next: (tickets) => {
+          const ticket = tickets.find((item) =>
+            item.id === this.ticketId && item.patientId === this.patientId,
+          );
+          this.resolvedTicketNumber = ticket?.ticketNumber || '';
+        },
+        error: () => {
+          this.radiologyResultsError = 'Unable to load the current visit ticket. Reopen the consultation to try again.';
+        },
+      });
+    }
+
     this.loadDoctors();
     this.loadDrugs();
     this.loadPatients();
@@ -303,6 +339,11 @@ export class AddVisitRecordComponent implements OnInit {
 
   get isDialog(): boolean {
     return !!this.dialogRef;
+  }
+
+  get currentTicketNumber(): string {
+    return this.dialogData?.ticketNumber || this.inputTicketNumber ||
+      this.route.snapshot?.queryParamMap?.get('ticketNumber') || this.resolvedTicketNumber;
   }
 
   get title(): string {
@@ -434,6 +475,9 @@ export class AddVisitRecordComponent implements OnInit {
   }
 
   onSelectPatient(patient: Patient): void {
+    this.radiologyReports = [];
+    this.radiologyResultsLoaded = false;
+    this.radiologyResultsError = '';
     this.selectedPatient = patient;
     this.patientId = patient.id;
     this.dhaConsentToken =
@@ -666,8 +710,220 @@ export class AddVisitRecordComponent implements OnInit {
     this.prescriptions.push(this.buildPrescriptionGroup());
   }
 
+  requestLabTest(): void {
+    const ticketNumber = this.dialogData?.ticketNumber;
+    const patientId = this.selectedPatient?.id || this.patientId;
+    const patientName =
+      this.selectedPatient &&
+      `${this.selectedPatient.firstName} ${this.selectedPatient.lastName}`.trim();
+
+    if (!patientId || !ticketNumber) {
+      this.snackBar.open(
+        'A patient and visit must be selected before requesting a lab test.',
+        'Close',
+        { duration: 3500 },
+      );
+      return;
+    }
+
+    this.laboratoryService
+      .getTests()
+      .pipe(take(1))
+      .subscribe({
+        next: (tests) => {
+          if (tests.length === 0) {
+            this.snackBar.open(
+              'No lab tests are available to request.',
+              'Close',
+              { duration: 3500 },
+            );
+            return;
+          }
+
+          this.dialog
+            .open(NewLabOrderDialogComponent, {
+              width: '760px',
+              maxWidth: '95vw',
+              data: {
+                tests,
+                patientId,
+                patientName:
+                  patientName || this.dialogData?.patientName || patientId,
+                ticketNumber: ticketNumber,
+                orderedBy: String(this.visitForm.get('doctor')?.value || ''),
+              },
+            })
+            .afterClosed()
+            .subscribe((payload) => {
+              if (!payload) return;
+
+              this.laboratoryService.createOrder(payload).subscribe({
+                next: () => {
+                  this.queueService
+                    .forwardTicket(this.ticketId, 'Laboratory', this.facilityId)
+                    .subscribe({
+                      next: () =>
+                        this.snackBar.open(
+                          'Lab test requested and ticket forwarded to Laboratory.',
+                          'Close',
+                          { duration: 3500 },
+                        ),
+                      error: () =>
+                        this.snackBar.open(
+                          'Lab test was requested, but the ticket could not be forwarded to Laboratory.',
+                          'Close',
+                          { duration: 5000 },
+                        ),
+                    });
+                },
+                error: () =>
+                  this.snackBar.open(
+                    'Unable to request the lab test. Please try again.',
+                    'Close',
+                    { duration: 3500 },
+                  ),
+              });
+            });
+        },
+        error: () =>
+          this.snackBar.open(
+            'Unable to load available lab tests. Please try again.',
+            'Close',
+            { duration: 3500 },
+          ),
+      });
+  }
+
+  fetchLabResults(): void {
+    if (!this.dialogData?.ticketNumber || !this.facilityId) {
+      this.labResultsError =
+        'Select a visit ticket before fetching its lab results.';
+      return;
+    }
+
+    const ticketNumber = this.dialogData?.ticketNumber || '';
+    this.loadingLabResults = true;
+    this.labResultsLoaded = false;
+    this.labResultsError = '';
+    this.labResults = [];
+
+    this.laboratoryService
+      .getResultsForTicket(ticketNumber, this.facilityId)
+      .pipe(finalize(() => (this.loadingLabResults = false)))
+      .subscribe({
+        next: (results) => {
+          if (this.dialogData?.ticketNumber !== ticketNumber) return;
+          this.labResults = results;
+          this.labResultsLoaded = true;
+        },
+        error: () => {
+          if (this.dialogData?.ticketNumber !== ticketNumber) return;
+          this.labResultsError =
+            'Unable to fetch lab results for this visit. Please try again.';
+        },
+      });
+  }
+
+  requestRadiologyTest(): void {
+    if (this.requestingRadiology) return;
+    const ticketNumber = this.currentTicketNumber;
+    const ticketId = this.ticketId;
+    const patientId = this.selectedPatient?.id || this.patientId;
+    const facilityId = this.facilityId;
+    const patientName = this.selectedPatient
+      ? `${this.selectedPatient.firstName} ${this.selectedPatient.lastName}`.trim()
+      : this.dialogData?.patientName || patientId;
+
+    if (!patientId || !ticketNumber || !ticketId || !facilityId) {
+      this.snackBar.open('Select a patient and visit ticket before requesting radiology.', 'Close', { duration: 3500 });
+      return;
+    }
+
+    this.requestingRadiology = true;
+    this.radiologyService.getImagingTypes(facilityId).pipe(take(1)).subscribe({
+      next: (imagingTypes) => {
+        if (!imagingTypes.length) {
+          this.requestingRadiology = false;
+          this.snackBar.open('No imaging tests are available to request.', 'Close', { duration: 3500 });
+          return;
+        }
+        this.dialog.open(NewRadiologyOrderDialogComponent, {
+          width: '760px',
+          maxWidth: '95vw',
+          data: {
+            imagingTypes,
+            patients: [{ id: patientId, name: patientName }],
+            doctors: this.doctors,
+            patientId,
+            ticketNumber,
+            orderedBy: this.visitForm.get('doctor')?.value || '',
+            clinicalNotes: this.visitForm.get('whatHappened')?.value || '',
+          },
+        }).afterClosed().pipe(take(1)).subscribe((payload) => {
+          if (!payload) {
+            this.requestingRadiology = false;
+            return;
+          }
+          this.radiologyService.createOrder({
+            ...payload, patientId, patient: patientName, ticketNumber,
+          }, facilityId).subscribe({
+            next: () => {
+              this.queueService.forwardTicket(ticketId, 'Radiology', facilityId)
+                .pipe(finalize(() => (this.requestingRadiology = false)))
+                .subscribe({
+                  next: () => this.snackBar.open('Imaging requested and ticket forwarded to Radiology.', 'Close', { duration: 3500 }),
+                  error: () => this.snackBar.open('Imaging was requested, but the ticket could not be forwarded to Radiology.', 'Close', { duration: 5000 }),
+                });
+            },
+            error: () => {
+              this.requestingRadiology = false;
+              this.snackBar.open('Unable to request imaging. Please try again.', 'Close', { duration: 3500 });
+            },
+          });
+        });
+      },
+      error: () => {
+        this.requestingRadiology = false;
+        this.snackBar.open('Unable to load imaging tests. Please try again.', 'Close', { duration: 3500 });
+      },
+    });
+  }
+
+  fetchRadiologyResults(): void {
+    if (this.loadingRadiologyResults) return;
+    const ticketNumber = this.currentTicketNumber;
+    const patientId = this.selectedPatient?.id || this.patientId;
+    if (!ticketNumber || !patientId || !this.facilityId) {
+      this.radiologyResultsError = 'Select a patient and visit ticket before fetching radiology results.';
+      return;
+    }
+    this.loadingRadiologyResults = true;
+    this.radiologyResultsLoaded = false;
+    this.radiologyResultsError = '';
+    this.radiologyReports = [];
+    this.radiologyService.getReportsForTicket(ticketNumber, this.facilityId, patientId)
+      .pipe(finalize(() => (this.loadingRadiologyResults = false)))
+      .subscribe({
+        next: (reports) => {
+          if (this.currentTicketNumber !== ticketNumber ||
+            (this.selectedPatient?.id || this.patientId) !== patientId) return;
+          this.radiologyReports = reports;
+          this.radiologyResultsLoaded = true;
+        },
+        error: () => {
+          if (this.currentTicketNumber !== ticketNumber ||
+            (this.selectedPatient?.id || this.patientId) !== patientId) return;
+          this.radiologyResultsError = 'Unable to fetch radiology results for this visit. Please try again.';
+        },
+      });
+  }
+
   removePrescription(index: number): void {
     this.prescriptions.removeAt(index);
+  }
+
+  removeLabTest(index: number): void {
+    // this.labTests.removeAt(index);
   }
 
   addDrug(prescriptionIndex: number): void {

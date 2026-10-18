@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -19,14 +26,18 @@ import {
   AddVisitRecordDialogComponent,
   VisitRecordFormValue,
 } from '../../dialogs/add-visit-record-dialog/add-visit-record-dialog.component';
+import { VitalsEntryDialogComponent } from '../../dialogs/vitals-entry-dialog/vitals-entry-dialog.component';
+import { MatOptionModule } from '@angular/material/core';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 
 /** Maps a backend role name to the queue station(s) that role is allowed to work at. */
 const ROLE_TO_DESTINATIONS: Record<string, QueueDestination[]> = {
   receptionist: ['Reception'],
-  consultant: ['Consultation'],
-  doctor: ['Consultation'],
+  consultant: ['Consultation', 'Triage'],
+  doctor: ['Consultation', 'Triage'],
   physician: ['Consultation'],
-  nurse: ['Consultation'],
+  nurse: ['Consultation', 'Triage'],
   lab_technician: ['Laboratory'],
   laboratory_technician: ['Laboratory'],
   radiologist: ['Radiology'],
@@ -48,6 +59,9 @@ const ROLE_TO_DESTINATIONS: Record<string, QueueDestination[]> = {
     MatCardModule,
     MatIconModule,
     MatSnackBarModule,
+    MatOptionModule,
+    MatFormFieldModule,
+    MatSelectModule,
   ],
   templateUrl: './visit-queue.component.html',
   styleUrl: './visit-queue.component.css',
@@ -84,6 +98,11 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
 
   /** All destinations for UI controls that should always list every stop. */
   readonly destinations = QUEUE_DESTINATIONS;
+  patientSearchTerm = '';
+  filteredPatients: typeof this.patients = [];
+
+  @ViewChild('patientSearchInput')
+  patientSearchInput?: ElementRef<HTMLInputElement>;
 
   ngOnInit(): void {
     const user = this.getStoredUser();
@@ -109,6 +128,28 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
       error: () =>
         this.showMessage('Unable to load patients. Please try again.'),
     });
+  }
+
+  filterPatients(): void {
+    const term = this.patientSearchTerm.trim().toLowerCase();
+
+    this.filteredPatients = this.patients.filter((patient) => {
+      const fullName = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+
+      return (
+        fullName.includes(term) ||
+        patient.firstName.toLowerCase().includes(term) ||
+        patient.lastName.toLowerCase().includes(term) ||
+        String(patient.id).toLowerCase().includes(term)
+      );
+    });
+  }
+
+  onPatientDropdownOpened(opened: boolean): void {
+    if (opened) {
+      this.patientSearchTerm = '';
+      this.filterPatients();
+    }
   }
 
   ngOnDestroy(): void {
@@ -245,6 +286,19 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
       });
   }
 
+  recordTriage(ticket: VisitTicket): void {
+    this.dialog.open(VitalsEntryDialogComponent, {
+      width: '90vw',
+      maxWidth: '650px',
+      data: {
+        ticketNumber: ticket.ticketNumber,
+        patientId: ticket.patientId,
+        patientName: ticket.patientName,
+        facilityId: this.facilityId,
+      },
+    });
+  }
+
   recordConsultation(ticket: VisitTicket): void {
     console.log('Recording consultation for ticket:', ticket);
     const user = this.getStoredUser();
@@ -257,6 +311,7 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
         mode: 'create',
         patientId: ticket.patientId,
         ticketId: ticket.id,
+        ticketNumber: ticket.ticketNumber,
         patientName: ticket.patientName,
         doctors: [{ id: doctorId, name: this.currentUser }],
         initialValue: { doctor: doctorId },

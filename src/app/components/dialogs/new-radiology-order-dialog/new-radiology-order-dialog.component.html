@@ -1,6 +1,9 @@
 <h2 mat-dialog-title>Create Imaging Order</h2>
 
 <mat-dialog-content>
+  <p *ngIf="data.ticketNumber" class="text-sm text-slate-600">
+    Outpatient ticket: <strong>{{ data.ticketNumber }}</strong>
+  </p>
   <form [formGroup]="form" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
     <mat-form-field appearance="fill" class="sm:col-span-2">
       <mat-label>Patient</mat-label>

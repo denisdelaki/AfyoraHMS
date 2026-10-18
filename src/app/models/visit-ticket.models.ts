@@ -1,5 +1,6 @@
 export type QueueDestination =
   | 'Reception'
+  | 'Triage'
   | 'Consultation'
   | 'Laboratory'
   | 'Radiology'
@@ -35,6 +36,7 @@ export type VisitTicket = {
 
 export const QUEUE_DESTINATIONS: QueueDestination[] = [
   'Reception',
+  'Triage',
   'Consultation',
   'Laboratory',
   'Radiology',

@@ -11,19 +11,19 @@
         </div>
         <div>
           <p class="text-sm text-gray-600">National ID / Birth Cert</p>
-          <p class="font-medium">{{ data.patient.nationalId || '-' }}</p>
+          <p class="font-medium">{{ data.patient.nationalId || "-" }}</p>
         </div>
         <div>
           <p class="text-sm text-gray-600">Blood Group</p>
-          <p class="font-medium">{{ data.patient.bloodGroup || '-' }}</p>
+          <p class="font-medium">{{ data.patient.bloodGroup || "-" }}</p>
         </div>
         <div>
           <p class="text-sm text-gray-600">Phone</p>
-          <p class="font-medium">{{ data.patient.phone || '-' }}</p>
+          <p class="font-medium">{{ data.patient.phone || "-" }}</p>
         </div>
         <div>
           <p class="text-sm text-gray-600">Email</p>
-          <p class="font-medium">{{ data.patient.email || '-' }}</p>
+          <p class="font-medium">{{ data.patient.email || "-" }}</p>
         </div>
         <div>
           <p class="text-sm text-gray-600">Age</p>
@@ -172,7 +172,9 @@
             </div>
 
             <div *ngIf="visit.vitals" class="my-2">
-              <app-vitals-summary-card [vitals]="visit.vitals"></app-vitals-summary-card>
+              <app-vitals-summary-card
+                [vitals]="visit.vitals"
+              ></app-vitals-summary-card>
             </div>
 
             <p class="text-sm mb-1">
@@ -219,15 +221,18 @@
             color="primary"
             type="button"
             (click)="openVitalsEntryDialog()"
-            class="!bg-emerald-600 hover:!bg-emerald-700"
           >
             <mat-icon>add</mat-icon>
             Record Patient Vitals
           </button>
         </div>
 
-        <div *ngIf="vitalsHistory.length === 0" class="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-          No vitals captured directly yet. Click "Record Patient Vitals" to log temperature, blood pressure, SpO2, BMI, etc.
+        <div
+          *ngIf="vitalsHistory.length === 0"
+          class="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200"
+        >
+          No vitals captured directly yet. Click "Record Patient Vitals" to log
+          temperature, blood pressure, SpO2, BMI, etc.
         </div>
 
         <div *ngIf="vitalsHistory.length > 0" class="space-y-3">

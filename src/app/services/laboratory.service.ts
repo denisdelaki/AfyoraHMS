@@ -3,6 +3,7 @@ import {
   BehaviorSubject,
   Observable,
   catchError,
+  forkJoin,
   map,
   of,
   tap,
@@ -27,11 +28,13 @@ type LabRequestApiModel = {
   id?: string;
   labId?: string;
   patient?:
-  | string
-  | { id?: string; patientId?: string; fullName?: string; name?: string };
+    | string
+    | { id?: string; patientId?: string; fullName?: string; name?: string };
   patient_id?: string;
   patientId?: string;
   patient_name?: string;
+  ticketNumber?: string;
+  ticket_id?: string;
   test?: string | { id?: string; name?: string };
   test_name?: string;
   orderedBy?: string;
@@ -336,6 +339,7 @@ export class LaboratoryService {
     const requestPayload = {
       patient: payload.patient.trim(),
       patientId: payload.patientId.trim(),
+      ticketNumber: payload.ticketNumber?.trim() || undefined,
       test: payload.testId.trim(),
       priority: payload.priority,
       notes: payload.notes?.trim() || undefined,
@@ -343,21 +347,16 @@ export class LaboratoryService {
       facilityId: this.getCurrentFacilityId(),
     };
 
-    this.http
-      .post<ApiResponse<LabRequestApiModel> | LabRequestApiModel>(
-        this.buildLabRequestUrl(),
-        requestPayload,
-      )
+    return this.http
+      .post<
+        ApiResponse<LabRequestApiModel> | LabRequestApiModel
+      >(this.buildLabRequestUrl(), requestPayload)
       .pipe(
         tap(() => {
           this.fetchLabRequests();
         }),
-        catchError((error) => {
-          console.error('Failed to create lab request:', error);
-          return of(null);
-        }),
-      )
-      .subscribe();
+        map(() => undefined),
+      );
   }
 
   startTest(labId: string) {
@@ -419,10 +418,10 @@ export class LaboratoryService {
       this.resultsSubject.value.map((result) =>
         result.labId === labId
           ? {
-            ...result,
-            status: 'Approved',
-            approvedBy: 'Dr. Wilson',
-          }
+              ...result,
+              status: 'Approved',
+              approvedBy: 'Dr. Wilson',
+            }
           : result,
       ),
     );
@@ -534,13 +533,76 @@ export class LaboratoryService {
       });
   }
 
-  private buildLabRequestUrl(): string {
-    const facilityId = this.getCurrentFacilityId();
-    if (!facilityId) {
+  getRequestForResult(
+    labId: string,
+    facilityId: string | number,
+  ): Observable<LabRequest> {
+    return this.getLabRequests(facilityId).pipe(
+      map((requests) => {
+        const request = requests.find((item) => item.id === labId);
+        if (!request) {
+          throw new Error(
+            'The lab request associated with this result was not found.',
+          );
+        }
+        return request;
+      }),
+    );
+  }
+
+  getResultsForTicket(
+    ticketNumber: null | string,
+    facilityId: string | number,
+  ): Observable<LabResult[]> {
+    return forkJoin({
+      requests: this.getLabRequests(facilityId),
+      results: this.http
+        .get<
+          ApiResponse<LabResultApiModel[]> | LabResultApiModel[]
+        >(this.buildLabResultUrl(facilityId))
+        .pipe(
+          map((response) =>
+            this.extractCollection<LabResultApiModel>(response)
+              .map((item) => this.mapApiLabResult(item))
+              .filter((item): item is LabResult => item !== null),
+          ),
+        ),
+    }).pipe(
+      map(({ requests, results }) => {
+        const ticketLabIds = new Set(
+          requests
+            .filter((request) => request.ticketNumber === ticketNumber)
+            .map((request) => request.id),
+        );
+        return results.filter((result) => ticketLabIds.has(result.labId));
+      }),
+    );
+  }
+
+  private getLabRequests(
+    facilityId: string | number,
+  ): Observable<LabRequest[]> {
+    return this.http
+      .get<
+        ApiResponse<LabRequestApiModel[]> | LabRequestApiModel[]
+      >(this.buildLabRequestUrl(facilityId))
+      .pipe(
+        map((response) => this.extractCollection<LabRequestApiModel>(response)),
+        map((requests) =>
+          requests
+            .map((item) => this.mapApiLabRequest(item))
+            .filter((item): item is LabRequest => item !== null),
+        ),
+      );
+  }
+
+  private buildLabRequestUrl(facilityId?: string | number): string {
+    const activeFacilityId = facilityId || this.getCurrentFacilityId();
+    if (!activeFacilityId) {
       return `${this.labRequestUrl}/`;
     }
 
-    return `${this.labRequestUrl}/?facilityId=${encodeURIComponent(facilityId)}/`;
+    return `${this.labRequestUrl}/?facilityId=${encodeURIComponent(activeFacilityId)}`;
   }
 
   private buildLabResultUrl(facilityId: string | number): string {
@@ -713,6 +775,7 @@ export class LaboratoryService {
       id,
       patient: patientName,
       patientId,
+      ticketNumber: item.ticketNumber,
       test: testName,
       orderedBy:
         item.orderedBy ||
@@ -728,7 +791,7 @@ export class LaboratoryService {
   }
 
   private mapApiLabResult(item: LabResultApiModel): LabResult | null {
-    const labId = item.labId || item.id || item.lab_request || item.labRequest;
+    const labId = item.labId || item.lab_request || item.labRequest || item.id;
     if (!labId) {
       return null;
     }

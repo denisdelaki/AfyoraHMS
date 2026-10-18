@@ -25,6 +25,10 @@ interface NewRadiologyOrderDialogData {
   imagingTypes: ImagingType[];
   patients: { id: string; name: string }[];
   doctors: { id: string; name: string }[];
+  patientId?: string;
+  ticketNumber?: string;
+  orderedBy?: string;
+  clinicalNotes?: string;
 }
 
 @Component({
@@ -73,6 +77,15 @@ export class NewRadiologyOrderDialogComponent implements OnInit {
     this.form.controls.patient.valueChanges.subscribe((patientId) => {
       this.form.controls.patientId.setValue(patientId ?? '');
     });
+    this.form.patchValue({
+      patient: this.data.patientId || '',
+      patientId: this.data.patientId || '',
+      orderedBy: this.data.orderedBy || '',
+      clinicalNotes: this.data.clinicalNotes || '',
+    });
+    if (this.data.patientId) {
+      this.form.controls.patient.disable();
+    }
   }
 
   close() {
@@ -88,6 +101,8 @@ export class NewRadiologyOrderDialogComponent implements OnInit {
     const rawValue = this.form.getRawValue();
     this.dialogRef.close({
       ...rawValue,
+      patient: this.patients.find((patient) => patient.id === rawValue.patientId)?.name || rawValue.patient,
+      ticketNumber: this.data.ticketNumber,
       scheduledDate: this.formatDate(rawValue.scheduledDate),
     } as CreateImagingOrderPayload);
   }

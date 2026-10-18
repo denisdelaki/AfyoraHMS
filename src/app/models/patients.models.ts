@@ -63,6 +63,7 @@ export type PatientVitals = {
   facilityId?: number | string;
   patientId?: string;
   ticketId?: string | number;
+  ticketNumber?: string;
   capturedBy?: {
     id: number | string;
     username: string;
@@ -81,8 +82,11 @@ export type PatientVitals = {
   weightKg?: number | string;
   bmi?: number | string;
   painScore?: number;
+  lastMenstrualPeriod?: Date;
   is_pregnant?: boolean;
+  pregnancy_months?: number;
   notes?: string;
+  allergies?: string;
   recordedAt?: string;
 };
 

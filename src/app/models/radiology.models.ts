@@ -62,6 +62,7 @@ export interface CreateImagingTypePayload {
 export interface CreateImagingOrderPayload {
   patient: string;
   patientId: string;
+  ticketNumber?: string;
   orderedBy: string;
   imagingTypeId: string;
   priority: ImagingPriority;
