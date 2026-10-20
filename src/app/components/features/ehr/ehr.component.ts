@@ -1,6 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -50,6 +58,23 @@ import { FhirBundleSummary } from '../../../models/interoperability.models';
 import { VitalsSummaryCardComponent } from '../../shared/vitals-summary-card/vitals-summary-card.component';
 import { VitalsEntryDialogComponent } from '../../dialogs/vitals-entry-dialog/vitals-entry-dialog.component';
 
+type EhrPrintSectionKey =
+  | 'visits'
+  | 'problems'
+  | 'allergies'
+  | 'orders'
+  | 'vitals'
+  | 'labs'
+  | 'radiology'
+  | 'alerts'
+  | 'hie';
+
+type EhrPrintSection = {
+  key: EhrPrintSectionKey;
+  label: string;
+  selected: boolean;
+};
+
 @Component({
   selector: 'app-ehr',
   standalone: true,
@@ -70,9 +95,10 @@ import { VitalsEntryDialogComponent } from '../../dialogs/vitals-entry-dialog/vi
   templateUrl: './ehr.component.html',
   styleUrl: './ehr.component.css',
 })
-export class EhrComponent implements OnInit {
+export class EhrComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly ehrService = inject(EhrService);
   private readonly patientService = inject(PatientsService);
   private readonly radiologyService = inject(RadiologyService);
@@ -92,6 +118,24 @@ export class EhrComponent implements OnInit {
     images?: UploadedRadiologyImage[];
   })[] = [];
   selectedImagePreview: UploadedRadiologyImage | null = null;
+  showPrintOptions = false;
+  showPdfPreview = false;
+  previewPdfUrl: SafeResourceUrl | null = null;
+  private previewObjectUrl: string | null = null;
+  @ViewChild('ehrPdfPreviewFrame')
+  private ehrPdfPreviewFrame?: ElementRef<HTMLIFrameElement>;
+  selectedVisitIndexes: number[] = [];
+  printSections: EhrPrintSection[] = [
+    { key: 'visits', label: 'Clinical visits and notes', selected: true },
+    { key: 'problems', label: 'Problem list and diagnoses', selected: true },
+    { key: 'allergies', label: 'Allergies', selected: true },
+    { key: 'orders', label: 'CPOE orders', selected: true },
+    { key: 'vitals', label: 'Vitals and growth charts', selected: true },
+    { key: 'labs', label: 'Laboratory results', selected: true },
+    { key: 'radiology', label: 'Radiology reports', selected: true },
+    { key: 'alerts', label: 'Clinical decision support alerts', selected: true },
+    { key: 'hie', label: 'Kenya HIE clinical summary', selected: true },
+  ];
 
   ehrRecords: EhrRecord[] = [];
 
@@ -157,6 +201,10 @@ export class EhrComponent implements OnInit {
     this.facilityId =
       JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
     this.getPatientsRecords();
+  }
+
+  ngOnDestroy(): void {
+    this.clearPdfPreviewUrl();
   }
 
   get filteredPatients(): EhrPatient[] {
@@ -636,5 +684,371 @@ export class EhrComponent implements OnInit {
 
   closeImagePreview(): void {
     this.selectedImagePreview = null;
+  }
+
+  get hasSelectedPrintSections(): boolean {
+    return this.printSections.some((section) => section.selected);
+  }
+
+  get selectedPrintSectionCount(): number {
+    return this.printSections.filter((section) => section.selected).length;
+  }
+
+  get selectedVisitCount(): number {
+    return this.selectedVisitIndexes.length;
+  }
+
+  isPrintSectionSelected(key: EhrPrintSectionKey): boolean {
+    return this.printSections.find((section) => section.key === key)?.selected ?? false;
+  }
+
+  openPrintOptions(): void {
+    this.printSections = this.printSections.map((section) => ({
+      ...section,
+      selected: true,
+    }));
+    this.selectedVisitIndexes = this.ehrRecords.map((_, index) => index);
+    this.showPrintOptions = true;
+  }
+
+  closePrintOptions(): void {
+    this.showPrintOptions = false;
+  }
+
+  closePdfPreview(): void {
+    this.showPdfPreview = false;
+    this.clearPdfPreviewUrl();
+  }
+
+  printPreviewPdf(): void {
+    const previewWindow =
+      this.ehrPdfPreviewFrame?.nativeElement.contentWindow;
+    if (!previewWindow) {
+      this.snackBar.open(
+        'PDF preview is not ready to print. Please wait and try again.',
+        'OK',
+        { duration: 3500 },
+      );
+      return;
+    }
+
+    previewWindow.focus();
+    previewWindow.print();
+  }
+
+  downloadPreviewPdf(): void {
+    if (!this.previewObjectUrl || !this.selectedPatient) return;
+
+    const patientFileName = this.getPatientPdfFileName();
+    const anchor = document.createElement('a');
+    anchor.href = this.previewObjectUrl;
+    anchor.download = `${patientFileName}-ehr.pdf`;
+    anchor.click();
+  }
+
+  private getPatientPdfFileName(): string {
+    return (
+      this.selectedPatient?.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') ||
+      this.selectedPatient?.id ||
+      'patient'
+    );
+  }
+
+  private clearPdfPreviewUrl(): void {
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
+    this.previewPdfUrl = null;
+  }
+
+  selectAllPrintSections(selected: boolean): void {
+    this.printSections = this.printSections.map((section) => ({
+      ...section,
+      selected,
+    }));
+  }
+
+  isVisitSelected(index: number): boolean {
+    return this.selectedVisitIndexes.includes(index);
+  }
+
+  toggleVisitSelection(index: number, selected: boolean): void {
+    this.selectedVisitIndexes = selected
+      ? [...new Set([...this.selectedVisitIndexes, index])]
+      : this.selectedVisitIndexes.filter((selectedIndex) => selectedIndex !== index);
+  }
+
+  selectAllVisits(selected: boolean): void {
+    this.selectedVisitIndexes = selected
+      ? this.ehrRecords.map((_, index) => index)
+      : [];
+  }
+
+  async previewEhrPdf(): Promise<void> {
+    const patient = this.selectedPatient;
+    const selectedSections = this.printSections
+      .filter((section) => section.selected)
+      .map((section) => section.key);
+    if (!patient || selectedSections.length === 0) return;
+
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const margin = 40;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const contentWidth = pageWidth - margin * 2;
+      const pageBottom = doc.internal.pageSize.getHeight() - margin;
+      let y = margin;
+
+      const writeSectionHeader = (title: string): void => {
+        if (y > pageBottom - 34) {
+          doc.addPage();
+          y = margin;
+        }
+        y += 10;
+        doc.setFillColor(30, 64, 115);
+        doc.rect(margin, y - 13, contentWidth, 24, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text(title, margin + 10, y + 3);
+        doc.setTextColor(30, 41, 59);
+        y += 22;
+      };
+
+      const writeSection = (title: string, entries: string[]): void => {
+        writeSectionHeader(title);
+        if (entries.length === 0) entries = ['No records available.'];
+        entries.forEach((entry) => {
+          const lines = entry
+            .split('\n')
+            .flatMap((line) => doc.splitTextToSize(line, contentWidth - 24));
+          const lineHeight = 14;
+          const cardHeight = Math.max(34, lines.length * lineHeight + 18);
+          if (y + cardHeight > pageBottom) {
+            doc.addPage();
+            y = margin;
+            writeSectionHeader(title);
+          }
+          doc.setFillColor(248, 250, 252);
+          doc.setDrawColor(226, 232, 240);
+          doc.roundedRect(margin, y, contentWidth, cardHeight, 4, 4, 'FD');
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(51, 65, 85);
+          doc.text(lines, margin + 12, y + 18);
+          y += cardHeight + 6;
+        });
+      };
+
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, pageWidth, 104, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.text('Patient Electronic Health Record', margin, 42);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(203, 213, 225);
+      doc.text('CONFIDENTIAL CLINICAL DOCUMENT', margin, 64);
+      doc.text(`Generated ${new Date().toLocaleString()}`, margin, 82);
+      doc.setTextColor(30, 41, 59);
+      y = 122;
+
+      const patientDetails = [
+        [`Patient`, patient.name],
+        [`Patient ID`, patient.id],
+        [`National ID`, patient.nationalId || 'Not recorded'],
+        [`Date of birth`, patient.dob || 'Not recorded'],
+        [`Age`, `${patient.age} years`],
+        [`Gender`, patient.gender],
+      ];
+      const columnWidth = contentWidth / 2;
+      const rowHeight = 34;
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(
+        margin,
+        y,
+        contentWidth,
+        rowHeight * 3 + 12,
+        5,
+        5,
+        'FD',
+      );
+      patientDetails.forEach(([label, value], index) => {
+        const column = index % 2;
+        const row = Math.floor(index / 2);
+        const x = margin + 12 + column * columnWidth;
+        const detailY = y + 22 + row * rowHeight;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(label.toUpperCase(), x, detailY);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(30, 41, 59);
+        doc.text(doc.splitTextToSize(value, columnWidth - 28)[0] || '', x, detailY + 12);
+      });
+      y += rowHeight * 3 + 26;
+
+      if (selectedSections.includes('visits')) {
+        writeSection(
+          'Clinical visits and notes',
+          this.ehrRecords
+            .map((record, index) => ({ record, index }))
+            .filter(({ index }) => this.selectedVisitIndexes.includes(index))
+            .map(({ record }) =>
+              [
+                `Visit date: ${record.date}  |  Clinician: ${record.doctor}`,
+                `Diagnosis: ${record.diagnosis} (${record.diagnosisSystem || 'KNHTS'}: ${record.diagnosisCode || 'Not coded'})`,
+                `Clinical notes: ${record.notes || 'No notes recorded.'}`,
+                ...(record.prescriptions || []).map(
+                  (prescription) =>
+                    `Prescription: ${prescription.medication || prescription.drugs?.map((drug) => drug.name).join(', ') || 'Medication'}  |  ${prescription.dosage || 'Dosage not recorded'}  |  ${prescription.frequency || 'Frequency not recorded'}  |  ${prescription.duration || 'Duration not recorded'}`,
+                ),
+              ].join('\n'),
+            ),
+        );
+      }
+
+      if (selectedSections.includes('problems')) {
+        writeSection(
+          'Problem list and diagnoses',
+          this.patientProblems.length
+            ? this.patientProblems.map(
+                (problem) =>
+                  `${problem.display} | ${problem.system}: ${problem.code} | Status: ${problem.status} | Onset: ${problem.onsetDate}${problem.notes ? ` | Notes: ${problem.notes}` : ''}`,
+              )
+            : ['No problems or diagnoses recorded.'],
+        );
+      }
+
+      if (selectedSections.includes('allergies')) {
+        writeSection(
+          'Allergies',
+          this.patientAllergies.length
+            ? this.patientAllergies.map(
+                (allergy) =>
+                  `${allergy.allergenName} | ${allergy.allergyType} | Severity: ${allergy.severity} | Reaction: ${allergy.reaction}`,
+              )
+            : ['No allergies recorded.'],
+        );
+      }
+
+      if (selectedSections.includes('orders')) {
+        writeSection(
+          'CPOE orders',
+          this.patientCpoeOrders.length
+            ? this.patientCpoeOrders.map(
+                (order) =>
+                  `${order.orderType}: ${order.title} | Status: ${order.status} | Ordered by: ${order.orderedBy} | Date: ${order.orderDate} | Instructions: ${order.instructions}`,
+              )
+            : ['No CPOE orders recorded.'],
+        );
+      }
+
+      if (selectedSections.includes('vitals')) {
+        const vitalsLines = this.vitalsHistory.map(
+          (vitals) =>
+            `Date: ${vitals.recordedAt || 'Not recorded'} | Blood pressure: ${vitals.systolicBp ?? 'N/A'}/${vitals.diastolicBp ?? 'N/A'} | Heart rate: ${vitals.heartRateBpm ?? 'N/A'} bpm | Temperature: ${vitals.temperatureC ?? 'N/A'} C | SpO2: ${vitals.spo2Percent ?? 'N/A'}% | Weight: ${vitals.weightKg ?? 'N/A'} kg | Height: ${vitals.heightCm ?? 'N/A'} cm | BMI: ${vitals.bmi ?? 'N/A'}`,
+        );
+        if (this.vitalsHistory.length === 0 && this.patientVitals) {
+          vitalsLines.push(
+            `Blood pressure: ${this.patientVitals.bloodPressureSystolic ?? 'N/A'}/${this.patientVitals.bloodPressureDiastolic ?? 'N/A'} | Heart rate: ${this.patientVitals.pulseRateBpm ?? 'N/A'} bpm | Temperature: ${this.patientVitals.temperatureC ?? 'N/A'} C | SpO2: ${this.patientVitals.oxygenSaturationSpO2 ?? 'N/A'}% | Weight: ${this.patientVitals.weightKg ?? 'N/A'} kg | Height: ${this.patientVitals.heightCm ?? 'N/A'} cm | BMI: ${this.patientVitals.bmi ?? 'N/A'}`,
+          );
+        }
+        if (this.patientGrowthChart) {
+          vitalsLines.push(
+            `Growth chart: ${this.patientGrowthChart.ageMonths} months | Height: ${this.patientGrowthChart.heightCm} cm (${this.patientGrowthChart.heightPercentile}th percentile) | Weight: ${this.patientGrowthChart.weightKg} kg (${this.patientGrowthChart.weightPercentile}th percentile) | WHO classification: ${this.patientGrowthChart.whoClassification}`,
+          );
+        }
+        writeSection(
+          'Vitals and growth charts',
+          vitalsLines.length ? vitalsLines : ['No vitals recorded.'],
+        );
+      }
+
+      if (selectedSections.includes('labs')) {
+        writeSection(
+          'Laboratory results',
+          this.patientLabResults.length
+            ? this.patientLabResults.map(
+                (result) =>
+                  `${result.date} | ${result.test}${result.loincCode ? ` (${result.loincCode})` : ''} | Result: ${result.result} | Status: ${result.status}`,
+              )
+            : ['No laboratory results recorded.'],
+        );
+      }
+
+      if (selectedSections.includes('radiology')) {
+        writeSection(
+          'Radiology reports',
+          this.patientRadiologyReports.length
+            ? this.patientRadiologyReports.flatMap((report) => [
+                `${report.type} | Date: ${report.scanDate} | Radiologist: ${report.radiologist} | Status: ${report.status}`,
+                `Findings: ${report.findings || 'Not recorded.'}`,
+                `Impression: ${report.impression || 'Not recorded.'}`,
+                `Recommendations: ${report.recommendations || 'Not recorded.'}`,
+                '',
+              ])
+            : ['No radiology reports recorded.'],
+        );
+      }
+
+      if (selectedSections.includes('alerts')) {
+        writeSection(
+          'Clinical decision support alerts',
+          this.cdsAlerts.length
+            ? this.cdsAlerts.map(
+                (alert) =>
+                  `${alert.severity}: ${alert.title} | ${alert.message} | Recommendation: ${alert.recommendation} | Source: ${alert.source}`,
+              )
+            : ['No clinical alerts recorded.'],
+        );
+      }
+
+      if (selectedSections.includes('hie')) {
+        writeSection(
+          'Kenya HIE clinical summary',
+          this.fhirSummary?.rawFhirJson
+            ? [this.fhirSummary.rawFhirJson]
+            : ['No HIE summary available.'],
+        );
+      }
+
+      const pageCount = doc.getNumberOfPages();
+      for (let page = 1; page <= pageCount; page++) {
+        doc.setPage(page);
+        doc.setDrawColor(203, 213, 225);
+        doc.line(margin, pageBottom + 12, pageWidth - margin, pageBottom + 12);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text('CONFIDENTIAL - For authorized care use only', margin, pageBottom + 26);
+        doc.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageBottom + 26, {
+          align: 'right',
+        });
+      }
+
+      this.clearPdfPreviewUrl();
+      this.previewObjectUrl = URL.createObjectURL(doc.output('blob'));
+      this.previewPdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+        this.previewObjectUrl,
+      );
+      this.showPrintOptions = false;
+      this.showPdfPreview = true;
+    } catch (error) {
+      console.error('Failed to generate patient EHR PDF:', error);
+      this.snackBar.open(
+        'Failed to generate the patient EHR PDF. Please try again.',
+        'OK',
+        { duration: 3500 },
+      );
+    }
   }
 }

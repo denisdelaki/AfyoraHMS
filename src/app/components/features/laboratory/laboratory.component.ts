@@ -1,6 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -41,11 +48,19 @@ type LaboratoryTab = 'requests' | 'results' | 'catalog';
   templateUrl: './laboratory.component.html',
   styleUrl: './laboratory.component.css',
 })
-export class LaboratoryComponent {
+export class LaboratoryComponent implements OnDestroy {
   private readonly dialog = inject(MatDialog);
   private readonly laboratoryService = inject(LaboratoryService);
   private readonly visitQueueService = inject(VisitQueueService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly sanitizer = inject(DomSanitizer);
+
+  showLabReportPreview = false;
+  labReportPreviewUrl: SafeResourceUrl | null = null;
+  private labReportObjectUrl: string | null = null;
+  private labReportFileName = 'laboratory-report.pdf';
+  @ViewChild('labReportPreviewFrame')
+  private labReportPreviewFrame?: ElementRef<HTMLIFrameElement>;
 
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly tabs: LaboratoryTab[] = ['requests', 'results', 'catalog'];
@@ -84,6 +99,10 @@ export class LaboratoryComponent {
       ).length,
     })),
   );
+
+  ngOnDestroy(): void {
+    this.clearLabReportPreview();
+  }
 
   setActiveTab(index: number) {
     this.activeTab = this.tabs[index] ?? 'requests';
@@ -131,6 +150,217 @@ export class LaboratoryComponent {
 
   approveResult(labId: string) {
     this.laboratoryService.approveResult(labId);
+  }
+
+  async previewLabReport(result: LabResult): Promise<void> {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const margin = 40;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const contentWidth = pageWidth - margin * 2;
+      const bottom = pageHeight - margin - 24;
+      let y = margin;
+
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, pageWidth, 112, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.text('Laboratory Report', margin, 43);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(203, 213, 225);
+      doc.text('CONFIDENTIAL CLINICAL DOCUMENT', margin, 64);
+      doc.text(`Generated ${new Date().toLocaleString()}`, margin, 84);
+      y = 132;
+
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(margin, y, contentWidth, 96, 5, 5, 'FD');
+      const metadata: [string, string][] = [
+        ['PATIENT', result.patient],
+        ['PATIENT / ORDER ID', result.labId],
+        ['TEST', result.test],
+        ['COMPLETED', result.completedDate],
+        ['TECHNICIAN', result.technician],
+        ['APPROVED BY', result.approvedBy || 'Not recorded'],
+      ];
+      const columnWidth = contentWidth / 2;
+      metadata.forEach(([label, value], index) => {
+        const column = index % 2;
+        const row = Math.floor(index / 2);
+        const x = margin + 12 + column * columnWidth;
+        const itemY = y + 20 + row * 28;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(100, 116, 139);
+        doc.text(label, x, itemY);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(30, 41, 59);
+        doc.text(doc.splitTextToSize(value || 'Not recorded', columnWidth - 26)[0], x, itemY + 11);
+      });
+      y += 116;
+
+      const writeSectionHeader = (title: string): void => {
+        if (y > bottom - 30) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.setFillColor(30, 64, 115);
+        doc.rect(margin, y, contentWidth, 23, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(255, 255, 255);
+        doc.text(title, margin + 10, y + 15);
+        doc.setTextColor(30, 41, 59);
+        y += 33;
+      };
+
+      writeSectionHeader('Test parameters');
+      const columns = [
+        { label: 'Test', x: margin + 8, width: 160 },
+        { label: 'Result', x: margin + 174, width: 90 },
+        { label: 'Unit', x: margin + 270, width: 75 },
+        { label: 'Reference range', x: margin + 350, width: 100 },
+        { label: 'Status', x: margin + 455, width: 55 },
+      ];
+
+      const drawTableHeader = (): void => {
+        doc.setFillColor(226, 232, 240);
+        doc.rect(margin, y, contentWidth, 25, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(51, 65, 85);
+        columns.forEach((column) => doc.text(column.label, column.x, y + 16));
+        y += 25;
+      };
+      drawTableHeader();
+
+      if (result.parameters.length === 0) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text('No test parameters recorded.', margin + 8, y + 18);
+        y += 30;
+      } else {
+        result.parameters.forEach((parameter, index) => {
+          if (y + 30 > bottom) {
+            doc.addPage();
+            y = margin;
+            writeSectionHeader('Test parameters (continued)');
+            drawTableHeader();
+          }
+          doc.setFillColor(index % 2 === 0 ? 255 : 248, 250, 252);
+          doc.rect(margin, y, contentWidth, 30, 'F');
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(30, 41, 59);
+          const values = [
+            parameter.name,
+            parameter.value,
+            parameter.unit || '—',
+            parameter.range || '—',
+          ];
+          values.forEach((value, valueIndex) => {
+            const column = columns[valueIndex];
+            doc.text(
+              doc.splitTextToSize(value || '—', column.width)[0],
+              column.x,
+              y + 18,
+            );
+          });
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(
+            parameter.status === 'Normal' ? 4 : 185,
+            parameter.status === 'Normal' ? 120 : 28,
+            parameter.status === 'Normal' ? 87 : 28,
+          );
+          doc.text(parameter.status, columns[4].x, y + 18);
+          doc.setDrawColor(226, 232, 240);
+          doc.line(margin, y + 30, margin + contentWidth, y + 30);
+          y += 30;
+        });
+      }
+
+      if (result.remarks) {
+        y += 18;
+        writeSectionHeader('Laboratory remarks');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(51, 65, 85);
+        const remarkLines = doc.splitTextToSize(result.remarks, contentWidth);
+        remarkLines.forEach((line: string) => {
+          if (y > bottom) {
+            doc.addPage();
+            y = margin;
+          }
+          doc.text(line, margin, y);
+          y += 14;
+        });
+      }
+
+      const pageCount = doc.getNumberOfPages();
+      for (let page = 1; page <= pageCount; page++) {
+        doc.setPage(page);
+        doc.setDrawColor(203, 213, 225);
+        doc.line(margin, pageHeight - margin, pageWidth - margin, pageHeight - margin);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text('CONFIDENTIAL - For authorized care use only', margin, pageHeight - margin + 14);
+        doc.text(`Page ${page} of ${pageCount}`, pageWidth - margin, pageHeight - margin + 14, {
+          align: 'right',
+        });
+      }
+
+      this.clearLabReportPreview();
+      this.labReportObjectUrl = URL.createObjectURL(doc.output('blob'));
+      this.labReportPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+        this.labReportObjectUrl,
+      );
+      this.labReportFileName = `${result.patient
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') || result.labId}-lab-report.pdf`;
+      this.showLabReportPreview = true;
+    } catch (error) {
+      console.error('Failed to generate laboratory report PDF:', error);
+      this.openSnackBar('Failed to generate the laboratory PDF. Please try again.');
+    }
+  }
+
+  printLabReportPreview(): void {
+    const previewWindow =
+      this.labReportPreviewFrame?.nativeElement.contentWindow;
+    if (!previewWindow) {
+      this.openSnackBar('PDF preview is not ready to print. Please wait and try again.');
+      return;
+    }
+    previewWindow.focus();
+    previewWindow.print();
+  }
+
+  downloadLabReportPreview(): void {
+    if (!this.labReportObjectUrl) return;
+    const anchor = document.createElement('a');
+    anchor.href = this.labReportObjectUrl;
+    anchor.download = this.labReportFileName;
+    anchor.click();
+  }
+
+  closeLabReportPreview(): void {
+    this.showLabReportPreview = false;
+    this.clearLabReportPreview();
+  }
+
+  private clearLabReportPreview(): void {
+    if (this.labReportObjectUrl) {
+      URL.revokeObjectURL(this.labReportObjectUrl);
+      this.labReportObjectUrl = null;
+    }
+    this.labReportPreviewUrl = null;
   }
 
   requestRetest(labId: string) {
