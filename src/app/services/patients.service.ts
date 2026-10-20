@@ -24,6 +24,7 @@ type VisitRecordPayload = {
     drugs: { name: string; quantity: number; dosage: string }[];
     status: 'Pending' | 'Dispensed';
     date: string;
+    ticketNumber?: string;
   }[];
   amountBilled: number | string;
   whatHappened: string;

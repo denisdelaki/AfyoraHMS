@@ -144,7 +144,12 @@
 
   @if (activeTab === "prescriptions") {
   <div class="space-y-4">
-    @for (prescription of prescriptions; track prescription.id) {
+    @if (ticketNumberFilter) {
+    <p class="text-sm text-gray-600">
+      Showing prescriptions for visit ticket {{ ticketNumberFilter }}
+    </p>
+    }
+    @for (prescription of filteredPrescriptions; track prescription.id) {
     <mat-card class="!p-4 sm:!p-6 !rounded-xl !shadow-sm">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 sm:gap-4">
         <div>
@@ -158,6 +163,11 @@
             {{ getDoctorName(prescription.doctorId) }}
           </p>
           <p class="text-xs sm:text-sm text-gray-500">Date: {{ prescription.date }}</p>
+          @if (prescription.ticketNumber) {
+          <p class="text-xs sm:text-sm text-gray-500">
+            Visit ticket: {{ prescription.ticketNumber }}
+          </p>
+          }
         </div>
         <mat-chip-set class="self-start sm:self-auto shrink-0">
           <mat-chip [class]="
@@ -193,6 +203,14 @@
       </button>
       }
     </mat-card>
+    } @empty {
+    <p class="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
+      @if (ticketNumberFilter) {
+      No prescriptions found for visit ticket {{ ticketNumberFilter }}.
+      } @else {
+      No prescriptions found.
+      }
+    </p>
     }
   </div>
   }

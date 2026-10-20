@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { PatientsService } from '../../../services';
 import { EmployeeService } from '../../../services/employee.service';
 import { FormsModule } from '@angular/forms';
@@ -60,6 +61,7 @@ export class PharmacyComponent implements OnInit {
   private readonly patientsService = inject(PatientsService);
   private readonly employeesService = inject(EmployeeService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly route = inject(ActivatedRoute);
 
   readonly Search = Search;
   readonly Plus = Plus;
@@ -68,6 +70,7 @@ export class PharmacyComponent implements OnInit {
 
   searchTerm = '';
   activeTab: PharmacyTab = 'catalog';
+  ticketNumberFilter = '';
 
   drugs: Drug[] = [
     // {
@@ -169,6 +172,11 @@ export class PharmacyComponent implements OnInit {
   facilityId: string | number = '';
 
   ngOnInit(): void {
+    this.ticketNumberFilter =
+      this.route.snapshot.queryParamMap.get('ticketNumber')?.trim() || '';
+    if (this.route.snapshot.queryParamMap.get('tab') === 'prescriptions') {
+      this.activeTab = 'prescriptions';
+    }
     this.facilityId =
       JSON.parse(localStorage.getItem('afyora.user') || 'null')?.facility || '';
     this.loadCategories();
@@ -294,6 +302,14 @@ export class PharmacyComponent implements OnInit {
   /** Ignore empty records returned by the API before the template uses them. */
   private get availableDrugs(): Drug[] {
     return this.drugs.filter((drug): drug is Drug => Boolean(drug));
+  }
+
+  get filteredPrescriptions(): Prescription[] {
+    if (!this.ticketNumberFilter) return this.prescriptions;
+    return this.prescriptions.filter(
+      (prescription) =>
+        prescription.ticketNumber?.trim() === this.ticketNumberFilter,
+    );
   }
 
   setActiveTab(tab: PharmacyTab): void {

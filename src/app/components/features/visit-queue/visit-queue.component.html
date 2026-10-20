@@ -149,8 +149,7 @@
                     }
                   } @else {
                     @if (
-                      currentStation === "Triage" &&
-                      ticket.status !== "Queued"
+                      currentStation === "Triage" && ticket.status !== "Queued"
                     ) {
                       <button
                         mat-flat-button
@@ -159,6 +158,20 @@
                         (click)="recordTriage(ticket)"
                       >
                         <mat-icon>monitor_heart</mat-icon> Record triage
+                      </button>
+                    }
+                    <!-- redirect the pharmacist to the prescription section -->
+                    @if (
+                      currentStation === "Pharmacy" &&
+                      ticket.status !== "Queued"
+                    ) {
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="button"
+                        (click)="recordPrescription(ticket)"
+                      >
+                        <mat-icon>local_pharmacy</mat-icon> view prescription
                       </button>
                     }
                     @if (

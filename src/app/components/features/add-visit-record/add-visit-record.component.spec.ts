@@ -62,7 +62,7 @@ describe('AddVisitRecordComponent vitals', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: MatSnackBar, useValue: { open: jasmine.createSpy('open') } },
         { provide: ActivatedRoute, useValue: {} },
-        { provide: Router, useValue: {} },
+        { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } },
         { provide: Location, useValue: {} },
       ],
     });
@@ -220,5 +220,54 @@ describe('AddVisitRecordComponent vitals', () => {
     expect(component.radiologyResultsError).toContain('Unable to fetch');
     expect(component.radiologyResultsLoaded).toBeFalsy();
     expect(component.loadingRadiologyResults).toBeFalsy();
+  });
+
+  it('includes the current visit ticket number on prescriptions sent with the visit record', () => {
+    component.inputTicketNumber = 'OP/42';
+    component.selectedConcept = {
+      coding: [],
+      text: 'Acute infection',
+      display: 'Acute infection',
+      code: 'A01',
+      system: 'KNHTS',
+    };
+    component.visitForm.patchValue({
+      doctor: 'EMP001',
+      whatHappened: 'Started treatment',
+    });
+    component.addPrescription();
+    component.drugsArray(0).at(0).patchValue({
+      name: 'Amoxicillin',
+      quantity: 1,
+      dosage: 'Once daily',
+    });
+    patientsService.createPatientVisitHistory.and.returnValue(of({}));
+
+    component.save();
+
+    const [, visitRecord] =
+      patientsService.createPatientVisitHistory.calls.mostRecent().args;
+    expect(visitRecord.prescriptions[0].ticketNumber).toBe('OP/42');
+  });
+
+  it('returns the visit record to the dialog without saving it a second time', () => {
+    const close = jasmine.createSpy('close');
+    Object.defineProperty(component, 'dialogRef', { value: { close } });
+    component.selectedConcept = {
+      coding: [],
+      text: 'Acute infection',
+      display: 'Acute infection',
+      code: 'A01',
+      system: 'KNHTS',
+    };
+    component.visitForm.patchValue({
+      doctor: 'EMP001',
+      whatHappened: 'Started treatment',
+    });
+
+    component.save();
+
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(patientsService.createPatientVisitHistory).not.toHaveBeenCalled();
   });
 });

@@ -147,6 +147,7 @@ export class PharmacyService {
       dhaStatus?: string;
       dhaVerified?: boolean;
       consentToken?: string;
+      ticketNumber?: string;
     },
     facilityId: string | number,
   ): Observable<ApiResponse<Prescription>> {

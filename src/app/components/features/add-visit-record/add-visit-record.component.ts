@@ -83,6 +83,7 @@ export type PrescriptionEntry = {
   dhaStatus?: string;
   dhaVerified?: boolean;
   dhaConsentToken?: string;
+  ticketNumber?: string;
 };
 
 export type VisitRecordFormValue = {
@@ -315,17 +316,22 @@ export class AddVisitRecordComponent implements OnInit {
     }
 
     if (!this.currentTicketNumber && this.ticketId && this.facilityId) {
-      this.queueService.refresh(this.facilityId).pipe(take(1)).subscribe({
-        next: (tickets) => {
-          const ticket = tickets.find((item) =>
-            item.id === this.ticketId && item.patientId === this.patientId,
-          );
-          this.resolvedTicketNumber = ticket?.ticketNumber || '';
-        },
-        error: () => {
-          this.radiologyResultsError = 'Unable to load the current visit ticket. Reopen the consultation to try again.';
-        },
-      });
+      this.queueService
+        .refresh(this.facilityId)
+        .pipe(take(1))
+        .subscribe({
+          next: (tickets) => {
+            const ticket = tickets.find(
+              (item) =>
+                item.id === this.ticketId && item.patientId === this.patientId,
+            );
+            this.resolvedTicketNumber = ticket?.ticketNumber || '';
+          },
+          error: () => {
+            this.radiologyResultsError =
+              'Unable to load the current visit ticket. Reopen the consultation to try again.';
+          },
+        });
     }
 
     this.loadDoctors();
@@ -342,8 +348,12 @@ export class AddVisitRecordComponent implements OnInit {
   }
 
   get currentTicketNumber(): string {
-    return this.dialogData?.ticketNumber || this.inputTicketNumber ||
-      this.route.snapshot?.queryParamMap?.get('ticketNumber') || this.resolvedTicketNumber;
+    return (
+      this.dialogData?.ticketNumber ||
+      this.inputTicketNumber ||
+      this.route.snapshot?.queryParamMap?.get('ticketNumber') ||
+      this.resolvedTicketNumber
+    );
   }
 
   get title(): string {
@@ -835,58 +845,100 @@ export class AddVisitRecordComponent implements OnInit {
       : this.dialogData?.patientName || patientId;
 
     if (!patientId || !ticketNumber || !ticketId || !facilityId) {
-      this.snackBar.open('Select a patient and visit ticket before requesting radiology.', 'Close', { duration: 3500 });
+      this.snackBar.open(
+        'Select a patient and visit ticket before requesting radiology.',
+        'Close',
+        { duration: 3500 },
+      );
       return;
     }
 
     this.requestingRadiology = true;
-    this.radiologyService.getImagingTypes(facilityId).pipe(take(1)).subscribe({
-      next: (imagingTypes) => {
-        if (!imagingTypes.length) {
-          this.requestingRadiology = false;
-          this.snackBar.open('No imaging tests are available to request.', 'Close', { duration: 3500 });
-          return;
-        }
-        this.dialog.open(NewRadiologyOrderDialogComponent, {
-          width: '760px',
-          maxWidth: '95vw',
-          data: {
-            imagingTypes,
-            patients: [{ id: patientId, name: patientName }],
-            doctors: this.doctors,
-            patientId,
-            ticketNumber,
-            orderedBy: this.visitForm.get('doctor')?.value || '',
-            clinicalNotes: this.visitForm.get('whatHappened')?.value || '',
-          },
-        }).afterClosed().pipe(take(1)).subscribe((payload) => {
-          if (!payload) {
+    this.radiologyService
+      .getImagingTypes(facilityId)
+      .pipe(take(1))
+      .subscribe({
+        next: (imagingTypes) => {
+          if (!imagingTypes.length) {
             this.requestingRadiology = false;
+            this.snackBar.open(
+              'No imaging tests are available to request.',
+              'Close',
+              { duration: 3500 },
+            );
             return;
           }
-          this.radiologyService.createOrder({
-            ...payload, patientId, patient: patientName, ticketNumber,
-          }, facilityId).subscribe({
-            next: () => {
-              this.queueService.forwardTicket(ticketId, 'Radiology', facilityId)
-                .pipe(finalize(() => (this.requestingRadiology = false)))
+          this.dialog
+            .open(NewRadiologyOrderDialogComponent, {
+              width: '760px',
+              maxWidth: '95vw',
+              data: {
+                imagingTypes,
+                patients: [{ id: patientId, name: patientName }],
+                doctors: this.doctors,
+                patientId,
+                ticketNumber,
+                orderedBy: this.visitForm.get('doctor')?.value || '',
+                clinicalNotes: this.visitForm.get('whatHappened')?.value || '',
+              },
+            })
+            .afterClosed()
+            .pipe(take(1))
+            .subscribe((payload) => {
+              if (!payload) {
+                this.requestingRadiology = false;
+                return;
+              }
+              this.radiologyService
+                .createOrder(
+                  {
+                    ...payload,
+                    patientId,
+                    patient: patientName,
+                    ticketNumber,
+                  },
+                  facilityId,
+                )
                 .subscribe({
-                  next: () => this.snackBar.open('Imaging requested and ticket forwarded to Radiology.', 'Close', { duration: 3500 }),
-                  error: () => this.snackBar.open('Imaging was requested, but the ticket could not be forwarded to Radiology.', 'Close', { duration: 5000 }),
+                  next: () => {
+                    this.queueService
+                      .forwardTicket(ticketId, 'Radiology', facilityId)
+                      .pipe(finalize(() => (this.requestingRadiology = false)))
+                      .subscribe({
+                        next: () =>
+                          this.snackBar.open(
+                            'Imaging requested and ticket forwarded to Radiology.',
+                            'Close',
+                            { duration: 3500 },
+                          ),
+                        error: () =>
+                          this.snackBar.open(
+                            'Imaging was requested, but the ticket could not be forwarded to Radiology.',
+                            'Close',
+                            { duration: 5000 },
+                          ),
+                      });
+                  },
+                  error: () => {
+                    this.requestingRadiology = false;
+                    this.snackBar.open(
+                      'Unable to request imaging. Please try again.',
+                      'Close',
+                      { duration: 3500 },
+                    );
+                  },
                 });
-            },
-            error: () => {
-              this.requestingRadiology = false;
-              this.snackBar.open('Unable to request imaging. Please try again.', 'Close', { duration: 3500 });
-            },
-          });
-        });
-      },
-      error: () => {
-        this.requestingRadiology = false;
-        this.snackBar.open('Unable to load imaging tests. Please try again.', 'Close', { duration: 3500 });
-      },
-    });
+            });
+        },
+        error: () => {
+          this.requestingRadiology = false;
+          this.snackBar.open(
+            'Unable to load imaging tests. Please try again.',
+            'Close',
+            { duration: 3500 },
+          );
+        },
+      });
   }
 
   fetchRadiologyResults(): void {
@@ -894,26 +946,35 @@ export class AddVisitRecordComponent implements OnInit {
     const ticketNumber = this.currentTicketNumber;
     const patientId = this.selectedPatient?.id || this.patientId;
     if (!ticketNumber || !patientId || !this.facilityId) {
-      this.radiologyResultsError = 'Select a patient and visit ticket before fetching radiology results.';
+      this.radiologyResultsError =
+        'Select a patient and visit ticket before fetching radiology results.';
       return;
     }
     this.loadingRadiologyResults = true;
     this.radiologyResultsLoaded = false;
     this.radiologyResultsError = '';
     this.radiologyReports = [];
-    this.radiologyService.getReportsForTicket(ticketNumber, this.facilityId, patientId)
+    this.radiologyService
+      .getReportsForTicket(ticketNumber, this.facilityId, patientId)
       .pipe(finalize(() => (this.loadingRadiologyResults = false)))
       .subscribe({
         next: (reports) => {
-          if (this.currentTicketNumber !== ticketNumber ||
-            (this.selectedPatient?.id || this.patientId) !== patientId) return;
+          if (
+            this.currentTicketNumber !== ticketNumber ||
+            (this.selectedPatient?.id || this.patientId) !== patientId
+          )
+            return;
           this.radiologyReports = reports;
           this.radiologyResultsLoaded = true;
         },
         error: () => {
-          if (this.currentTicketNumber !== ticketNumber ||
-            (this.selectedPatient?.id || this.patientId) !== patientId) return;
-          this.radiologyResultsError = 'Unable to fetch radiology results for this visit. Please try again.';
+          if (
+            this.currentTicketNumber !== ticketNumber ||
+            (this.selectedPatient?.id || this.patientId) !== patientId
+          )
+            return;
+          this.radiologyResultsError =
+            'Unable to fetch radiology results for this visit. Please try again.';
         },
       });
   }
@@ -1292,6 +1353,10 @@ export class AddVisitRecordComponent implements OnInit {
       diagnosisText,
       prescriptions: (value.prescriptions ?? []).map((p: any) => ({
         id: ((p['id'] as string) ?? '').trim() || undefined,
+        ticketNumber:
+          ((p['ticketNumber'] as string) ?? '').trim() ||
+          this.currentTicketNumber ||
+          undefined,
         drugs: (
           (p['drugs'] as {
             id: string;
@@ -1320,7 +1385,9 @@ export class AddVisitRecordComponent implements OnInit {
       vitals: vitalsPayload,
     };
 
-    if (this.selectedPatient && this.facilityId) {
+    if (this.dialogRef) {
+      this.finishSave(recordValue);
+    } else if (this.selectedPatient && this.facilityId) {
       this.patientsService
         .createPatientVisitHistory(
           this.selectedPatient.id,
@@ -1341,7 +1408,6 @@ export class AddVisitRecordComponent implements OnInit {
             this.finishSave(recordValue);
           },
           error: () => {
-            // Save local fallback
             this.finishSave(recordValue);
           },
         });
@@ -1367,6 +1433,7 @@ export class AddVisitRecordComponent implements OnInit {
   ): FormGroup {
     return this.formBuilder.group({
       id: [initial?.id ?? ''],
+      ticketNumber: [initial?.ticketNumber ?? this.currentTicketNumber],
       date: [initial?.date ?? this.todayDateValue(), [Validators.required]],
       status: [initial?.status ?? 'Pending', [Validators.required]],
       drugs: this.formBuilder.array(

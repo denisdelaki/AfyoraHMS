@@ -43,6 +43,7 @@ export type Prescription = {
   dhaStatus?: string;
   dhaVerified?: boolean;
   consentToken?: string;
+  ticketNumber?: string;
 };
 
 export type CreateDrugRequest = Omit<Drug, 'id' | 'categoryName'>;

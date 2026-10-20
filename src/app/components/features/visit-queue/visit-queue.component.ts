@@ -22,6 +22,7 @@ import {
   VisitTicket,
 } from '../../../models';
 import { PatientsService, VisitQueueService } from '../../../services';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   AddVisitRecordDialogComponent,
   VisitRecordFormValue,
@@ -71,7 +72,9 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
   private readonly queueService = inject(VisitQueueService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
   private queueSubscription?: Subscription;
+  private route = inject(ActivatedRoute);
 
   facilityId: string | number = '';
   currentUser = 'Reception';
@@ -207,7 +210,6 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('Creating ticket for patient:', patient);
     this.queueService
       .createTicket(
         {
@@ -298,6 +300,18 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
       },
     });
   }
+  recordPrescription(ticket: VisitTicket): void {
+    if (!ticket) {
+      this.showMessage('No ticket selected for viewing prescription.');
+      return;
+    }
+    this.router.navigate(['/pharmacy'], {
+      queryParams: {
+        tab: 'prescriptions',
+        ticketNumber: ticket.ticketNumber,
+      },
+    });
+  }
 
   recordConsultation(ticket: VisitTicket): void {
     console.log('Recording consultation for ticket:', ticket);
@@ -324,11 +338,18 @@ export class VisitQueueComponent implements OnInit, OnDestroy {
     dialogRef
       .afterClosed()
       .subscribe((record: VisitRecordFormValue | undefined) => {
-        if (!record?.nextDestination) return;
+        if (!record) return;
         this.patientsService
           .createPatientVisitHistory(ticket.patientId, record, this.facilityId)
           .subscribe({
             next: () => {
+              if (!record.nextDestination) {
+                this.showMessage(
+                  'Consultation saved successfully.',
+                  'app-snackbar-success',
+                );
+                return;
+              }
               this.queueService
                 .forwardTicket(
                   ticket.id,
