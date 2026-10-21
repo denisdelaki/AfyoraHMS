@@ -12,6 +12,7 @@ import {
 import { inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { apiUrl } from '../core/api.config';
+import { PageResult, normalizePageResult } from '../core/pagination';
 import {
   ApiResponse,
   CreateLabOrderPayload,
@@ -248,6 +249,27 @@ export class LaboratoryService {
     return this.testsSubject.asObservable();
   }
 
+  getTestsPage(
+    page: number,
+    pageSize: number,
+    search = '',
+  ): Observable<PageResult<LabTest>> {
+    return this.http
+      .get<unknown>(
+        this.buildPagedUrl(this.buildLabTestUrl(), page, pageSize, search),
+      )
+      .pipe(
+        map((response) =>
+          this.mapLabPage<LabTestApiModel, LabTest>(
+            response,
+            page,
+            pageSize,
+            (item) => this.mapApiLabTest(item),
+          ),
+        ),
+      );
+  }
+
   getTestById(testId: string): Observable<LabTest> {
     return this.http
       .get<
@@ -270,8 +292,56 @@ export class LaboratoryService {
     return this.requestsSubject.asObservable();
   }
 
+  getRequestsPage(
+    page: number,
+    pageSize: number,
+    search = '',
+  ): Observable<PageResult<LabRequest>> {
+    return this.http
+      .get<unknown>(
+        this.buildPagedUrl(this.buildLabRequestUrl(), page, pageSize, search),
+      )
+      .pipe(
+        map((response) =>
+          this.mapLabPage<LabRequestApiModel, LabRequest>(
+            response,
+            page,
+            pageSize,
+            (item) => this.mapApiLabRequest(item),
+          ),
+        ),
+      );
+  }
+
   getResults() {
     return this.resultsSubject.asObservable();
+  }
+
+  getResultsPage(
+    facilityId: string | number,
+    page: number,
+    pageSize: number,
+    search = '',
+  ): Observable<PageResult<LabResult>> {
+    return this.http
+      .get<unknown>(
+        this.buildPagedUrl(
+          this.buildLabResultUrl(facilityId),
+          page,
+          pageSize,
+          search,
+        ),
+      )
+      .pipe(
+        map((response) =>
+          this.mapLabPage<LabResultApiModel, LabResult>(
+            response,
+            page,
+            pageSize,
+            (item) => this.mapApiLabResult(item),
+          ),
+        ),
+      );
   }
 
   createTest(payload: LabTestPayload): Observable<LabTest> {
@@ -359,13 +429,13 @@ export class LaboratoryService {
       );
   }
 
-  startTest(labId: string) {
+  startTest(labId: string): Observable<void> {
     this.requestsSubject.next(
       this.requestsSubject.value.map((request) =>
         request.id === labId ? { ...request, status: 'In Progress' } : request,
       ),
     );
-    this.http
+    return this.http
       .post<ApiResponse<LabRequestApiModel> | LabRequestApiModel>(
         this.buildLabRequestActionUrl(labId, 'start'),
         {},
@@ -373,14 +443,14 @@ export class LaboratoryService {
       .pipe(
         tap(() => this.fetchLabRequests()),
         catchError((error) => {
-          console.error('Failed to start lab test on backend:', error);
-          return of(null);
+          this.fetchLabRequests();
+          return throwError(() => error);
         }),
-      )
-      .subscribe();
+        map(() => undefined),
+      );
   }
 
-  submitResult(payload: SubmitLabResultPayload) {
+  submitResult(payload: SubmitLabResultPayload): Observable<void> {
     const resultPayload = {
       labRequest: payload.labId,
       labId: payload.labId,
@@ -389,7 +459,7 @@ export class LaboratoryService {
       facilityId: this.getCurrentFacilityId(),
     };
 
-    this.http
+    return this.http
       .post<ApiResponse<LabResultApiModel> | LabResultApiModel>(
         this.buildLabResultUrl(this.getCurrentFacilityId()),
         resultPayload,
@@ -399,15 +469,11 @@ export class LaboratoryService {
           this.fetchLabResults(this.getCurrentFacilityId());
           this.fetchLabRequests();
         }),
-        catchError((error) => {
-          console.error('Failed to submit lab result:', error);
-          return of(null);
-        }),
-      )
-      .subscribe();
+        map(() => undefined),
+      );
   }
 
-  approveResult(labId: string) {
+  approveResult(labId: string): Observable<void> {
     this.requestsSubject.next(
       this.requestsSubject.value.map((request) =>
         request.id === labId ? { ...request, status: 'Approved' } : request,
@@ -426,7 +492,7 @@ export class LaboratoryService {
       ),
     );
 
-    this.http
+    return this.http
       .post<ApiResponse<LabRequestApiModel> | LabRequestApiModel>(
         this.buildLabRequestActionUrl(labId, 'approve'),
         {},
@@ -437,11 +503,12 @@ export class LaboratoryService {
           this.fetchLabResults(this.getCurrentFacilityId());
         }),
         catchError((error) => {
-          console.error('Failed to approve lab result on backend:', error);
-          return of(null);
+          this.fetchLabRequests();
+          this.fetchLabResults(this.getCurrentFacilityId());
+          return throwError(() => error);
         }),
-      )
-      .subscribe();
+        map(() => undefined),
+      );
   }
 
   private buildLabRequestActionUrl(
@@ -611,6 +678,35 @@ export class LaboratoryService {
     }
 
     return `${this.labResultUrl}/?facilityId=${encodeURIComponent(facilityId)}`;
+  }
+
+  private buildPagedUrl(
+    url: string,
+    page: number,
+    pageSize: number,
+    search: string,
+  ): string {
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(pageSize),
+    });
+    if (search.trim()) params.set('search', search.trim());
+    return `${url}${url.includes('?') ? '&' : '?'}${params.toString()}`;
+  }
+
+  private mapLabPage<TApi, T>(
+    response: unknown,
+    page: number,
+    pageSize: number,
+    mapItem: (item: TApi) => T | null,
+  ): PageResult<T> {
+    const normalized = normalizePageResult<TApi>(response, { page, pageSize });
+    return {
+      ...normalized,
+      items: normalized.items
+        .map(mapItem)
+        .filter((item): item is T => item !== null),
+    };
   }
 
   private buildLabTestUrl(): string {

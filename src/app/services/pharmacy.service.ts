@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map, tap, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -7,6 +7,10 @@ import { ApiResponse, CreateDrugPurchaseOrderRequest, CreateDrugRequest, Drug, D
 import { DHAPrescription } from '../models/dha-connect.models';
 import { DataSyncService } from './data-sync.service';
 import { DhaAfyaConnectService } from './dha-afyaconnect.service';
+import {
+  PageResult,
+  normalizePageResult,
+} from '../core/pagination';
 
 @Injectable({ providedIn: 'root' })
 export class PharmacyService {
@@ -23,6 +27,34 @@ export class PharmacyService {
           (response?.items ?? response?.results ?? response?.data ?? (Array.isArray(response) ? response : [])).filter((drug: Drug): drug is Drug => Boolean(drug)),
         ),
       ));
+  }
+
+  getDrugsPage(
+    facilityId: string | number,
+    page: number,
+    pageSize: number,
+    search = '',
+  ): Observable<PageResult<Drug>> {
+    let params = new HttpParams()
+      .set('facilityId', String(facilityId))
+      .set('page', String(page))
+      .set('page_size', String(pageSize));
+    if (search.trim()) params = params.set('search', search.trim());
+
+    return this.http
+      .get<unknown>(`${this.baseUrl}/drugs/`, { params })
+      .pipe(
+        map((response) => {
+          const pageResult = normalizePageResult<Drug>(response, {
+            page,
+            pageSize,
+          });
+          return {
+            ...pageResult,
+            items: pageResult.items.filter((drug) => Boolean(drug)),
+          };
+        }),
+      );
   }
 
   getCategories(facilityId: string | number): Observable<DrugCategory[]> {
@@ -116,6 +148,31 @@ export class PharmacyService {
         `${this.baseUrl}/prescriptions/?facilityId=${encodeURIComponent(facilityId)}/`,
       )
       .pipe(map((response: any) => response?.items ?? response?.results ?? response?.data ?? (Array.isArray(response) ? response : []))));
+  }
+
+  getPrescriptionsPage(
+    facilityId: string | number,
+    page: number,
+    pageSize: number,
+    search = '',
+    ticketNumber = '',
+  ): Observable<PageResult<Prescription>> {
+    let params = new HttpParams()
+      .set('facilityId', String(facilityId))
+      .set('page', String(page))
+      .set('page_size', String(pageSize));
+    if (search.trim()) params = params.set('search', search.trim());
+    if (ticketNumber.trim()) {
+      params = params.set('ticketNumber', ticketNumber.trim());
+    }
+
+    return this.http
+      .get<unknown>(`${this.baseUrl}/prescriptions/`, { params })
+      .pipe(
+        map((response) =>
+          normalizePageResult<Prescription>(response, { page, pageSize }),
+        ),
+      );
   }
 
   verifyAndCreateDhaPrescription(payload: {

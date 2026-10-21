@@ -33,7 +33,7 @@
     <mat-card class="!p-6 !m-0">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm text-gray-600 mb-1">Doctors</p>
+          <p class="text-sm text-gray-600 mb-1">Doctors on this page</p>
           <p class="text-2xl font-semibold">{{ doctorsCount() }}</p>
         </div>
         <div class="bg-green-500 p-3 rounded-lg">
@@ -45,7 +45,7 @@
     <mat-card class="!p-6 !m-0">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm text-gray-600 mb-1">On Duty Today</p>
+          <p class="text-sm text-gray-600 mb-1">On duty on this page</p>
           <p class="text-2xl font-semibold">{{ onDutyTodayCount() }}</p>
         </div>
         <div class="bg-yellow-500 p-3 rounded-lg">
@@ -57,7 +57,7 @@
     <mat-card class="!p-6 !m-0">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm text-gray-600 mb-1">Monthly Payroll</p>
+          <p class="text-sm text-gray-600 mb-1">Payroll on this page</p>
           <p class="text-2xl font-semibold">Kes &nbsp;{{ monthlyPayroll() }}</p>
         </div>
         <div class="bg-purple-500 p-3 rounded-lg">
@@ -86,7 +86,7 @@
               placeholder="Search by name, role, or department..."
               class="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
               [ngModel]="searchTerm()"
-              (ngModelChange)="searchTerm.set($event)"
+              (ngModelChange)="onSearchChange($event)"
             />
           </div>
         </mat-card>
@@ -117,6 +117,12 @@
                   <th class="py-3 px-4 text-sm font-medium text-gray-600">
                     Status
                   </th>
+                  <th
+                    *ngIf="canManageEmployees"
+                    class="py-3 px-4 text-sm font-medium text-gray-600"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -142,15 +148,46 @@
                       {{ employee.status }}
                     </span>
                   </td>
+                  <td *ngIf="canManageEmployees" class="py-3 px-4">
+                    <div class="flex items-center gap-2">
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        (click)="openEditEmployeeDialog(employee)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                        Edit
+                      </button>
+                      <button
+                        mat-stroked-button
+                        color="warn"
+                        type="button"
+                        (click)="deleteEmployee(employee)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
                 </tr>
                 <tr *ngIf="employees.length === 0">
-                  <td colspan="7" class="py-8 text-center text-gray-500">
+                  <td
+                    [attr.colspan]="canManageEmployees ? 8 : 7"
+                    class="py-8 text-center text-gray-500"
+                  >
                     No employees found matching "{{ searchTerm() }}"
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <app-pagination-controls
+            [page]="employeesPage"
+            [pageSize]="employeesPageSize"
+            [total]="employeesTotal"
+            [loading]="employeesLoading"
+            (pageChange)="onEmployeesPageChange($event)"
+          />
         </mat-card>
       </div>
     </mat-tab>
@@ -369,6 +406,12 @@
                   <th class="py-3 px-4 text-sm font-medium text-gray-600">
                     Join Date
                   </th>
+                  <th
+                    *ngIf="canManageEmployees"
+                    class="py-3 px-4 text-sm font-medium text-gray-600"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -383,10 +426,38 @@
                     KES {{ employee.salary / 12 | number: "1.2-2" }}
                   </td>
                   <td class="py-3 px-4">{{ employee.joinDate }}</td>
+                  <td *ngIf="canManageEmployees" class="py-3 px-4">
+                    <div class="flex items-center gap-2">
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        (click)="openEditEmployeeDialog(employee)"
+                      >
+                        <mat-icon>edit</mat-icon>
+                        Edit
+                      </button>
+                      <button
+                        mat-stroked-button
+                        color="warn"
+                        type="button"
+                        (click)="deleteEmployee(employee)"
+                      >
+                        <mat-icon>delete</mat-icon>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <app-pagination-controls
+            [page]="employeesPage"
+            [pageSize]="employeesPageSize"
+            [total]="employeesTotal"
+            [loading]="employeesLoading"
+            (pageChange)="onEmployeesPageChange($event)"
+          />
         </mat-card>
       </div>
     </mat-tab>

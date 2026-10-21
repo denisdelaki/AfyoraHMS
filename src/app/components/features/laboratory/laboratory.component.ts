@@ -16,7 +16,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
-import { combineLatest, map, startWith, switchMap, throwError } from 'rxjs';
+import {
+  combineLatest,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  startWith,
+  switchMap,
+  throwError,
+} from 'rxjs';
+import { PageRequest } from '../../../core/pagination';
+import { PaginationControlsComponent } from '../../shared/pagination-controls/pagination-controls.component';
 import {
   LabRequest,
   LabResult,
@@ -44,6 +54,7 @@ type LaboratoryTab = 'requests' | 'results' | 'catalog';
     MatSnackBarModule,
     MatTabsModule,
     MatIconModule,
+    PaginationControlsComponent,
   ],
   templateUrl: './laboratory.component.html',
   styleUrl: './laboratory.component.css',
@@ -61,6 +72,21 @@ export class LaboratoryComponent implements OnDestroy {
   private labReportFileName = 'laboratory-report.pdf';
   @ViewChild('labReportPreviewFrame')
   private labReportPreviewFrame?: ElementRef<HTMLIFrameElement>;
+  labRequests: LabRequest[] = [];
+  labResults: LabResult[] = [];
+  labTests: LabTest[] = [];
+  requestsPage = 1;
+  requestsPageSize = 25;
+  requestsTotal = 0;
+  requestsLoading = false;
+  resultsPage = 1;
+  resultsPageSize = 25;
+  resultsTotal = 0;
+  resultsLoading = false;
+  testsPage = 1;
+  testsPageSize = 25;
+  testsTotal = 0;
+  testsLoading = false;
 
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly tabs: LaboratoryTab[] = ['requests', 'results', 'catalog'];
@@ -100,12 +126,108 @@ export class LaboratoryComponent implements OnDestroy {
     })),
   );
 
+  ngOnInit(): void {
+    this.loadRequestsPage();
+    this.loadResultsPage();
+    this.loadTestsPage();
+    this.searchControl.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(() => {
+        this.requestsPage = 1;
+        this.loadRequestsPage();
+      });
+  }
+
   ngOnDestroy(): void {
     this.clearLabReportPreview();
   }
 
   setActiveTab(index: number) {
     this.activeTab = this.tabs[index] ?? 'requests';
+  }
+
+  get filteredLabRequests(): LabRequest[] {
+    return this.labRequests;
+  }
+
+  onRequestsPageChange(request: PageRequest): void {
+    this.requestsPage = request.page;
+    this.requestsPageSize = request.pageSize;
+    this.loadRequestsPage();
+  }
+
+  onResultsPageChange(request: PageRequest): void {
+    this.resultsPage = request.page;
+    this.resultsPageSize = request.pageSize;
+    this.loadResultsPage();
+  }
+
+  onTestsPageChange(request: PageRequest): void {
+    this.testsPage = request.page;
+    this.testsPageSize = request.pageSize;
+    this.loadTestsPage();
+  }
+
+  private loadRequestsPage(): void {
+    this.requestsLoading = true;
+    this.laboratoryService
+      .getRequestsPage(
+        this.requestsPage,
+        this.requestsPageSize,
+        this.searchControl.value,
+      )
+      .subscribe({
+        next: (page) => {
+          this.labRequests = page.items;
+          this.requestsTotal = page.total;
+          this.requestsLoading = false;
+        },
+        error: (error) => {
+          console.error('Failed to load paginated lab requests:', error);
+          this.requestsLoading = false;
+          this.openSnackBar('Unable to load lab requests.');
+        },
+      });
+  }
+
+  private loadResultsPage(): void {
+    this.resultsLoading = true;
+    this.laboratoryService
+      .getResultsPage(
+        this.getFacilityId(),
+        this.resultsPage,
+        this.resultsPageSize,
+      )
+      .subscribe({
+        next: (page) => {
+          this.labResults = page.items;
+          this.resultsTotal = page.total;
+          this.resultsLoading = false;
+        },
+        error: (error) => {
+          console.error('Failed to load paginated lab results:', error);
+          this.resultsLoading = false;
+          this.openSnackBar('Unable to load lab results.');
+        },
+      });
+  }
+
+  private loadTestsPage(): void {
+    this.testsLoading = true;
+    this.laboratoryService
+      .getTestsPage(this.testsPage, this.testsPageSize)
+      .subscribe({
+        next: (page) => {
+          this.labTests = page.items;
+          this.testsTotal = page.total;
+          this.testsLoading = false;
+        },
+        error: (error) => {
+          console.error('Failed to load paginated lab tests:', error);
+          this.testsLoading = false;
+          this.openSnackBar('Unable to load lab tests.');
+        },
+      });
   }
 
   openNewOrderDialog(tests: LabTest[]) {
@@ -119,7 +241,10 @@ export class LaboratoryComponent implements OnDestroy {
       .subscribe((payload) => {
         if (payload) {
           this.laboratoryService.createOrder(payload).subscribe({
-            next: () => this.openSnackBar('Lab request created successfully.'),
+            next: () => {
+              this.loadRequestsPage();
+              this.openSnackBar('Lab request created successfully.');
+            },
             error: (error) =>
               this.openSnackBar(
                 this.getErrorMessage(error, 'Unable to create lab request.'),
@@ -130,7 +255,13 @@ export class LaboratoryComponent implements OnDestroy {
   }
 
   startTest(labId: string) {
-    this.laboratoryService.startTest(labId);
+    this.laboratoryService.startTest(labId).subscribe({
+      next: () => this.loadRequestsPage(),
+      error: (error) => {
+        console.error(`Failed to start lab test ${labId}:`, error);
+        this.openSnackBar('Unable to start lab test.');
+      },
+    });
   }
 
   openEnterResultsDialog(request: LabRequest) {
@@ -143,13 +274,34 @@ export class LaboratoryComponent implements OnDestroy {
       .afterClosed()
       .subscribe((payload: SubmitLabResultPayload | undefined) => {
         if (payload) {
-          this.laboratoryService.submitResult(payload);
+          this.laboratoryService.submitResult(payload).subscribe({
+            next: () => {
+              this.loadResultsPage();
+              this.loadRequestsPage();
+            },
+            error: (error) => {
+              console.error(
+                `Failed to submit lab results for ${payload.labId}:`,
+                error,
+              );
+              this.openSnackBar('Unable to save lab results.');
+            },
+          });
         }
       });
   }
 
   approveResult(labId: string) {
-    this.laboratoryService.approveResult(labId);
+    this.laboratoryService.approveResult(labId).subscribe({
+      next: () => {
+        this.loadRequestsPage();
+        this.loadResultsPage();
+      },
+      error: (error) => {
+        console.error(`Failed to approve lab results ${labId}:`, error);
+        this.openSnackBar('Unable to approve lab results.');
+      },
+    });
   }
 
   async previewLabReport(result: LabResult): Promise<void> {
@@ -441,6 +593,7 @@ export class LaboratoryComponent implements OnDestroy {
 
         this.laboratoryService.createTest(payload).subscribe({
           next: () => {
+            this.loadTestsPage();
             this.openSnackBar('Lab test created successfully.');
           },
           error: (error) => {
@@ -469,6 +622,7 @@ export class LaboratoryComponent implements OnDestroy {
 
             this.laboratoryService.updateTest(testId, payload).subscribe({
               next: () => {
+                this.loadTestsPage();
                 this.openSnackBar('Lab test updated successfully.');
               },
               error: (error) => {
@@ -497,6 +651,7 @@ export class LaboratoryComponent implements OnDestroy {
 
     this.laboratoryService.deleteTest(test.id).subscribe({
       next: () => {
+        this.loadTestsPage();
         this.openSnackBar('Lab test deleted successfully.');
       },
       error: (error) => {

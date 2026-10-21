@@ -4,6 +4,7 @@ import { Observable, map, tap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import { Employee, Shift, EmployeeAttendance } from '../models/employee.model';
 import { ApiResponse, PaginatedResponse } from '../models';
+import { PageResult, normalizePageResult } from '../core/pagination';
 
 @Injectable({
   providedIn: 'root',
@@ -46,6 +47,30 @@ export class EmployeeService {
       );
   }
 
+  fetchEmployeesPage(
+    facilityId: string | number,
+    page: number,
+    pageSize: number,
+    search = '',
+  ): Observable<PageResult<Employee>> {
+    let params = this.buildFacilityParams(facilityId)
+      .set('page', String(page))
+      .set('page_size', String(pageSize));
+    if (search.trim()) params = params.set('search', search.trim());
+
+    return this.http
+      .get<unknown>(this.baseUrl, {
+        headers: this.buildAuthHeaders(),
+        params,
+      })
+      .pipe(
+        map((response) =>
+          normalizePageResult<Employee>(response, { page, pageSize }),
+        ),
+        tap((pageResult) => this.employees.set(pageResult.items)),
+      );
+  }
+
   getEmployeeById(employeeId: string): Observable<ApiResponse<Employee>> {
     return this.http.get<ApiResponse<Employee>>(
       `${this.baseUrl}${encodeURIComponent(employeeId)}/`,
@@ -71,7 +96,7 @@ export class EmployeeService {
   putEmployee(
     employeeId: string,
     payload: Omit<Employee, 'id'>,
-  ): Observable<Employee> {
+  ): Observable<Employee | undefined> {
     return this.http
       .put<ApiResponse<Employee>>(
         `${this.baseUrl}${encodeURIComponent(employeeId)}/`,
@@ -83,7 +108,7 @@ export class EmployeeService {
       .pipe(
         map((response) => response.data),
         tap((updatedEmployee) => {
-          this.replaceEmployeeInState(updatedEmployee);
+          this.replaceEmployeeInState(updatedEmployee, employeeId);
         }),
       );
   }
@@ -91,7 +116,7 @@ export class EmployeeService {
   updateEmployee(
     employeeId: string,
     payload: Partial<Omit<Employee, 'id'>>,
-  ): Observable<Employee> {
+  ): Observable<Employee | undefined> {
     return this.http
       .patch<ApiResponse<Employee>>(
         `${this.baseUrl}${encodeURIComponent(employeeId)}/`,
@@ -103,7 +128,7 @@ export class EmployeeService {
       .pipe(
         map((response) => response.data),
         tap((updatedEmployee) => {
-          this.replaceEmployeeInState(updatedEmployee);
+          this.replaceEmployeeInState(updatedEmployee, employeeId);
         }),
       );
   }
@@ -182,10 +207,21 @@ export class EmployeeService {
     return Array.isArray(payload) ? payload : payload.items;
   }
 
-  private replaceEmployeeInState(updatedEmployee: Employee): void {
+  private replaceEmployeeInState(
+    updatedEmployee: Employee | null | undefined,
+    employeeId: string,
+  ): void {
+    if (!updatedEmployee || typeof updatedEmployee !== 'object') return;
+
+    const employeeWithId = {
+      ...updatedEmployee,
+      id: updatedEmployee.id || employeeId,
+    };
     this.employees.update((employees) =>
       employees.map((employee) =>
-        employee.id === updatedEmployee.id ? updatedEmployee : employee,
+        employee.id === employeeId
+          ? { ...employee, ...employeeWithId }
+          : employee,
       ),
     );
   }

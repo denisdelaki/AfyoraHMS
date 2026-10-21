@@ -9,6 +9,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { from, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { map, mergeMap, toArray } from 'rxjs';
+import { PageRequest } from '../../../core/pagination';
+import { PaginationControlsComponent } from '../../shared/pagination-controls/pagination-controls.component';
 import {
   Appointment,
   CreateAppointmentPayload,
@@ -41,6 +47,8 @@ import {
     MatIconModule,
     MatInputModule,
     MatTableModule,
+    MatSnackBarModule,
+    PaginationControlsComponent,
   ],
   templateUrl: './patients.component.html',
   styleUrl: './patients.component.css',
@@ -50,6 +58,7 @@ export class PatientsComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly patientsService = inject(PatientsService);
   private readonly appointmentsService = inject(AppointmentsService);
+  private readonly snackBar = inject(MatSnackBar);
   readonly permissionsService = inject(PermissionsService);
 
   displayedColumns: string[] = [
@@ -69,6 +78,12 @@ export class PatientsComponent implements OnInit {
   appointments: Appointment[] = [];
 
   visitHistory: VisitHistory[] = [];
+  patientsPage = 1;
+  patientsPageSize = 25;
+  patientsTotal = 0;
+  patientsLoading = false;
+  private latestVisitDateByPatientId = new Map<string, string>();
+  private patientLoadSequence = 0;
 
   ngOnInit(): void {
     this.facilityId =
@@ -78,19 +93,23 @@ export class PatientsComponent implements OnInit {
   }
 
   get filteredPatients(): Patient[] {
-    const term = this.searchTerm.trim().toLowerCase();
-    if (!term) {
-      return this.patients;
-    }
+    return this.patients;
+  }
 
-    return this.patients.filter(
-      (patient) =>
-        `${patient.firstName} ${patient.lastName}`
-          .toLowerCase()
-          .includes(term) ||
-        patient.id.toLowerCase().includes(term) ||
-        (patient.nationalId && patient.nationalId.toLowerCase().includes(term)),
-    );
+  onPatientSearchChange(searchTerm: string): void {
+    this.searchTerm = searchTerm;
+    this.patientsPage = 1;
+    this.loadPatients();
+  }
+
+  onPatientPageChange(request: PageRequest): void {
+    this.patientsPage = request.page;
+    this.patientsPageSize = request.pageSize;
+    this.loadPatients();
+  }
+
+  getLastVisitDate(patient: Patient): string {
+    return this.latestVisitDateByPatientId.get(patient.id) ?? 'Loading visit history...';
   }
 
   openRegisterDialog(patientToEdit?: Patient): void {
@@ -175,10 +194,8 @@ export class PatientsComponent implements OnInit {
         const createdPatient: Patient =
           response?.data || (response as any)?.results || response;
         if (createdPatient && createdPatient.id) {
-          this.patients = [
-            createdPatient,
-            ...this.patients.filter((entry) => entry.id !== createdPatient.id),
-          ];
+          this.patientsTotal++;
+          this.loadPatients();
         } else {
           this.loadPatients();
         }
@@ -208,6 +225,9 @@ export class PatientsComponent implements OnInit {
       },
       ...this.patients,
     ];
+    this.patients = this.patients.slice(0, this.patientsPageSize);
+    this.patientsTotal++;
+    this.latestVisitDateByPatientId.set(nextId, 'No visits recorded');
   }
 
   private addAppointment(formValue: CreateAppointmentPayload): void {
@@ -350,11 +370,99 @@ export class PatientsComponent implements OnInit {
   }
 
   private loadPatients(): void {
-    this.patientsService.getPatients(this.facilityId).subscribe({
-      next: (data) => {
-        this.patients = data;
+    const loadSequence = ++this.patientLoadSequence;
+    this.patientsLoading = true;
+    this.patientsService
+      .getPatientsPage(
+        this.facilityId,
+        this.patientsPage,
+        this.patientsPageSize,
+        this.searchTerm,
+      )
+      .subscribe({
+      next: (page) => {
+        if (loadSequence !== this.patientLoadSequence) return;
+        this.patients = page.items;
+        this.patientsTotal = page.total;
+        if (page.items.length === 0) {
+          this.latestVisitDateByPatientId.clear();
+          this.patientsLoading = false;
+          return;
+        }
+        from(page.items)
+          .pipe(
+            mergeMap(
+              (patient) =>
+                this.patientsService
+                  .getPatientVisitHistory(patient.id, this.facilityId)
+                  .pipe(
+                    map((history) => ({
+                      patientId: patient.id,
+                      history,
+                    })),
+                    catchError((error) => {
+                      console.error(
+                        `Failed to load visit history for patient ${patient.id}:`,
+                        error,
+                      );
+                      return of({
+                        patientId: patient.id,
+                        history: null,
+                      });
+                    }),
+                  ),
+              6,
+            ),
+            toArray(),
+          )
+          .subscribe((histories) => {
+          if (loadSequence !== this.patientLoadSequence) return;
+          const historiesByPatientId = new Map(
+            histories.map(({ patientId, history }) => [patientId, history]),
+          );
+          const hasHistoryErrors = histories.some(
+            (item) => item.history === null,
+          );
+          this.latestVisitDateByPatientId = new Map(
+            page.items.map((patient) => {
+              const history = historiesByPatientId.get(patient.id);
+              const latestVisit = history
+                ?.filter(
+                  (visit) =>
+                    Boolean(visit.date) &&
+                    Number.isFinite(new Date(visit.date).getTime()),
+                )
+                .sort(
+                  (left, right) =>
+                    new Date(right.date).getTime() -
+                    new Date(left.date).getTime(),
+                )[0];
+              return [
+                patient.id,
+                history === null
+                  ? 'Visit history unavailable'
+                  : latestVisit?.date || 'No visits recorded',
+              ] as const;
+            }),
+          );
+          this.patientsLoading = false;
+          if (hasHistoryErrors) {
+            this.snackBar.open(
+              'Some patient visit histories could not be loaded.',
+              'Close',
+              { duration: 3500 },
+            );
+          }
+        });
       },
-      error: () => { },
+      error: (error) => {
+        if (loadSequence !== this.patientLoadSequence) return;
+        console.error('Failed to load patients:', error);
+        this.patientsLoading = false;
+        this.snackBar.open('Unable to load patients.', 'Close', {
+          duration: 3500,
+        });
+      },
     });
   }
 

@@ -27,7 +27,7 @@
     <mat-card class="!rounded-xl !shadow-sm">
       <div class="p-5 flex items-center justify-between">
         <div>
-          <p class="text-sm text-slate-600">Pending</p>
+          <p class="text-sm text-slate-600">Pending on page</p>
           <p class="text-2xl font-semibold">{{ stats.pending }}</p>
         </div>
         <div class="size-10 rounded-lg bg-amber-500/90 flex items-center justify-center">
@@ -39,7 +39,7 @@
     <mat-card class="!rounded-xl !shadow-sm">
       <div class="p-5 flex items-center justify-between">
         <div>
-          <p class="text-sm text-slate-600">Scheduled</p>
+          <p class="text-sm text-slate-600">Scheduled on page</p>
           <p class="text-2xl font-semibold">{{ stats.scheduled }}</p>
         </div>
         <div class="size-10 rounded-lg bg-orange-500/90 flex items-center justify-center">
@@ -51,7 +51,7 @@
     <mat-card class="!rounded-xl !shadow-sm">
       <div class="p-5 flex items-center justify-between">
         <div>
-          <p class="text-sm text-slate-600">Completed</p>
+          <p class="text-sm text-slate-600">Completed on page</p>
           <p class="text-2xl font-semibold">{{ stats.completed }}</p>
         </div>
         <div class="size-10 rounded-lg bg-emerald-500/90 flex items-center justify-center">
@@ -107,7 +107,8 @@
                 </tr>
               </thead>
 
-              <tbody *ngIf="filteredOrders$ | async as orders">
+              <tbody *ngIf="ordersPage$ | async as ordersPage">
+                <ng-container *ngIf="ordersPage.items as orders">
                 <tr *ngFor="let order of orders; trackBy: trackByOrder"
                   class="border-b border-slate-100 hover:bg-slate-50/70">
                   <td class="py-3 px-4 font-medium">{{ order.id }}</td>
@@ -173,16 +174,25 @@
                     No matching imaging orders found.
                   </td>
                 </tr>
+                </ng-container>
               </tbody>
             </table>
           </div>
+          <ng-container *ngIf="ordersPage$ | async as ordersPage">
+            <app-pagination-controls
+              [page]="ordersPage.page"
+              [pageSize]="ordersPage.pageSize"
+              [total]="ordersPage.total"
+              (pageChange)="onOrdersPageChange($event)"
+            />
+          </ng-container>
         </mat-card>
       </div>
     </mat-tab>
 
     <mat-tab label="Reports">
-      <div class="py-4 space-y-4" *ngIf="reports$ | async as reports">
-        <mat-card *ngFor="let report of reports; trackBy: trackByReport" class="!rounded-xl !shadow-sm">
+      <div class="py-4 space-y-4" *ngIf="reportsPage$ | async as reportsPage">
+        <mat-card *ngFor="let report of reportsPage.items; trackBy: trackByReport" class="!rounded-xl !shadow-sm">
           <div class="p-5">
             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
               <div>
@@ -236,15 +246,22 @@
             </div>
           </div>
         </mat-card>
+        <app-pagination-controls
+          [page]="reportsPage.page"
+          [pageSize]="reportsPage.pageSize"
+          [total]="reportsPage.total"
+          (pageChange)="onReportsPageChange($event)"
+        />
       </div>
     </mat-tab>
 
     <mat-tab label="Imaging Catalog">
-      <div class="py-4" *ngIf="imagingTypes$ | async as imagingTypes">
+      <div class="py-4" *ngIf="imagingTypesPage$ | async as imagingTypesPage">
+        <ng-container *ngIf="imagingTypesPage.items as imagingTypes">
         <!-- Tab header with Add button -->
         <div class="flex items-center justify-between mb-4">
           <p class="text-sm text-slate-600">
-            {{ imagingTypes.length }} imaging type(s) registered for this facility.
+            {{ imagingTypesPage.total }} imaging type(s) registered for this facility.
           </p>
           <button mat-flat-button color="primary" class="!rounded-lg" (click)="openAddImagingTypeDialog()">
             <mat-icon class="mr-1">add</mat-icon>
@@ -314,6 +331,13 @@
             </table>
           </div>
         </mat-card>
+        <app-pagination-controls
+          [page]="imagingTypesPage.page"
+          [pageSize]="imagingTypesPage.pageSize"
+          [total]="imagingTypesPage.total"
+          (pageChange)="onImagingTypesPageChange($event)"
+        />
+        </ng-container>
       </div>
     </mat-tab>
   </mat-tab-group>

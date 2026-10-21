@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { map, Observable, tap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
@@ -12,6 +12,10 @@ import {
   VisitHistory,
 } from '../models';
 import { DataSyncService } from './data-sync.service';
+import {
+  PageResult,
+  normalizePageResult,
+} from '../core/pagination';
 
 type VisitRecordPayload = {
   date: string;
@@ -52,6 +56,29 @@ export class PatientsService {
           ),
         ),
     );
+  }
+
+  getPatientsPage(
+    facilityId: string | number,
+    page: number,
+    pageSize: number,
+    search = '',
+  ): Observable<PageResult<Patient>> {
+    let params = new HttpParams()
+      .set('facilityId', String(facilityId))
+      .set('page', String(page))
+      .set('page_size', String(pageSize));
+    if (search.trim()) {
+      params = params.set('search', search.trim());
+    }
+
+    return this.http
+      .get<unknown>(`${this.baseUrl}/`, { params })
+      .pipe(
+        map((response) =>
+          normalizePageResult<Patient>(response, { page, pageSize }),
+        ),
+      );
   }
 
   getPatientById(patientId: string): Observable<ApiResponse<Patient>> {

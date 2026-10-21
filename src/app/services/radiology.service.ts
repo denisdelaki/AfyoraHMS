@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { EMPTY, Observable, catchError, expand, forkJoin, map, of, from, reduce, switchMap } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import { ApiResponse } from '../models/api.models';
+import { PageResult, normalizePageResult } from '../core/pagination';
 import {
   CreateImagingOrderPayload,
   CreateImagingTypePayload,
@@ -13,6 +14,23 @@ import {
   UploadedRadiologyImage,
   UploadRadiologyImagesPayload,
 } from '../models/radiology.models';
+
+type RadiologyReportApiModel = {
+  orderRequestId?: string;
+  orderId?: string;
+  order_id?: string;
+  patient?: string;
+  patientId?: string;
+  studyName?: string;
+  type?: string;
+  scanDate?: string;
+  scan_date?: string;
+  radiologist?: string;
+  findings?: string;
+  impression?: string;
+  recommendations?: string;
+  status?: RadiologyReport['status'];
+};
 
 @Injectable({
   providedIn: 'root',
@@ -59,6 +77,29 @@ export class RadiologyService {
       catchError((error) => {
         console.error('Failed to fetch imaging types:', error);
         return of([] as ImagingType[]);
+      }),
+    );
+  }
+
+  getImagingTypesPage(
+    facilityId: string | number,
+    page: number,
+    pageSize: number,
+    search = '',
+  ): Observable<PageResult<ImagingType>> {
+    return this.getPagedCollection(
+      `${this.baseUrl}/studies/`,
+      facilityId,
+      page,
+      pageSize,
+      search,
+      (study) => ({
+        id: study.id ?? study.study_id,
+        name: study.name,
+        modality: study.modality ?? '',
+        bodyPart: study.body_part ?? study.bodyPart ?? '',
+        duration: study.duration ?? '',
+        price: study.price ?? 0,
       }),
     );
   }
@@ -119,6 +160,33 @@ export class RadiologyService {
       catchError((error) => {
         console.error('Failed to fetch radiology orders:', error);
         return of([] as RadiologyOrder[]);
+      }),
+    );
+  }
+
+  getOrdersPage(
+    facilityId: string | number,
+    page: number,
+    pageSize: number,
+    search = '',
+  ): Observable<PageResult<RadiologyOrder>> {
+    return this.getPagedCollection(
+      `${this.baseUrl}/requests/`,
+      facilityId,
+      page,
+      pageSize,
+      search,
+      (request) => ({
+        id: request.id,
+        patient: request.patient,
+        patientId: request.patientId,
+        type: request.studyName,
+        orderedBy: request.orderedBy,
+        orderDate: request.orderDate,
+        scheduledDate: request.scheduledDate || request.orderDate,
+        status: request.status,
+        priority: request.priority,
+        clinicalNotes: request.notes,
       }),
     );
   }
@@ -187,6 +255,97 @@ export class RadiologyService {
       catchError((error) => {
         console.error('Failed to fetch radiology reports:', error);
         return of([] as RadiologyReport[]);
+      }),
+    );
+  }
+
+  getReportsPage(
+    facilityId: string | number,
+    page: number,
+    pageSize: number,
+    search = '',
+  ): Observable<PageResult<RadiologyReport>> {
+    return this.getPagedCollection(
+      `${this.baseUrl}/reports/`,
+      facilityId,
+      page,
+      pageSize,
+      search,
+      (report) => ({
+        orderId:
+          report.orderRequestId || report.orderId || report.order_id || '',
+        patient: report.patient || '',
+        patientId: report.patientId,
+        type: report.studyName || report.type || '',
+        scanDate: report.scanDate || report.scan_date || '',
+        radiologist: report.radiologist || '',
+        findings: report.findings || '',
+        impression: report.impression || '',
+        recommendations: report.recommendations || '',
+        status: report.status || 'Finalized',
+      }),
+    );
+  }
+
+  getReportsForOrder(
+    facilityId: string | number,
+    orderId: string,
+  ): Observable<RadiologyReport[]> {
+    const params = new HttpParams()
+      .set('facilityId', String(facilityId))
+      .set('orderId', orderId)
+      .set('page', '1')
+      .set('page_size', '25');
+
+    return this.http
+      .get<unknown>(`${this.baseUrl}/reports/`, { params })
+      .pipe(
+        map((response) =>
+          this.extractCollection<RadiologyReportApiModel>(
+            response as
+              | ApiResponse<RadiologyReportApiModel[]>
+              | RadiologyReportApiModel[],
+          ).map((report) => ({
+            orderId:
+              report.orderRequestId ||
+              report.orderId ||
+              report.order_id ||
+              '',
+            patient: report.patient || '',
+            patientId: report.patientId,
+            type: report.studyName || report.type || '',
+            scanDate: report.scanDate || report.scan_date || '',
+            radiologist: report.radiologist || '',
+            findings: report.findings || '',
+            impression: report.impression || '',
+            recommendations: report.recommendations || '',
+            status: report.status || 'Finalized',
+          })),
+        ),
+      );
+  }
+
+  private getPagedCollection<T>(
+    endpoint: string,
+    facilityId: string | number,
+    page: number,
+    pageSize: number,
+    search: string,
+    mapItem: (item: any) => T,
+  ): Observable<PageResult<T>> {
+    let params = new HttpParams()
+      .set('facilityId', String(facilityId))
+      .set('page', String(page))
+      .set('page_size', String(pageSize));
+    if (search.trim()) params = params.set('search', search.trim());
+
+    return this.http.get<unknown>(endpoint, { params }).pipe(
+      map((response) => {
+        const normalized = normalizePageResult<any>(response, {
+          page,
+          pageSize,
+        });
+        return { ...normalized, items: normalized.items.map(mapItem) };
       }),
     );
   }

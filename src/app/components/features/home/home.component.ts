@@ -624,6 +624,60 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  private resolveAppointmentDoctorName(doctor: unknown): string {
+    if (doctor === null || doctor === undefined || doctor === '') {
+      return 'Doctor not assigned';
+    }
+
+    const doctorRecord =
+      typeof doctor === 'object'
+        ? (doctor as {
+            id?: string | number;
+            name?: string;
+            fullName?: string;
+            full_name?: string;
+            employee_id_number?: string;
+            employeeIdNumber?: string;
+          })
+        : null;
+    const doctorValues = [
+      typeof doctor === 'string' || typeof doctor === 'number'
+        ? String(doctor).trim()
+        : '',
+      String(doctorRecord?.id ?? '').trim(),
+      doctorRecord?.employee_id_number?.trim() ?? '',
+      doctorRecord?.employeeIdNumber?.trim() ?? '',
+      doctorRecord?.name?.trim() ?? '',
+      doctorRecord?.fullName?.trim() ?? '',
+      doctorRecord?.full_name?.trim() ?? '',
+    ].filter(Boolean);
+    if (doctorValues.length === 0) return 'Doctor not assigned';
+
+    const normalizedDoctorValues = new Set(
+      doctorValues.map((value) => value.toLowerCase()),
+    );
+    const employee = this.employees.find((item) =>
+      [
+        item.id,
+        item.employee_id_number,
+        item.employeeIdNumber,
+        item.name,
+      ].some(
+        (value) =>
+          Boolean(value) &&
+          normalizedDoctorValues.has(String(value).trim().toLowerCase()),
+      ),
+    );
+    if (employee?.name) return employee.name;
+
+    const suppliedName =
+      doctorRecord?.name || doctorRecord?.fullName || doctorRecord?.full_name;
+    if (suppliedName) return suppliedName;
+
+    const value = doctorValues[0];
+    return /\s/.test(value) ? value : 'Doctor not found';
+  }
+
   private loadAppointments(user: StoredUser): void {
     if (!this.facilityId) return;
     this.appointmentService.getAppointments(this.facilityId).subscribe({
@@ -666,7 +720,7 @@ export class HomeComponent implements OnInit {
           .map((appointment) => ({
             time: this.formatAppointmentTime(appointment.time),
             patient: `${appointment.firstName} ${appointment.lastName}`,
-            doctor: appointment.doctor,
+            doctor: this.resolveAppointmentDoctorName(appointment.doctor),
             department: appointment.department,
           }));
         this.patientsSeenToday = relevant.filter(

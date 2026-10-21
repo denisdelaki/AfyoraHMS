@@ -11,7 +11,21 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { BehaviorSubject, combineLatest, map, startWith, switchMap, take } from 'rxjs';
+import {
+  BehaviorSubject,
+  combineLatest,
+  EMPTY,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  shareReplay,
+  startWith,
+  switchMap,
+  take,
+} from 'rxjs';
+import { PageRequest } from '../../../core/pagination';
+import { PaginationControlsComponent } from '../../shared/pagination-controls/pagination-controls.component';
 import {
   CreateImagingOrderPayload,
   CreateImagingTypePayload,
@@ -49,6 +63,7 @@ type RadiologyTab = 'orders' | 'reports' | 'catalog';
     MatTabsModule,
     MatIconModule,
     MatTooltipModule,
+    PaginationControlsComponent,
   ],
   templateUrl: './radiology.component.html',
   styleUrl: './radiology.component.css',
@@ -70,20 +85,92 @@ export class RadiologyComponent implements OnInit {
   private readonly refreshOrders$ = new BehaviorSubject<void>(undefined);
   private readonly refreshReports$ = new BehaviorSubject<void>(undefined);
   private readonly refreshImagingTypes$ = new BehaviorSubject<void>(undefined);
+  private readonly ordersRequest$ = new BehaviorSubject<PageRequest>({
+    page: 1,
+    pageSize: 25,
+  });
+  private readonly reportsRequest$ = new BehaviorSubject<PageRequest>({
+    page: 1,
+    pageSize: 25,
+  });
+  private readonly imagingTypesRequest$ = new BehaviorSubject<PageRequest>({
+    page: 1,
+    pageSize: 25,
+  });
 
-  readonly imagingTypes$ = this.refreshImagingTypes$.pipe(
-    switchMap(() => this.radiologyService.getImagingTypes(this.facilityId)),
+  readonly imagingTypesPage$ = combineLatest([
+    this.refreshImagingTypes$,
+    this.imagingTypesRequest$,
+  ]).pipe(
+    switchMap(([, request]) =>
+      this.radiologyService.getImagingTypesPage(
+        this.facilityId,
+        request.page,
+        request.pageSize,
+      ).pipe(
+        catchError((error) => {
+          console.error('Failed to load imaging type page:', error);
+          this.openSnackBar('Unable to load imaging types.');
+          return EMPTY;
+        }),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
   );
-  readonly orders$ = this.refreshOrders$.pipe(
-    switchMap(() => this.radiologyService.getOrders(this.facilityId)),
+  readonly imagingTypes$ = this.imagingTypesPage$.pipe(
+    map((page) => page.items),
   );
-  readonly reports$ = this.refreshReports$.pipe(
-    switchMap(() => this.radiologyService.getReports(this.facilityId)),
+  readonly ordersPage$ = combineLatest([
+    this.refreshOrders$,
+    this.ordersRequest$,
+  ]).pipe(
+    switchMap(([, request]) =>
+      this.radiologyService.getOrdersPage(
+        this.facilityId,
+        request.page,
+        request.pageSize,
+        this.searchControl.value,
+      ).pipe(
+        catchError((error) => {
+          console.error('Failed to load imaging order page:', error);
+          this.openSnackBar('Unable to load imaging orders.');
+          return EMPTY;
+        }),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
   );
+  readonly orders$ = this.ordersPage$.pipe(map((page) => page.items));
+  readonly reportsPage$ = combineLatest([
+    this.refreshReports$,
+    this.reportsRequest$,
+  ]).pipe(
+    switchMap(([, request]) =>
+      this.radiologyService.getReportsPage(
+        this.facilityId,
+        request.page,
+        request.pageSize,
+      ).pipe(
+        catchError((error) => {
+          console.error('Failed to load radiology report page:', error);
+          this.openSnackBar('Unable to load radiology reports.');
+          return EMPTY;
+        }),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+  readonly reports$ = this.reportsPage$.pipe(map((page) => page.items));
 
   ngOnInit(): void {
     this.fetchPatients(this.facilityId);
     this.fetchEmployees(this.facilityId);
+    this.searchControl.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(() => {
+        const request = this.ordersRequest$.value;
+        this.ordersRequest$.next({ ...request, page: 1 });
+      });
   }
 
   private openSnackBar(message: string) {
@@ -121,12 +208,12 @@ export class RadiologyComponent implements OnInit {
     }),
   );
 
-  readonly stats$ = this.orders$.pipe(
-    map((orders) => ({
-      totalOrders: orders.length,
-      pending: orders.filter((order) => order.status === 'Pending').length,
-      scheduled: orders.filter((order) => order.status === 'Scheduled' || order.status === 'In Progress').length,
-      completed: orders.filter(
+  readonly stats$ = this.ordersPage$.pipe(
+    map((page) => ({
+      totalOrders: page.total,
+      pending: page.items.filter((order) => order.status === 'Pending').length,
+      scheduled: page.items.filter((order) => order.status === 'Scheduled' || order.status === 'In Progress').length,
+      completed: page.items.filter(
         (order) =>
           order.status === 'Completed' || order.status === 'Report Ready',
       ).length,
@@ -135,6 +222,18 @@ export class RadiologyComponent implements OnInit {
 
   setActiveTab(index: number) {
     this.activeTab = this.tabs[index] ?? 'orders';
+  }
+
+  onOrdersPageChange(request: PageRequest): void {
+    this.ordersRequest$.next(request);
+  }
+
+  onReportsPageChange(request: PageRequest): void {
+    this.reportsRequest$.next(request);
+  }
+
+  onImagingTypesPageChange(request: PageRequest): void {
+    this.imagingTypesRequest$.next(request);
   }
 
   openNewOrderDialog() {
@@ -314,17 +413,28 @@ export class RadiologyComponent implements OnInit {
 
   viewReport(order?: RadiologyOrder) {
     if (order) {
-      this.reports$.pipe(take(1)).subscribe((reports) => {
-        const matchingReport = reports.find(
-          (r) => r.orderId === order.id || (r as any).orderRequestId === order.id,
-        );
-        if (matchingReport) {
-          this.openViewReportDetails(matchingReport);
-        } else {
-          this.activeTab = 'reports';
-          this.openSnackBar(`No formal report recorded for order ${order.id} yet.`);
-        }
-      });
+      this.radiologyService
+        .getReportsForOrder(this.facilityId, order.id)
+        .pipe(take(1))
+        .subscribe({
+          next: (reports) => {
+            const matchingReport = reports.find(
+              (report) => report.orderId === order.id,
+            );
+            if (matchingReport) {
+              this.openViewReportDetails(matchingReport);
+            } else {
+              this.activeTab = 'reports';
+              this.openSnackBar(
+                `No formal report recorded for order ${order.id} yet.`,
+              );
+            }
+          },
+          error: (error) => {
+            console.error(`Failed to load report for order ${order.id}:`, error);
+            this.openSnackBar('Unable to load the radiology report.');
+          },
+        });
     } else {
       this.activeTab = 'reports';
     }

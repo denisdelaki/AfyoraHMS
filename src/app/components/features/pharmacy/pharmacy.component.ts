@@ -30,6 +30,8 @@ import { InventoryService, PharmacyService } from '../../../services';
 import { Patient } from '../patients/patient.models';
 import { Employee } from '../../../models/employee.model';
 import { Vendor } from '../../../models/vendor.models';
+import { PageRequest, PageResult } from '../../../core/pagination';
+import { PaginationControlsComponent } from '../../shared/pagination-controls/pagination-controls.component';
 import { ManageDrugCategoryDialogComponent } from '../../dialogs/manage-drug-category-dialog/manage-drug-category-dialog.component';
 import { CreateDrugPurchaseOrderDialogComponent } from '../../dialogs/create-drug-purchase-order-dialog/create-drug-purchase-order-dialog.component';
 import { POPreviewDialogComponent } from '../../dialogs/po-preview-dialog/po-preview-dialog.component';
@@ -50,6 +52,7 @@ type PharmacyTab = 'catalog' | 'prescriptions' | 'alerts' | 'categories' | 'purc
     MatTooltipModule,
     LucideAngularModule,
     MatIcon,
+    PaginationControlsComponent,
   ],
   templateUrl: './pharmacy.component.html',
   styleUrl: './pharmacy.component.css',
@@ -169,6 +172,14 @@ export class PharmacyComponent implements OnInit {
     //   date: '2024-02-23',
     // },
   ];
+  drugsPage = 1;
+  drugsPageSize = 25;
+  drugsTotal = 0;
+  drugsLoading = false;
+  prescriptionsPage = 1;
+  prescriptionsPageSize = 25;
+  prescriptionsTotal = 0;
+  prescriptionsLoading = false;
   facilityId: string | number = '';
 
   ngOnInit(): void {
@@ -316,6 +327,24 @@ export class PharmacyComponent implements OnInit {
     this.activeTab = tab;
   }
 
+  onDrugSearchChange(searchTerm: string): void {
+    this.searchTerm = searchTerm;
+    this.drugsPage = 1;
+    this.loadDrugs();
+  }
+
+  onDrugsPageChange(request: PageRequest): void {
+    this.drugsPage = request.page;
+    this.drugsPageSize = request.pageSize;
+    this.loadDrugs();
+  }
+
+  onPrescriptionsPageChange(request: PageRequest): void {
+    this.prescriptionsPage = request.page;
+    this.prescriptionsPageSize = request.pageSize;
+    this.loadPrescriptions();
+  }
+
   openAddDrugDialog(): void {
     const dialogRef = this.dialog.open(AddDrugDialogComponent, {
       width: '90vw',
@@ -341,10 +370,7 @@ export class PharmacyComponent implements OnInit {
         const createdDrug: Drug =
           response?.data || (response as any)?.results || response;
         if (createdDrug && createdDrug.id) {
-          this.drugs = [
-            createdDrug,
-            ...this.drugs.filter((item) => item.id !== createdDrug.id),
-          ];
+          this.loadDrugs();
         } else {
           this.loadDrugs();
         }
@@ -400,20 +426,53 @@ export class PharmacyComponent implements OnInit {
   }
 
   private loadDrugs(): void {
-    this.pharmacyService.getDrugs(this.facilityId).subscribe({
-      next: (data) => {
-        this.drugs = data.filter((drug): drug is Drug => Boolean(drug));
+    this.drugsLoading = true;
+    this.pharmacyService
+      .getDrugsPage(
+        this.facilityId,
+        this.drugsPage,
+        this.drugsPageSize,
+        this.searchTerm,
+      )
+      .subscribe({
+      next: (page: PageResult<Drug>) => {
+        this.drugs = page.items;
+        this.drugsTotal = page.total;
+        this.drugsLoading = false;
       },
-      error: () => {},
+      error: (error) => {
+        console.error('Failed to load paginated drugs:', error);
+        this.drugsLoading = false;
+        this.snackBar.open('Unable to load drug catalog.', 'Close', {
+          duration: 3000,
+        });
+      },
     });
   }
 
   private loadPrescriptions(): void {
-    this.pharmacyService.getPrescriptions(this.facilityId).subscribe({
-      next: (data) => {
-        this.prescriptions = data;
+    this.prescriptionsLoading = true;
+    this.pharmacyService
+      .getPrescriptionsPage(
+        this.facilityId,
+        this.prescriptionsPage,
+        this.prescriptionsPageSize,
+        '',
+        this.ticketNumberFilter,
+      )
+      .subscribe({
+      next: (page) => {
+        this.prescriptions = page.items;
+        this.prescriptionsTotal = page.total;
+        this.prescriptionsLoading = false;
       },
-      error: () => {},
+      error: (error) => {
+        console.error('Failed to load paginated prescriptions:', error);
+        this.prescriptionsLoading = false;
+        this.snackBar.open('Unable to load prescriptions.', 'Close', {
+          duration: 3000,
+        });
+      },
     });
   }
 

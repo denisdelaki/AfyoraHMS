@@ -1,4 +1,6 @@
-<h2 mat-dialog-title>Add New Employee</h2>
+<h2 mat-dialog-title>
+  {{ employee ? "Edit Employee" : "Add New Employee" }}
+</h2>
 <mat-dialog-content>
   <form
     [formGroup]="employeeForm"
@@ -26,6 +28,14 @@
       <mat-form-field appearance="fill">
         <mat-label>Role</mat-label>
         <mat-select formControlName="role">
+          <mat-option
+            *ngIf="
+              employee && !hasCurrentRoleOption
+            "
+            [value]="employee.role"
+          >
+            {{ employee.role }}
+          </mat-option>
           <mat-option *ngFor="let role of roles" [value]="role.value">{{
             role.label
           }}</mat-option>
@@ -38,6 +48,14 @@
       <mat-form-field appearance="fill">
         <mat-label>Department</mat-label>
         <mat-select formControlName="department">
+          <mat-option
+            *ngIf="
+              employee && !hasCurrentDepartmentOption
+            "
+            [value]="employee.department"
+          >
+            {{ employee.department }}
+          </mat-option>
           <mat-option
             *ngFor="let department of departments"
             [value]="department.id"
@@ -124,6 +142,6 @@
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Cancel</button>
   <button mat-flat-button color="primary" (click)="onSubmit()">
-    Add Employee
+    {{ employee ? "Save Changes" : "Add Employee" }}
   </button>
 </mat-dialog-actions>

@@ -107,7 +107,7 @@
                 </tr>
               </thead>
 
-              <tbody *ngIf="filteredRequests$ | async as requests">
+              <tbody *ngIf="filteredLabRequests as requests">
                 <tr *ngFor="let request of requests; trackBy: trackByRequest"
                   class="border-b border-slate-100 hover:bg-slate-50/70">
                   <td class="py-3 px-4 font-medium">{{ request.id }}</td>
@@ -165,12 +165,19 @@
               </tbody>
             </table>
           </div>
+          <app-pagination-controls
+            [page]="requestsPage"
+            [pageSize]="requestsPageSize"
+            [total]="requestsTotal"
+            [loading]="requestsLoading"
+            (pageChange)="onRequestsPageChange($event)"
+          />
         </mat-card>
       </div>
     </mat-tab>
 
     <mat-tab label="Results">
-      <div class="py-4 space-y-4" *ngIf="results$ | async as results">
+      <div class="py-4 space-y-4" *ngIf="labResults as results">
         <mat-card *ngFor="let result of results; trackBy: trackByResult" class="!rounded-xl !shadow-sm">
           <div class="p-5">
             <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
@@ -258,11 +265,18 @@
             </div>
           </div>
         </mat-card>
+        <app-pagination-controls
+          [page]="resultsPage"
+          [pageSize]="resultsPageSize"
+          [total]="resultsTotal"
+          [loading]="resultsLoading"
+          (pageChange)="onResultsPageChange($event)"
+        />
       </div>
     </mat-tab>
 
     <mat-tab label="Test Catalog">
-      <div class="py-4" *ngIf="tests$ | async as tests">
+      <div class="py-4" *ngIf="labTests as tests">
         <div class="flex justify-end mb-4">
           <button mat-flat-button color="primary" (click)="openCreateTestDialog()">
             <mat-icon class="mr-1">add</mat-icon>
@@ -324,6 +338,13 @@
             </table>
           </div>
         </mat-card>
+        <app-pagination-controls
+          [page]="testsPage"
+          [pageSize]="testsPageSize"
+          [total]="testsTotal"
+          [loading]="testsLoading"
+          (pageChange)="onTestsPageChange($event)"
+        />
       </div>
     </mat-tab>
   </mat-tab-group>
