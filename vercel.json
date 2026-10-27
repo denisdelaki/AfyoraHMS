@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build && npm run verify:seo",
+  "outputDirectory": "dist/afyora-hms/browser",
+  "routes": [
+    { "handle": "filesystem" },
+    {
+      "src": "/.*",
+      "dest": "/index.csr.html",
+      "headers": { "X-Robots-Tag": "noindex, nofollow, noarchive" }
+    }
+  ]
+}

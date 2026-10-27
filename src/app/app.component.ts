@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs';
 import { SessionTimeoutService } from './services/session-timeout.service';
@@ -16,28 +17,36 @@ export class AppComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly seoService = inject(SeoService);
+  private readonly destroyRef = inject(DestroyRef);
   title = 'Afyora HMS';
 
   ngOnInit(): void {
     this.sessionTimeoutService.startMonitoring();
     this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((event) => this.updateSeo(event.urlAfterRedirects));
   }
 
   private updateSeo(url: string): void {
     let route = this.activatedRoute;
-    while (route.firstChild) route = route.firstChild;
-
-    const seo = route.snapshot.data['seo'] as SeoConfig | undefined;
-    this.seoService.update(
-      seo ?? {
-        title: 'Healthcare Management Software',
-        description:
-          'Afyora HMS helps clinics and hospitals manage healthcare operations in one secure workspace.',
-        noIndex: true,
-      },
-      url,
-    );
+    let seo: SeoConfig | undefined;
+    let noIndex = false;
+    while (route) {
+      const current = route.snapshot.data['seo'] as Partial<SeoConfig> | undefined;
+      if (current) {
+        seo = { ...seo, ...current } as SeoConfig;
+        noIndex ||= current.noIndex === true;
+      }
+      if (!route.firstChild) break;
+      route = route.firstChild;
+    }
+    this.seoService.update({
+      title: seo?.title ?? 'Facility workspace',
+      description: seo?.description ?? 'Afyora HMS facility workspace.',
+      noIndex: noIndex || !seo,
+    }, url);
   }
 }

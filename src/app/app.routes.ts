@@ -8,9 +8,9 @@ export const routes: Routes = [
     pathMatch: 'full',
     data: {
       seo: {
-        title: 'Healthcare Management Software',
+        title: 'Afyora HMS | Hospital Management System',
         description:
-          'Afyora HMS is healthcare management software for clinics and hospitals. Manage patients, clinical records, appointments, billing, pharmacy, inventory, and reports in one workspace.',
+          'Afyora HMS is a hospital management system for clinics and hospitals, connecting patient management, electronic health records, pharmacy, billing, staff and hospital operations.',
       },
     },
     loadComponent: () =>
