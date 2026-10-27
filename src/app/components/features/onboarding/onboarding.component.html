@@ -360,33 +360,85 @@
 
           <!-- Step 3: Select Modules -->
           <div *ngIf="currentStep === 3">
-            <h2 class="text-2xl font-semibold mb-6">Select Modules</h2>
-            <p class="text-gray-600 mb-6">
-              Choose the modules you want to enable for your {{ facilityType }}
+            <h2 class="text-2xl font-semibold mb-2">Select Modules</h2>
+            <p class="text-gray-500 mb-6 text-sm">
+              Choose the modules to activate for your {{ facilityType }}.
+              <span class="font-medium text-blue-600">Some modules auto-enable their dependencies.</span>
+              Modules can be added or removed later from the Facility Profile.
             </p>
+
+            <!-- Selected count badge -->
+            <div class="flex items-center gap-2 mb-4">
+              <span class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold px-3 py-1 rounded-full">
+                <mat-icon style="height:14px;width:14px;font-size:14px;display:flex;align-items:center;justify-content:center;">check_circle</mat-icon>
+                {{ selectedModules.length }} module{{ selectedModules.length === 1 ? '' : 's' }} selected
+              </span>
+            </div>
+
             <div
-              class="grid grid-cols-1 md:grid-cols-2 gap-4"
+              class="grid grid-cols-1 md:grid-cols-2 gap-3"
               formGroupName="modules"
             >
               <div
                 *ngFor="let module of modules"
-                class="flex items-center space-x-3 p-4 border-2 rounded-lg hover:bg-gray-50 hover:border-blue-200 cursor-pointer transition-all duration-200 shadow-sm"
-                [class.border-blue-500]="isModuleSelected(module.key)"
-                [class.bg-blue-50]="isModuleSelected(module.key)"
+                class="module-card relative flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 group"
+                [class.selected]="isModuleSelected(module.key)"
                 (click)="toggleModule(module.key)"
+                [attr.id]="'module-card-' + module.key"
+                [attr.aria-pressed]="isModuleSelected(module.key)"
+                role="button"
               >
+                <!-- Checkbox (hidden from tab order — the card is the interactive element) -->
                 <mat-checkbox
                   [formControlName]="module.key"
                   (change)="onModuleSelectionChange()"
                   (click)="$event.stopPropagation()"
                   color="primary"
+                  class="module-checkbox"
+                  [tabIndex]="-1"
                 >
                 </mat-checkbox>
-                <span
-                  class="flex-1 cursor-pointer font-medium text-gray-700 select-none"
-                  >{{ module.label }}</span
+
+                <!-- Icon -->
+                <div
+                  class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-200"
+                  [ngClass]="isModuleSelected(module.key)
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-500 group-hover:bg-blue-50 group-hover:text-blue-500'"
                 >
+                  <mat-icon style="height:20px;width:20px;font-size:20px;display:flex;align-items:center;justify-content:center;">
+                    {{ module.icon }}
+                  </mat-icon>
+                </div>
+
+                <!-- Text -->
+                <div class="flex-1 min-w-0">
+                  <p class="font-semibold text-gray-800 text-sm leading-tight">{{ module.label }}</p>
+                  <p class="text-xs text-gray-500 mt-0.5 leading-snug">{{ module.description }}</p>
+                  <!-- Auto-enables chip -->
+                  <div *ngIf="module.autoEnables?.length" class="mt-1.5 flex flex-wrap gap-1">
+                    <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full font-medium">
+                      Auto-enables: {{ module.autoEnables!.join(', ') }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Selected check overlay -->
+                <div
+                  *ngIf="isModuleSelected(module.key)"
+                  class="absolute top-2 right-2"
+                >
+                  <div class="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
+                    <mat-icon style="height:12px;width:12px;font-size:12px;color:white;display:flex;align-items:center;justify-content:center;">check</mat-icon>
+                  </div>
+                </div>
               </div>
+            </div>
+
+            <!-- Always-on notice -->
+            <div class="mt-4 flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <mat-icon style="height:14px;width:14px;font-size:14px;display:flex;align-items:center;justify-content:center;">info</mat-icon>
+              <span><strong>Dashboard, Visit Queue and Roles</strong> are always enabled and cannot be removed.</span>
             </div>
           </div>
 

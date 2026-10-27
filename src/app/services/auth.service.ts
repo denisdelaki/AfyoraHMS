@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { map, Observable, finalize, tap, throwError } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import { PermissionsService } from '../core/permissions.service';
+import { FacilityContextService } from '../core/facility-context.service';
 import {
   ApiResponse,
   FacilityOnboardingRequest,
@@ -17,6 +18,7 @@ import {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly permissionsService = inject(PermissionsService);
+  private readonly facilityContext = inject(FacilityContextService);
   private readonly baseUrl = apiUrl('/auth');
   private readonly storageKeys = {
     user: 'afyora.user',
@@ -172,6 +174,20 @@ export class AuthService {
       } else {
         // Refresh from stored user object as fallback
         this.permissionsService.refresh();
+      }
+      // Persist resolved_modules so sidebar can gate nav by facility module list
+      if (Array.isArray(userObj['resolved_modules'])) {
+        this.permissionsService.setResolvedModules(
+          userObj['resolved_modules'] as string[],
+        );
+      }
+      // Cache facility ID explicitly so FacilityContextService always resolves it
+      for (const key of ['facility_id', 'facility', 'facilityId', 'organization_id', 'organization']) {
+        const v = userObj[key];
+        if (v !== undefined && v !== null && String(v).trim() !== '') {
+          this.facilityContext.setFacilityId(String(v));
+          break;
+        }
       }
     }
   }

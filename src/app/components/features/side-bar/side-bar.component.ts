@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, computed } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../services';
 import {
   ModuleKey,
@@ -50,7 +50,7 @@ type StoredUser = {
 
 @Component({
   selector: 'app-side-bar',
-  imports: [CommonModule, RouterLink, RouterOutlet, LucideAngularModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, LucideAngularModule],
   templateUrl: './side-bar.component.html',
   styleUrl: './side-bar.component.css',
 })
@@ -82,7 +82,7 @@ export class SideBarComponent implements OnInit {
       name: 'Visit Queue',
       href: '/visit-queue',
       icon: Ticket,
-      permission: 'visit_queue',
+      permission: 'patients',
     },
     { name: 'EHR', href: '/ehr', icon: FileText, permission: 'ehr' },
     { name: 'Pharmacy', href: '/pharmacy', icon: Pill, permission: 'pharmacy' },
@@ -114,7 +114,7 @@ export class SideBarComponent implements OnInit {
       name: 'Insurance & Payers',
       href: '/insurance-onboarding',
       icon: Shield,
-      adminOnly: true,
+      permission: 'insurance',
     },
     {
       name: 'Inventory',
@@ -161,6 +161,9 @@ export class SideBarComponent implements OnInit {
     return this.allNavigation.filter((item) => {
       if (item.adminOnly) return isAdmin;
       if (!item.permission) return true;
+      // Stage 1: facility-module gate — is this module enabled for this facility?
+      if (!this.permissionsService.isModuleEnabled(item.permission)) return false;
+      // Stage 2: RBAC gate
       if (isAdmin) return true;
       return this.permissionsService.hasPermission(
         item.permission,
@@ -169,7 +172,7 @@ export class SideBarComponent implements OnInit {
     });
   });
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
     // Ensure the reactive signals are in sync with what is currently in localStorage.

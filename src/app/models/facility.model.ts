@@ -1,3 +1,52 @@
+// ============================================================
+// Module types — must mirror SELECTABLE_MODULES on the backend
+// ============================================================
+
+export type SelectableModuleKey =
+  | 'patients'
+  | 'appointments'
+  | 'ehr'
+  | 'pharmacy'
+  | 'laboratory'
+  | 'radiology'
+  | 'billing'
+  | 'inventory'
+  | 'reports'
+  | 'employees'
+  | 'departments';
+
+export interface ModuleDefinition {
+  key: SelectableModuleKey;
+  label: string;
+  description: string;
+  icon: string;
+  /** Modules automatically enabled when this one is selected */
+  autoEnables?: string[];
+}
+
+/** Response from GET /api/facilities/{id}/manage-modules/ */
+export interface FacilityModulesConfig {
+  facility_id: number | string;
+  facility_name: string;
+  selectable_modules: SelectableModuleKey[];
+  enabled_modules: string[];
+  resolved_modules: string[];
+  module_dependencies: Record<string, string[]>;
+}
+
+/** Request body for PUT/PATCH /api/facilities/{id}/manage-modules/ */
+export interface UpdateFacilityModulesRequest {
+  modules: SelectableModuleKey[];
+}
+
+/** Response from PUT/PATCH /api/facilities/{id}/manage-modules/ */
+export interface UpdateFacilityModulesResponse {
+  message: string;
+  facility_id: number | string;
+  enabled_modules: string[];
+  resolved_modules: string[];
+}
+
 export interface FacilityProfile {
   id: number | string;
   name: string;
@@ -23,6 +72,10 @@ export interface FacilityProfile {
   users_count?: number;
   created_at?: string;
   updated_at?: string;
+  /** Raw module keys chosen by the admin (excludes auto-resolved deps) */
+  enabled_modules?: string[];
+  /** Fully resolved module list (includes deps + always-on) — drives sidebar */
+  resolved_modules?: string[];
 }
 
 export interface FacilityUpdateRequest {

@@ -1,0 +1,30 @@
+/* ============================================================
+   Module Selection Cards — Step 3
+   ============================================================ */
+
+.module-card {
+  border-color: #e5e7eb; /* gray-200 */
+  background-color: #ffffff;
+}
+
+.module-card:hover {
+  border-color: #93c5fd; /* blue-300 */
+  background-color: #f0f7ff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
+}
+
+.module-card.selected {
+  border-color: #3b82f6; /* blue-500 */
+  background-color: #eff6ff; /* blue-50 */
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.18);
+}
+
+/* Hide the native checkbox visual — the card IS the interactive element */
+.module-checkbox .mdc-checkbox__background {
+  display: none !important;
+}
+.module-checkbox .mdc-form-field {
+  gap: 0 !important;
+  width: 0;
+  overflow: hidden;
+}

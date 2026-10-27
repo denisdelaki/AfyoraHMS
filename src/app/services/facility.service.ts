@@ -3,11 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { apiUrl } from '../core/api.config';
 import {
+  FacilityModulesConfig,
   FacilityProfile,
   FacilityUpdateRequest,
   SubscribePayload,
   SubscribeResponse,
   SubscriptionPaymentRecord,
+  UpdateFacilityModulesRequest,
+  UpdateFacilityModulesResponse,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -98,5 +101,30 @@ export class FacilityService {
         page_size: pageSize.toString(),
       },
     });
+  }
+
+  // -------------------------------------------------------
+  // Module management
+  // -------------------------------------------------------
+
+  /** GET /api/facilities/{id}/manage-modules/ */
+  getModules(facilityId: number | string): Observable<FacilityModulesConfig> {
+    return this.http
+      .get<any>(`${this.baseUrl}/${facilityId}/manage-modules/`, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((res) => (res?.data ?? res) as FacilityModulesConfig));
+  }
+
+  /** PUT /api/facilities/{id}/manage-modules/ */
+  updateModules(
+    facilityId: number | string,
+    payload: UpdateFacilityModulesRequest,
+  ): Observable<UpdateFacilityModulesResponse> {
+    return this.http
+      .put<any>(`${this.baseUrl}/${facilityId}/manage-modules/`, payload, {
+        headers: this.authHeaders(),
+      })
+      .pipe(map((res) => (res?.data ?? res) as UpdateFacilityModulesResponse));
   }
 }

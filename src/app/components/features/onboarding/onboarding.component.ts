@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { LogoComponent } from '../logo/logo.component';
 import { AuthService } from '../../../services';
-import { FacilityOnboardingRequest, FacilityType } from '../../../models';
+import { FacilityOnboardingRequest, FacilityType, SelectableModuleKey } from '../../../models';
 
 @Component({
   selector: 'app-onboarding',
@@ -71,15 +71,18 @@ export class OnboardingComponent implements OnInit {
     adminPassword: ['', [Validators.required]],
     adminConfirmPassword: ['', [Validators.required]],
     modules: this.fb.group({
-      patientManagement: [false],
-      electronicHealthRecords: [false],
-      pharmacyManagement: [false],
-      billingFinance: [false],
-      employeeManagement: [false],
-      inventoryManagement: [false],
-      laboratoryManagement: [false],
-      radiologyManagement: [false],
-      reportsAnalytics: [false],
+      // Keys match SELECTABLE_MODULES on the backend exactly
+      patients: [false],
+      appointments: [false],
+      ehr: [false],
+      pharmacy: [false],
+      laboratory: [false],
+      radiology: [false],
+      billing: [false],
+      inventory: [false],
+      reports: [false],
+      employees: [false],
+      departments: [false],
     }),
     selectedPlan: ['', [Validators.required]],
   });
@@ -92,16 +95,83 @@ export class OnboardingComponent implements OnInit {
     'Subscription',
   ];
 
-  modules = [
-    { key: 'patientManagement', label: 'Patient Management' },
-    { key: 'electronicHealthRecords', label: 'Electronic Health Records' },
-    { key: 'pharmacyManagement', label: 'Pharmacy Management' },
-    { key: 'billingFinance', label: 'Billing & Finance' },
-    { key: 'employeeManagement', label: 'Employee Management' },
-    { key: 'inventoryManagement', label: 'Inventory Management' },
-    { key: 'laboratoryManagement', label: 'Laboratory Management' },
-    { key: 'radiologyManagement', label: 'Radiology Management' },
-    { key: 'reportsAnalytics', label: 'Reports & Analytics' },
+  /**
+   * Canonical module definitions — keys match SELECTABLE_MODULES on the backend.
+   * description and icon are used in the onboarding step 3 cards.
+   */
+  modules: { key: SelectableModuleKey; label: string; description: string; icon: string; autoEnables?: string[] }[] = [
+    {
+      key: 'patients',
+      label: 'Patient Management',
+      description: 'Register and manage patient records & demographics.',
+      icon: 'people',
+    },
+    {
+      key: 'appointments',
+      label: 'Appointment Scheduling',
+      description: 'Book, reschedule and track patient appointments.',
+      icon: 'event',
+      autoEnables: ['patients'],
+    },
+    {
+      key: 'ehr',
+      label: 'Consultation & EHR',
+      description: 'Visit history, triage, SOAP notes and clinical records.',
+      icon: 'description',
+      autoEnables: ['patients', 'visit_queue'],
+    },
+    {
+      key: 'pharmacy',
+      label: 'Pharmacy & Prescriptions',
+      description: 'Dispense medications and manage prescriptions.',
+      icon: 'medication',
+      autoEnables: ['inventory'],
+    },
+    {
+      key: 'laboratory',
+      label: 'Laboratory',
+      description: 'Lab test orders, samples and results management.',
+      icon: 'science',
+      autoEnables: ['patients'],
+    },
+    {
+      key: 'radiology',
+      label: 'Radiology & Imaging',
+      description: 'Imaging orders, DICOM reports and results.',
+      icon: 'radiology',
+      autoEnables: ['patients'],
+    },
+    {
+      key: 'billing',
+      label: 'Billing & Finance',
+      description: 'Invoices, payments and financial reports.',
+      icon: 'receipt_long',
+      autoEnables: ['insurance'],
+    },
+    {
+      key: 'inventory',
+      label: 'Inventory Management',
+      description: 'Track drugs, supplies and stock levels.',
+      icon: 'inventory_2',
+    },
+    {
+      key: 'reports',
+      label: 'Reports & Analytics',
+      description: 'Facility-wide analytics, dashboards and exports.',
+      icon: 'bar_chart',
+    },
+    {
+      key: 'employees',
+      label: 'HR – Employees',
+      description: 'Staff records, contracts and payroll.',
+      icon: 'badge',
+    },
+    {
+      key: 'departments',
+      label: 'HR – Departments',
+      description: 'Manage clinical and administrative departments.',
+      icon: 'corporate_fare',
+    },
   ];
 
   plans = [
@@ -173,9 +243,10 @@ export class OnboardingComponent implements OnInit {
     }
 
     const formValue = this.onboardingForm.value;
+    // Collect selected module keys — these match backend SELECTABLE_MODULES exactly
     const modules = this.modules
       .filter((module) => this.isModuleSelected(module.key))
-      .map((module) => module.key);
+      .map((module) => module.key) as SelectableModuleKey[];
 
     const emailOtp = `${formValue.otp1 ?? ''}${formValue.otp2 ?? ''}${formValue.otp3 ?? ''}${formValue.otp4 ?? ''}${formValue.otp5 ?? ''}${formValue.otp6 ?? ''}`;
     const organizationId = localStorage.getItem(this.organizationIdStorageKey);

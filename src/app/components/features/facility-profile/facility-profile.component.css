@@ -11,3 +11,28 @@
     transform: rotate(360deg);
   }
 }
+
+/* ============================================================
+   Module Management Cards — Modules Tab
+   ============================================================ */
+
+.module-manage-card {
+  border-color: #e2e8f0; /* slate-200 */
+  background-color: #ffffff;
+}
+
+.module-manage-card:hover {
+  border-color: #a5b4fc; /* indigo-300 */
+  background-color: #f5f3ff; /* indigo-50 */
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.12);
+}
+
+.module-manage-card.enabled {
+  border-color: #6366f1; /* indigo-500 */
+  background-color: #eef2ff; /* indigo-50 */
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.18);
+}
+
+.module-manage-card.disabled-mod {
+  opacity: 0.75;
+}

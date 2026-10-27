@@ -11,6 +11,7 @@ import {
   FileText,
   Globe,
   Hospital,
+  Layers,
   Mail,
   MapPin,
   Phone,
@@ -30,14 +31,26 @@ import {
   Eye,
   EyeOff,
   Lock,
+  FlaskConical,
+  Pill,
+  Scan,
+  Package,
+  BarChart3,
+  UserCog,
+  CalendarDays,
+  LucideIconData,
 } from 'lucide-angular';
 import { FacilityService } from '../../../services/facility.service';
 import { BillingService } from '../../../services/billing.service';
 import { KnhtsService } from '../../../services/knhts.service';
 import { ToastService } from '../../../core/toast.service';
+import { PermissionsService } from '../../../core/permissions.service';
 import {
+  FacilityModulesConfig,
   FacilityProfile,
   FacilityUpdateRequest,
+  ModuleDefinition,
+  SelectableModuleKey,
   SubscribePayload,
   SubscriptionPaymentRecord,
 } from '../../../models/facility.model';
@@ -91,6 +104,7 @@ export class FacilityProfileComponent implements OnInit {
   readonly FileText = FileText;
   readonly Globe = Globe;
   readonly Hospital = Hospital;
+  readonly Layers = Layers;
   readonly Mail = Mail;
   readonly MapPin = MapPin;
   readonly Phone = Phone;
@@ -113,8 +127,141 @@ export class FacilityProfileComponent implements OnInit {
 
   // Active Tab
   activeTab = signal<
-    'profile' | 'subscription' | 'history' | 'mpesa' | 'compliance'
+    'profile' | 'subscription' | 'history' | 'mpesa' | 'compliance' | 'modules'
   >('profile');
+
+  // ─── Module management ───────────────────────────────────────────────────
+  private readonly permissionsService = inject(PermissionsService);
+  /** Config fetched from GET manage-modules/ */
+  modulesConfig = signal<FacilityModulesConfig | null>(null);
+  /** Resolved modules (from API or refreshed after save) */
+  resolvedModules = signal<string[]>([]);
+  /** Draft: the admin's pending toggle state, before saving */
+  draftModules = signal<Set<SelectableModuleKey>>(new Set());
+  loadingModules = signal<boolean>(false);
+  savingModules = signal<boolean>(false);
+
+  /** True if draftModules differs from what the server has */
+  modulesHaveChanges = computed(() => {
+    const cfg = this.modulesConfig();
+    if (!cfg) return false;
+    const serverSet = new Set(cfg.enabled_modules);
+    const draft = this.draftModules();
+    if (serverSet.size !== draft.size) return true;
+    for (const k of draft) { if (!serverSet.has(k)) return true; }
+    return false;
+  });
+
+  /** Canonical module definitions used in the Modules tab */
+  readonly moduleDefinitions: ModuleDefinition[] = [
+    { key: 'patients',     label: 'Patient Management',      description: 'Register and manage patient records & demographics.', icon: 'people',          },
+    { key: 'appointments', label: 'Appointment Scheduling',  description: 'Book, reschedule and track patient appointments.',    icon: 'calendar_month',  autoEnables: ['patients'] },
+    { key: 'ehr',          label: 'Consultation & EHR',      description: 'Visit history, triage, SOAP notes and clinical records.', icon: 'description',  autoEnables: ['patients', 'visit_queue'] },
+    { key: 'pharmacy',     label: 'Pharmacy & Prescriptions',description: 'Dispense medications and manage prescriptions.',      icon: 'medication',      autoEnables: ['inventory'] },
+    { key: 'laboratory',   label: 'Laboratory',              description: 'Lab test orders, samples and results management.',    icon: 'science',         autoEnables: ['patients'] },
+    { key: 'radiology',    label: 'Radiology & Imaging',     description: 'Imaging orders, DICOM reports and results.',          icon: 'radiology',       autoEnables: ['patients'] },
+    { key: 'billing',      label: 'Billing & Finance',       description: 'Invoices, payments and financial reports.',           icon: 'receipt_long',    autoEnables: ['insurance'] },
+    { key: 'inventory',    label: 'Inventory Management',    description: 'Track drugs, supplies and stock levels.',             icon: 'inventory_2',     },
+    { key: 'reports',      label: 'Reports & Analytics',     description: 'Facility-wide analytics, dashboards and exports.',    icon: 'bar_chart',       },
+    { key: 'employees',    label: 'HR – Employees',          description: 'Staff records, contracts and payroll.',               icon: 'badge',           },
+    { key: 'departments',  label: 'HR – Departments',        description: 'Manage clinical and administrative departments.',      icon: 'corporate_fare',  },
+  ];
+
+  /** Map from module key to its Lucide icon data */
+  private readonly moduleIconMap: Record<string, LucideIconData> = {
+    patients:     Users,
+    appointments: CalendarDays,
+    ehr:          FileText,
+    pharmacy:     Pill,
+    laboratory:   FlaskConical,
+    radiology:    Scan,
+    billing:      CreditCard,
+    inventory:    Package,
+    reports:      BarChart3,
+    employees:    UserCog,
+    departments:  Building2,
+  };
+
+  getModuleIcon(key: string): LucideIconData {
+    return this.moduleIconMap[key] ?? Layers;
+  }
+
+  loadModulesConfig(facilityId: number | string): void {
+    if (this.loadingModules()) return;
+    this.loadingModules.set(true);
+    this.facilityService.getModules(facilityId).subscribe({
+      next: (cfg) => {
+        this.modulesConfig.set(cfg);
+        this.resolvedModules.set(cfg.resolved_modules ?? []);
+        // Initialise draft from the server's enabled_modules (selectable keys only)
+        const selectable = new Set(cfg.selectable_modules);
+        const initial = new Set<SelectableModuleKey>(
+          (cfg.enabled_modules as SelectableModuleKey[]).filter((k) => selectable.has(k)),
+        );
+        this.draftModules.set(initial);
+        this.loadingModules.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingModules.set(false);
+        this.toast.handleHttpError(err);
+      },
+    });
+  }
+
+  isDraftModuleEnabled(key: string): boolean {
+    return this.draftModules().has(key as SelectableModuleKey);
+  }
+
+  toggleDraftModule(key: string): void {
+    const k = key as SelectableModuleKey;
+    const draft = new Set(this.draftModules());
+    if (draft.has(k)) {
+      draft.delete(k);
+    } else {
+      draft.add(k);
+    }
+    this.draftModules.set(draft);
+  }
+
+  cancelModuleChanges(): void {
+    const cfg = this.modulesConfig();
+    if (!cfg) return;
+    const selectable = new Set(cfg.selectable_modules);
+    const restored = new Set<SelectableModuleKey>(
+      (cfg.enabled_modules as SelectableModuleKey[]).filter((k) => selectable.has(k)),
+    );
+    this.draftModules.set(restored);
+  }
+
+  saveModules(facilityId: number | string): void {
+    if (this.savingModules() || !this.modulesHaveChanges()) return;
+    this.savingModules.set(true);
+    const modules = Array.from(this.draftModules());
+    this.facilityService.updateModules(facilityId, { modules }).subscribe({
+      next: (res) => {
+        this.savingModules.set(false);
+        // Merge updated lists back into the config
+        const prev = this.modulesConfig();
+        if (prev) {
+          this.modulesConfig.set({
+            ...prev,
+            enabled_modules: res.enabled_modules,
+            resolved_modules: res.resolved_modules,
+          });
+        }
+        this.resolvedModules.set(res.resolved_modules ?? []);
+        // Propagate to the global permission service so the sidebar updates
+        this.permissionsService.setResolvedModules(res.resolved_modules ?? []);
+        this.toast.showSuccess(res.message || 'Modules updated successfully.');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingModules.set(false);
+        this.toast.handleHttpError(err);
+      },
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
 
   // State Signals
   loading = signal<boolean>(true);

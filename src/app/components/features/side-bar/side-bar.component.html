@@ -21,13 +21,14 @@
       </div>
 
       <nav class="flex-1 overflow-y-auto py-4 px-3">
-        @for (item of navigation(); track item.name) {
-        <a [routerLink]="item.href" (click)="closeSidebar()"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors"
-          [class.bg-blue-50]="isActive(item.href)" [class.text-blue-600]="isActive(item.href)"
-          [class.text-gray-700]="!isActive(item.href)" [class.hover:bg-gray-100]="!isActive(item.href)">
-          <lucide-icon [img]="item.icon" class="w-5 h-5"></lucide-icon>
-          <span>{{ item.name }}</span>
+        @for (item of navigation(); track item.href) {
+        <a [routerLink]="item.href"
+          routerLinkActive="bg-blue-50 text-blue-600"
+          [routerLinkActiveOptions]="{ exact: item.href === '/' }"
+          (click)="closeSidebar()"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-colors text-gray-700 hover:bg-gray-100">
+          <lucide-icon [img]="item.icon" class="w-5 h-5 flex-shrink-0"></lucide-icon>
+          <span class="truncate">{{ item.name }}</span>
         </a>
         }
       </nav>

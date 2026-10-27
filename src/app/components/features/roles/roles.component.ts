@@ -43,6 +43,7 @@ const MODULE_LABELS: Record<ModuleKey, string> = {
   laboratory: 'Laboratory',
   radiology: 'Radiology',
   billing: 'Billing',
+  insurance: 'Insurance & Payers',
   inventory: 'Inventory',
   reports: 'Reports',
   employees: 'Employees',
@@ -57,7 +58,7 @@ const MODULE_GROUPS: { label: string; modules: ModuleKey[] }[] = [
   },
   { label: 'Diagnostics', modules: ['laboratory', 'radiology'] },
   { label: 'Pharmacy', modules: ['pharmacy', 'inventory'] },
-  { label: 'Finance', modules: ['billing', 'reports'] },
+  { label: 'Finance', modules: ['billing', 'insurance', 'reports'] },
   {
     label: 'Administration',
     modules: ['employees', 'departments', 'dashboard_overview', 'roles'],

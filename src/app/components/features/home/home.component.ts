@@ -38,6 +38,7 @@ import {
 import { DepartmentService } from '../../../services/department.service';
 import { TransformIdsPipe } from '../../../shared/pipes/transform-ids.pipe';
 import { PermissionsService } from '../../../core/permissions.service';
+import { FacilityContextService } from '../../../core/facility-context.service';
 
 type DashboardStatUi = DashboardStat & { icon: LucideIconData };
 type StoredUser = {
@@ -287,6 +288,7 @@ export class HomeComponent implements OnInit {
   private readonly employeesService = inject(EmployeeService);
   private readonly departmentService = inject(DepartmentService);
   private readonly permissionsService = inject(PermissionsService);
+  private readonly facilityContext = inject(FacilityContextService);
   private readonly route = inject(ActivatedRoute);
   employees: any[] = [];
   departments: any[] = [];
@@ -366,7 +368,8 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     const user = this.readStoredUser();
-    this.facilityId = user.facility ?? '';
+    // Use FacilityContextService for reliable multi-field resolution
+    this.facilityId = this.facilityContext.getFacilityId() || user.facility || '';
     this.userName = this.getUserName(user) || 'there';
     this.userId = String(user.id ?? '');
     this.role = this.normalizeRole(user.role);
